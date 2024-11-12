@@ -2,26 +2,26 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider = "prisma-client-js"
+    provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+    provider = "sqlite"
+    url      = env("DATABASE_URL")
 }
 
 model User {
-  id       Int    @id // Telegram ID
-  username String
-
-  musicEntry MusicEntry?
+    id    Int               @id // Telegram ID
+    tag   String? // Telegram tag
+    name  String // Telegram username
+    Music MusicSubmission[]
 }
 
-model MusicEntry {
-  id        Int      @id @default(autoincrement())
-  fileId    String
-  timestamp DateTime
+model MusicSubmission {
+    fileId    String
 
-  userId Int  @unique
-  user   User @relation(fields: [userId], references: [id])
+    user   User @relation(fields: [userId], references: [id])
+    userId Int
+
+    @@id([userId]) // TODO: send a message "This music has already been submitted by someone else, submit a different one or send this one on the next event."
 }

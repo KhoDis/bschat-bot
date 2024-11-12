@@ -1,9 +1,9 @@
-import { Context } from "telegraf";
+import { Context, Scenes } from "telegraf";
 
 export interface SessionData {
-  likeCount: number;
+//   likeCount: number;
 }
 
-export interface IBotContext extends Context {
+export interface IBotContext extends Context, Scenes.SceneContext {
   session: SessionData;
 }
