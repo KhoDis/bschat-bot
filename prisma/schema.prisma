@@ -11,10 +11,10 @@ datasource db {
 }
 
 model User {
-    id    BigInt            @id // Telegram ID
-    tag   String? // Telegram tag
-    name  String // Telegram username
-    Music MusicSubmission[] // TODO: rename to music, make 1 to 1 relation instead
+    id              BigInt           @id // Telegram ID
+    tag             String? // Telegram tag
+    name            String // Telegram username
+    musicSubmission MusicSubmission? // TODO: rename to music, make 1 to 1 relation instead
 }
 
 model MusicSubmission {

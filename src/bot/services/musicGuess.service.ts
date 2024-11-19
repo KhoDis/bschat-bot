@@ -5,7 +5,7 @@ import {
 } from "telegraf/typings/core/types/typegram";
 import { shuffleArray } from "../../utils/arrayUtils";
 import prisma from "../../prisma/client";
-import { IMusicGuessService } from "./musicGuess.interface";
+import { IMusicGuessService } from "../events/musicGuess.interface";
 import { MusicSubmission, User } from "@prisma/client";
 
 class MusicRoundState {
