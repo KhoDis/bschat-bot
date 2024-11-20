@@ -5,18 +5,29 @@ import { UserService } from "../../../services/UserService";
 import Timer from "../../../../utils/Timer";
 import { formatTime } from "../../../../utils/timeUtils";
 
+interface TimerState {
+  timer: Timer | null;
+  messageId: number | null;
+  interval: NodeJS.Timeout | null;
+}
+
 class MusicGameScene extends Scenes.BaseScene<IBotContext> {
-  static sceneName = "MUSIC_GAME_SCENE";
+  static readonly SCENE_NAME = "MUSIC_GAME_SCENE";
+  private static readonly TIMER_UPDATE_INTERVAL = 5000;
+  private static readonly INITIAL_WAIT_TIME = 2 * 60 * 1000; // 2 minutes
+  private static readonly ADMIN_USERNAME = "khodis";
+
+  private readonly timerState: TimerState = {
+    timer: null,
+    messageId: null,
+    interval: null,
+  };
 
   private musicGuessService: MusicGuessService;
   private userService: UserService;
 
-  private timer: Timer | null = null;
-  private timerMessageId: number | null = null; // To track the timer message
-  private timerInterval: NodeJS.Timeout | null = null; // To track the interval
-
   constructor(musicGuessService: MusicGuessService, userService: UserService) {
-    super(MusicGameScene.sceneName);
+    super(MusicGameScene.SCENE_NAME);
 
     this.musicGuessService = musicGuessService;
     this.userService = userService;
@@ -28,60 +39,13 @@ class MusicGameScene extends Scenes.BaseScene<IBotContext> {
     this.enter(async (ctx) => {
       await ctx.reply("Это игра Угадай Музыку! Пингуем и ждём 2 минуты.");
 
-      // Ping all participants (tag all of them)
-      const participants = await this.musicGuessService.getTracks();
-
-      if (!participants.length) {
-        await ctx.reply("Никто не решился учавствовать :(");
-        return Promise.resolve();
-      }
-
-      const names = participants.map(
-        async (p) =>
-          `[${await this.userService.getFormattedUser(
-            Number(p.userId)
-          )}](tg://user?id=${p.userId})`
-      );
-      // Await all promises
-      const formattedNames = await Promise.all(names);
-      await ctx.replyWithMarkdown(formattedNames.join("\n"));
+      const participants = await this.pingParticipants(ctx);
+      if (!participants) return;
 
       // Start game after 2 minutes with timer
       const duration = 2 * 60 * 1000; // 2 minutes in milliseconds
 
-      // Initialize the actual game logic
-      const timer = new Timer(() => this.nextRound(ctx), duration);
-
-      this.timer = timer;
-      timer.start();
-
-      // Send initial timer message and store its ID
-      const timerMessage = await ctx.reply(`Осталось: ...`);
-      this.timerMessageId = timerMessage.message_id;
-
-      // Start updating the timer message every second
-      this.timerInterval = setInterval(async () => {
-        const remainingTime = timer.getRemainingTime();
-        console.log(remainingTime);
-        if (remainingTime <= 0) {
-          clearInterval(this.timerInterval!); // Clear interval when time is up
-          this.timerInterval = null;
-          return;
-        }
-
-        try {
-          // Edit the timer message
-          await ctx.telegram.editMessageText(
-            ctx.chat!.id,
-            this.timerMessageId!,
-            undefined,
-            `Осталось: ${formatTime(remainingTime)}`
-          );
-        } catch (error) {
-          console.error("Failed to update timer message:", error);
-          clearInterval(this.timerInterval!);
-        }
-      }, 5000);
+      await this.initializeGameTimer(ctx);
 
       // Add keyboard with two buttons: "next_round" and "add_30s"
       await ctx.reply("Что хотите сделать?", {
@@ -95,17 +59,8 @@ class MusicGameScene extends Scenes.BaseScene<IBotContext> {
     });
 
     this.command("add_30s", async (ctx) => {
-      // Add 30 seconds to the game timer
-      if (this.timer) {
-        const added = this.timer.addTime(30 * 1000);
-        if (added) {
-          await ctx.reply("Добавлено 30 секунд.");
-        } else {
-          await ctx.reply("Уже поздно :(");
-        }
-      } else {
-        await ctx.reply("Ещё ничего не играется.");
-      }
+      const response = await this.addExtraTime();
+      await ctx.reply(response);
     });
 
     this.command("next_round", async (ctx) => {
@@ -118,8 +73,7 @@ class MusicGameScene extends Scenes.BaseScene<IBotContext> {
       }
 
       // Stop timer and start next round
-      this.timer?.clear();
-      await this.musicGuessService.nextRound(ctx);
+      await this.handleTimerComplete(ctx);
     });
 
     this.action(/^service:(.+)$/, async (ctx) => {
@@ -136,45 +90,121 @@ class MusicGameScene extends Scenes.BaseScene<IBotContext> {
           }
 
           // Stop timer and start next round
-          this.nextRound(ctx);
+          await this.handleTimerComplete(ctx);
           break;
         case "add_30s":
-          // Add 30 seconds to the game timer
-          if (this.timer) {
-            const added = this.timer.addTime(30 * 1000);
-            if (added) {
-              await ctx.answerCbQuery("Добавлено 30 секунд.");
-            } else {
-              await ctx.answerCbQuery("Уже поздно :(");
-            }
-          } else {
-            await ctx.answerCbQuery("Ещё ничего не играется.");
-          }
+          const response = await this.addExtraTime();
+          await ctx.answerCbQuery(response);
           break;
       }
     });
   }
 
-  private async nextRound(ctx: Context) {
-    // Stop the timer and edit the message when time is up
-    if (this.timerInterval) {
-      clearInterval(this.timerInterval);
-      this.timerInterval = null;
+  private async pingParticipants(ctx: Context): Promise<boolean> {
+    const participants = await this.musicGuessService.getTracks();
+
+    if (!participants.length) {
+      await ctx.reply("Никто не решился учавствовать :(");
+      return false;
     }
-    // Clear the timer
-    this.timer?.clear();
-    this.timer = null;
-    await ctx.telegram.editMessageText(
-      ctx.chat!.id,
-      this.timerMessageId!,
-      undefined,
-      "Время вышло!"
+
+    const formattedNames = await Promise.all(
+      participants.map(async (p) =>
+        this.formatParticipantName(Number(p.userId))
+      )
     );
+
+    await ctx.replyWithMarkdown(formattedNames.join("\n"));
+    return true;
+  }
+
+  private async formatParticipantName(userId: number): Promise<string> {
+    const formattedUser = await this.userService.getFormattedUser(userId);
+    return `[${formattedUser}](tg://user?id=${userId})`;
+  }
+
+  private async initializeGameTimer(ctx: Context): Promise<void> {
+    const timer = new Timer(
+      () => this.handleTimerComplete(ctx),
+      MusicGameScene.INITIAL_WAIT_TIME
+    );
+
+    this.timerState.timer = timer;
+    timer.start();
+
+    const timerMessage = await ctx.reply(`Осталось: ...`);
+    this.timerState.messageId = timerMessage.message_id;
+
+    this.startTimerUpdates(ctx);
+  }
+
+  private async handleTimerComplete(ctx: Context): Promise<void> {
+    this.clearTimerInterval();
+    this.clearTimer();
+
+    await this.updateTimerMessage(ctx, 0);
+    await this.startNextRound(ctx);
+  }
+
+  private clearTimerInterval(): void {
+    if (this.timerState.interval) {
+      clearInterval(this.timerState.interval);
+      this.timerState.interval = null;
+    }
+  }
+
+  private async startNextRound(ctx: Context): Promise<void> {
     if (!this.musicGuessService.isGameStarted()) {
       await this.musicGuessService.startGame(ctx);
       return;
     }
     await this.musicGuessService.nextRound(ctx);
+  }
+
+  private async updateTimerMessage(
+    ctx: Context,
+    remainingTime: number
+  ): Promise<void> {
+    await ctx.telegram.editMessageText(
+      ctx.chat!.id,
+      this.timerState.messageId!,
+      undefined,
+      `Осталось: ${formatTime(remainingTime)}`
+    );
+  }
+
+  private clearTimer(): void {
+    this.timerState.timer?.clear();
+    this.timerState.timer = null;
+  }
+
+  private isAdminUser(ctx: Context): boolean {
+    return ctx.from?.username === MusicGameScene.ADMIN_USERNAME;
+  }
+
+  private startTimerUpdates(ctx: Context): void {
+    this.timerState.interval = setInterval(async () => {
+      const remainingTime = this.timerState.timer?.getRemainingTime() ?? 0;
+
+      if (remainingTime <= 0) {
+        this.clearTimerInterval();
+        return;
+      }
+
+      await this.updateTimerMessage(ctx, remainingTime).catch((error) => {
+        console.error("Failed to update timer message:", error);
+        this.clearTimerInterval();
+      });
+    }, MusicGameScene.TIMER_UPDATE_INTERVAL);
+  }
+
+  private addExtraTime(): string {
+    if (!this.timerState.timer) {
+      return "Ещё ничего не играется.";
+    }
+
+    const added = this.timerState.timer.addTime(30 * 1000);
+    return added ? "Добавлено 30 секунд." : "Уже поздно :(";
   }
 }
 
