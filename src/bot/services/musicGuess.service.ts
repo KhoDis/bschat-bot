@@ -74,7 +74,9 @@ export class MusicGuessService implements IMusicGuessService {
       return Promise.resolve();
     }
 
-    const round = this.gameState.rounds.get(this.gameState.currentRound);
+    const gameState = this.gameState;
+
+    const round = gameState.rounds.get(gameState.currentRound);
     if (!round) {
       await ctx.reply("Больше нет раундов");
       // Show leaderboard
@@ -82,12 +84,13 @@ export class MusicGuessService implements IMusicGuessService {
       return Promise.resolve();
     }
 
-    const users = [...this.gameState.users.values()];
+    const users = [...gameState.users.values()];
 
     const buttons = users.map((user) => {
+      console.log(`На кнопке guess:${gameState.currentRound}_${user.id}`);
       return {
         text: user.name,
-        callback_data: `guess_${user.id}`,
+        callback_data: `guess:${gameState.currentRound}_${user.id}`,
       } as InlineKeyboardButton;
     });
 
@@ -99,17 +102,15 @@ export class MusicGuessService implements IMusicGuessService {
     this.sendRoundInfo(ctx);
   }
 
-  async processGuess(ctx: Context, guesserId: number) {
+  async processGuess(ctx: Context, roundId: number, guesserId: number) {
     if (!this.gameState) {
       await ctx.answerCbQuery("Игра еще не началась :(");
       return Promise.resolve();
     }
 
-    const round = this.gameState.rounds.get(this.gameState.currentRound);
+    const round = this.gameState.rounds.get(roundId);
     if (!round) {
-      await ctx.answerCbQuery("Больше нет раундов");
-      // Show leaderboard
-      await this.showLeaderboard(ctx);
+      await ctx.answerCbQuery("Нет такого раунда :(");
       return Promise.resolve();
     }
 

@@ -6,6 +6,10 @@ export interface IMusicGuessService {
   startGame(ctx: Context): Promise<void>;
   processRound(ctx: Context, track: MusicSubmission): Promise<void>;
   nextRound(ctx: Context): Promise<void>;
-  processGuess(ctx: Context, guessedUserId: number): Promise<void>;
+  processGuess(
+    ctx: Context,
+    roundId: number,
+    guessedUserId: number
+  ): Promise<void>;
   showLeaderboard(ctx: Context): void;
 }

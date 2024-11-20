@@ -11,8 +11,8 @@ interface TimerState {
   timerInterval: TimerInterval | null;
 }
 
-class MusicGameScene extends Scenes.BaseScene<IBotContext> {
-  static readonly SCENE_NAME = "MUSIC_GAME_SCENE";
+class MusicWaitingScene extends Scenes.BaseScene<IBotContext> {
+  static readonly SCENE_NAME = "MUSIC_WAITING_SCENE";
   private static readonly TIMER_UPDATE_INTERVAL = 5000;
   private static readonly INITIAL_WAIT_TIME = 2 * 60 * 1000; // 2 minutes
   private static readonly ADMIN_USERNAME = "khodis";
@@ -26,7 +26,7 @@ class MusicGameScene extends Scenes.BaseScene<IBotContext> {
   private userService: UserService;
 
   constructor(musicGuessService: MusicGuessService, userService: UserService) {
-    super(MusicGameScene.SCENE_NAME);
+    super(MusicWaitingScene.SCENE_NAME);
 
     this.musicGuessService = musicGuessService;
     this.userService = userService;
@@ -36,20 +36,16 @@ class MusicGameScene extends Scenes.BaseScene<IBotContext> {
 
   private setupHandlers() {
     this.enter(async (ctx) => {
-      await ctx.reply("Раунд начинается!");
+      await ctx.reply("Это игра Угадай Музыку! Пингуем и ждём 2 минуты.");
+
+      const participants = await this.pingParticipants(ctx);
+      if (!participants) return;
 
       // Start timer
       await this.initializeGameTimer(ctx);
 
-      // Add keyboard with two buttons: "next_round" and "add_30s"
-      await ctx.reply("Что хотите сделать?", {
-        reply_markup: {
-          inline_keyboard: [
-            [{ text: "Начать Раунд", callback_data: "service:next_round" }],
-            [{ text: "Добавить 30 секунд", callback_data: "service:add_30s" }],
-          ],
-        },
-      });
+      // Start game or add extra time
+      await this.showGameControls(ctx);
     });
 
     this.command("add_30s", async (ctx) => {
@@ -57,7 +53,7 @@ class MusicGameScene extends Scenes.BaseScene<IBotContext> {
       await ctx.reply(response);
     });
 
-    this.command("next_round", async (ctx) => {
+    this.command("start_game", async (ctx) => {
       // Check if user sending this command is @khodis
       if (ctx.from.username !== "khodis") {
         await ctx.reply(
@@ -67,27 +63,7 @@ class MusicGameScene extends Scenes.BaseScene<IBotContext> {
       }
 
       // Stop timer and start next round
-      await this.nextRound(ctx);
-    });
-
-    this.action("*", async (ctx) => {
-      await ctx.reply("СЛДОПАРЫЛВОРАЫВЛДО");
-      await ctx.answerCbQuery("СЛДОПАРЫЛВОРАЫВЛДО");
-
-      const guessData = ctx.match[1]!.split("_");
-      const guessRound = guessData[0] ? parseInt(guessData[0]) : null;
-      const guessedUserId = guessData[1] ? parseInt(guessData[1]) : null; // User's picked option
-
-      if (!guessedUserId) {
-        await ctx.answerCbQuery("Почему-то id пользователя не нашлось :(");
-        return Promise.resolve();
-      }
-
-      if (!guessRound) {
-        await ctx.answerCbQuery("Почему-то раунд не нашлось :(");
-        return Promise.resolve();
-      }
-      await this.musicGuessService.processGuess(ctx, guessRound, guessedUserId);
+      await this.startGame(ctx);
     });
 
     this.action(/^service:(.+)$/, async (ctx) => {
@@ -104,13 +80,29 @@ class MusicGameScene extends Scenes.BaseScene<IBotContext> {
           }
 
           // Stop timer and start next round
-          await this.nextRound(ctx);
+          await this.startGame(ctx);
           break;
         case "add_30s":
           const response = await this.addExtraTime();
           await ctx.answerCbQuery(response);
           break;
       }
+    });
+  }
+
+  private async showGameControls(ctx: Context): Promise<void> {
+    await ctx.reply("Что хотите сделать?", {
+      reply_markup: {
+        inline_keyboard: [
+          [
+            {
+              text: "Начать Игру",
+              callback_data: "service:next_round",
+            },
+          ],
+          [{ text: "Добавить 30 секунд", callback_data: "service:add_30s" }],
+        ],
+      },
     });
   }
 
@@ -143,8 +135,8 @@ class MusicGameScene extends Scenes.BaseScene<IBotContext> {
     this.timerState.messageId = timerMessage.message_id;
 
     const timerInterval = new TimerInterval(
-      async () => await this.nextRound(ctx),
-      MusicGameScene.INITIAL_WAIT_TIME,
+      async () => await this.startGame(ctx),
+      MusicWaitingScene.INITIAL_WAIT_TIME,
       async () =>
         await ctx.telegram.editMessageText(
           ctx.chat!.id,
@@ -152,19 +144,22 @@ class MusicGameScene extends Scenes.BaseScene<IBotContext> {
           undefined,
           `Осталось: ${formatTime(timerInterval.getRemainingTime())}`
         ),
-      MusicGameScene.TIMER_UPDATE_INTERVAL
+      MusicWaitingScene.TIMER_UPDATE_INTERVAL
     );
 
     this.timerState.timerInterval = timerInterval;
   }
 
-  private async nextRound(ctx: Context): Promise<void> {
+  private async startGame(ctx: Context): Promise<void> {
     if (!this.timerState.timerInterval) {
       return;
     }
     this.timerState.timerInterval.clear();
 
-    this.musicGuessService.nextRound(ctx);
+    if (!this.musicGuessService.isGameStarted()) {
+      await this.musicGuessService.startGame(ctx);
+      return;
+    }
     await ctx.reply("Игра уже идёт!");
   }
 
@@ -177,4 +172,4 @@ class MusicGameScene extends Scenes.BaseScene<IBotContext> {
   }
 }
 
-export default MusicGameScene;
+export default MusicWaitingScene;

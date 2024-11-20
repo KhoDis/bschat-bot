@@ -11,6 +11,7 @@ import MusicUploadScene from "./bot/scenes/private/music/MusicUploadScene";
 import PrivateMainMenuScene from "./bot/scenes/private/PrivateMainMenuScene";
 import GroupMainMenuScene from "./bot/scenes/group/GroupMainMenuScene";
 import MusicGameScene from "./bot/scenes/group/music_guess/MusicGameScene";
+import MusicWaitingScene from "./bot/scenes/group/music_guess/MusicWaitingScene";
 
 class Bot {
   bot: Telegraf<IBotContext>;
@@ -37,6 +38,10 @@ class Bot {
       this.musicGuessService,
       this.userService
     );
+    const musicWaitingScene = new MusicWaitingScene(
+      this.musicGuessService,
+      this.userService
+    );
 
     // Create stage and add scenes
     this.stage = new Scenes.Stage<IBotContext>([
@@ -45,6 +50,7 @@ class Bot {
       musicUploadScene,
       groupMainMenuScene,
       musicGameScene,
+      musicWaitingScene,
     ]);
 
     this.bot.use(this.stage.middleware());
@@ -62,41 +68,6 @@ class Bot {
         await ctx.scene.enter(GroupMainMenuScene.sceneName);
       }
     });
-
-    // this.bot.command("check_music", async (ctx) => {
-    //   // Check how many people and who has submitted music
-    //   const musicSubmissions = await prisma.musicSubmission.findMany({});
-    //   const uniqueUsers = new Set(musicSubmissions.map((s) => s.userId));
-
-    //   const userMap = new Map(
-    //     (
-    //       await prisma.user.findMany({
-    //         where: { id: { in: [...uniqueUsers] } },
-    //       })
-    //     ).map((user) => [user.id, user])
-    //   );
-
-    //   await ctx.reply(
-    //     `Всего участников: ${uniqueUsers.size}\n\n` +
-    //       [...userMap.values()]
-    //         .map((user) => `${user.name} ${user.tag ? `(${user.tag})` : ""}`)
-    //         .join("\n")
-    //   );
-    // });
-
-    // this.bot.action(/guess_(.+)/, async (ctx) => {
-    //   const guessData = ctx.match[1]!.split("_"); // TODO: make callback system more robust
-    //   const guessedUserId = guessData[0] ? parseInt(guessData[0]) : null; // User's picked option
-
-    //   console.log(`Button pressed for user ID: ${guessedUserId}`);
-
-    //   if (!guessedUserId) {
-    //     await ctx.answerCbQuery("Почему-то id пользователя не нашлось :(");
-    //     return Promise.resolve();
-    //   }
-
-    //   await this.musicGuessService.processGuess(ctx, guessedUserId);
-    // });
 
     this.bot.catch((err) => {
       console.error("Bot error:", err);
