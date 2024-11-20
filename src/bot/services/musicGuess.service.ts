@@ -137,6 +137,10 @@ export class MusicGuessService implements IMusicGuessService {
     await this.updateRoundInfo(ctx);
   }
 
+  isGameStarted() {
+    return !!this.gameState;
+  }
+
   async nextRound(ctx: Context) {
     if (!this.gameState) {
       await ctx.reply("Игра еще не началась");

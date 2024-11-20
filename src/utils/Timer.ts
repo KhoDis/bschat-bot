@@ -1,50 +1,75 @@
+type TimerCallback = () => void;
+
 class Timer {
-  private timeoutId: NodeJS.Timeout | null = null;
-  private remainingTime: number;
-  private startTime: number | null = null;
-  private callback: () => void;
-  private isExecuted: boolean = false;
+  private duration: number; // Initial duration in milliseconds
+  private remainingTime: number; // Remaining time in milliseconds
+  private callback: TimerCallback; // Callback function
+  private startTime: number | null = null; // Start time of the timer
+  private timerId: NodeJS.Timeout | null = null; // Timer ID
 
-  constructor(callback: () => void, delay: number) {
+  constructor(callback: TimerCallback, duration: number) {
+    this.duration = duration;
+    this.remainingTime = duration;
     this.callback = callback;
-    this.remainingTime = delay;
-
-    // Start the timer immediately
-    this.startTimer();
   }
 
-  private startTimer() {
+  // Starts the timer
+  start(): void {
+    if (this.timerId) {
+      throw new Error("Timer is already running.");
+    }
+
     this.startTime = Date.now();
-    this.timeoutId = setTimeout(() => {
-      this.isExecuted = true;
+    this.timerId = setTimeout(() => {
       this.callback();
+      this.clear(); // Reset the timer after the callback
     }, this.remainingTime);
   }
 
-  public addTime(extraTime: number): boolean {
-    if (this.isExecuted) {
-      return false;
+  // Adds time to the timer if it's still running
+  addTime(milliseconds: number): boolean {
+    if (!this.timerId || this.startTime === null) {
+      return false; // Timer is not running
     }
 
-    // Clear the current timeout and calculate new remaining time
-    if (this.timeoutId) {
-      clearTimeout(this.timeoutId);
-      const elapsedTime = Date.now() - (this.startTime || 0);
-      this.remainingTime -= elapsedTime;
-    }
+    // Calculate elapsed time
+    const elapsedTime = Date.now() - this.startTime;
 
-    this.remainingTime += extraTime;
+    // Update remaining time
+    this.remainingTime = Math.max(
+      0,
+      this.remainingTime - elapsedTime + milliseconds
+    );
 
-    // Restart the timer with the updated time
-    this.startTimer();
+    // Clear the current timer and restart with updated remaining time
+    clearTimeout(this.timerId);
+    this.timerId = setTimeout(() => {
+      this.callback();
+      this.clear(); // Reset the timer after the callback
+    }, this.remainingTime);
+
+    this.startTime = Date.now(); // Reset start time
     return true;
   }
 
-  public clear(): void {
-    if (this.timeoutId) {
-      clearTimeout(this.timeoutId);
-      this.timeoutId = null;
+  // Returns the remaining time in milliseconds
+  getRemainingTime(): number {
+    if (this.startTime === null) {
+      return this.remainingTime; // Timer hasn't started
     }
+
+    const elapsedTime = Date.now() - this.startTime;
+    return Math.max(0, this.remainingTime - elapsedTime);
+  }
+
+  // Clears the timer and resets state
+  clear(): void {
+    if (this.timerId) {
+      clearTimeout(this.timerId);
+      this.timerId = null;
+    }
+    this.startTime = null;
+    this.remainingTime = this.duration;
   }
 }
 

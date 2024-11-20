@@ -1,8 +1,9 @@
-import { Scenes } from "telegraf";
+import { Context, Scenes } from "telegraf";
 import { IBotContext } from "../../../../context/context.interface";
 import { MusicGuessService } from "../../../services/musicGuess.service";
 import { UserService } from "../../../services/UserService";
 import Timer from "../../../../utils/Timer";
+import { formatTime } from "../../../../utils/timeUtils";
 
 class MusicGameScene extends Scenes.BaseScene<IBotContext> {
   static sceneName = "MUSIC_GAME_SCENE";
@@ -11,6 +12,8 @@ class MusicGameScene extends Scenes.BaseScene<IBotContext> {
   private userService: UserService;
 
   private timer: Timer | null = null;
+  private timerMessageId: number | null = null; // To track the timer message
+  private timerInterval: NodeJS.Timeout | null = null; // To track the interval
 
   constructor(musicGuessService: MusicGuessService, userService: UserService) {
     super(MusicGameScene.sceneName);
@@ -27,21 +30,58 @@ class MusicGameScene extends Scenes.BaseScene<IBotContext> {
 
       // Ping all participants (tag all of them)
       const participants = await this.musicGuessService.getTracks();
-      const message = `@${participants
-        .map(
-          async (p) =>
-            `[${await this.userService.getFormattedUser(
-              Number(p.userId)
-            )}](tg://user?id=${p.userId})`
-        )
-        .join("\n")}`;
-      await ctx.reply(message);
 
-      // Start game after 2 minutes
-      this.timer = new Timer(
-        async () => await this.musicGuessService.startGame(ctx),
-        2 * 60 * 1000
+      if (!participants.length) {
+        await ctx.reply("Никто не решился учавствовать :(");
+        return Promise.resolve();
+      }
+
+      const names = participants.map(
+        async (p) =>
+          `[${await this.userService.getFormattedUser(
+            Number(p.userId)
+          )}](tg://user?id=${p.userId})`
       );
+      // Await all promises
+      const formattedNames = await Promise.all(names);
+      await ctx.replyWithMarkdown(formattedNames.join("\n"));
+
+      // Start game after 2 minutes with timer
+      const duration = 2 * 60 * 1000; // 2 minutes in milliseconds
+
+      // Initialize the actual game logic
+      const timer = new Timer(() => this.nextRound(ctx), duration);
+
+      this.timer = timer;
+      timer.start();
+
+      // Send initial timer message and store its ID
+      const timerMessage = await ctx.reply(`Осталось: ...`);
+      this.timerMessageId = timerMessage.message_id;
+
+      // Start updating the timer message every second
+      this.timerInterval = setInterval(async () => {
+        const remainingTime = timer.getRemainingTime();
+        console.log(remainingTime);
+        if (remainingTime <= 0) {
+          clearInterval(this.timerInterval!); // Clear interval when time is up
+          this.timerInterval = null;
+          return;
+        }
+
+        try {
+          // Edit the timer message
+          await ctx.telegram.editMessageText(
+            ctx.chat!.id,
+            this.timerMessageId!,
+            undefined,
+            `Осталось: ${formatTime(remainingTime)}`
+          );
+        } catch (error) {
+          console.error("Failed to update timer message:", error);
+          clearInterval(this.timerInterval!);
+        }
+      }, 5000);
 
       // Add keyboard with two buttons: "next_round" and "add_30s"
       await ctx.reply("Что хотите сделать?", {
@@ -71,10 +111,14 @@ class MusicGameScene extends Scenes.BaseScene<IBotContext> {
     this.command("next_round", async (ctx) => {
       // Check if user sending this command is @khodis
       if (ctx.from.username !== "khodis") {
-        await ctx.reply("Только @khodis может запустить событие :)");
+        await ctx.reply(
+          "Только @khodis может насильно начинать следующий раунд :)"
+        );
         return;
       }
 
+      // Stop timer and start next round
+      this.timer?.clear();
       await this.musicGuessService.nextRound(ctx);
     });
 
@@ -86,19 +130,20 @@ class MusicGameScene extends Scenes.BaseScene<IBotContext> {
           // Check if user sending this command is @khodis
           if (ctx.from.username !== "khodis") {
             await ctx.answerCbQuery(
-              "Только @khodis может запустить событие :)"
+              "Только @khodis может насильно начинать следующий раунд :)"
             );
             return;
           }
 
-          await this.musicGuessService.nextRound(ctx);
+          // Stop timer and start next round
+          this.nextRound(ctx);
           break;
         case "add_30s":
           // Add 30 seconds to the game timer
           if (this.timer) {
             const added = this.timer.addTime(30 * 1000);
             if (added) {
-              await ctx.reply("Добавлено 30 секунд.");
+              await ctx.answerCbQuery("Добавлено 30 секунд.");
             } else {
               await ctx.answerCbQuery("Уже поздно :(");
             }
@@ -108,19 +153,28 @@ class MusicGameScene extends Scenes.BaseScene<IBotContext> {
           break;
       }
     });
+  }
 
-    this.command("music_guess", async (ctx) => {
-      // Check that it's from admin (@khodis)
-      if (ctx.from.username !== "khodis") {
-        await ctx.reply("Только @khodis может запустить событие :)");
-        return;
-      }
-      await ctx.scene.enter("MUSIC_GAME_SCENE");
-    });
-
-    this.command("other", async (ctx) => {
-      await ctx.reply("Извините, другие услуги пока в разработке.");
-    });
+  private async nextRound(ctx: Context) {
+    // Stop the timer and edit the message when time is up
+    if (this.timerInterval) {
+      clearInterval(this.timerInterval);
+      this.timerInterval = null;
+    }
+    // Clear the timer
+    this.timer?.clear();
+    this.timer = null;
+    await ctx.telegram.editMessageText(
+      ctx.chat!.id,
+      this.timerMessageId!,
+      undefined,
+      "Время вышло!"
+    );
+    if (!this.musicGuessService.isGameStarted()) {
+      await this.musicGuessService.startGame(ctx);
+      return;
+    }
+    await this.musicGuessService.nextRound(ctx);
   }
 }
 

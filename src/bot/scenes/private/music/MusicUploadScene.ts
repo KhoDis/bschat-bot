@@ -2,6 +2,7 @@ import { Scenes } from "telegraf";
 import { IBotContext } from "../../../../context/context.interface";
 import { message } from "telegraf/filters";
 import { UserService } from "../../../services/UserService";
+import PrivateMainMenuScene from "../PrivateMainMenuScene";
 
 export class MusicUploadScene extends Scenes.BaseScene<IBotContext> {
   private userService: UserService;
@@ -63,7 +64,7 @@ export class MusicUploadScene extends Scenes.BaseScene<IBotContext> {
 
       switch (action) {
         case "back_to_main":
-          await ctx.scene.enter("MAIN_MENU_SCENE");
+          await ctx.scene.enter(PrivateMainMenuScene.sceneName);
           break;
         default:
           await ctx.reply("Что-то пошло не так :(");

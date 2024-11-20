@@ -1,7 +1,6 @@
 import { Scenes } from "telegraf";
 import { IBotContext } from "../../../context/context.interface";
-import MusicGuessScene from "../private/music/MusicGuessScene";
-import { MusicGuessService } from "../../services/music-guess-service";
+import { MusicGuessService } from "../../services/musicGuess.service";
 
 class GroupMainMenuScene extends Scenes.BaseScene<IBotContext> {
   static sceneName = "GROUP_MAIN_MENU_SCENE";
@@ -37,18 +36,17 @@ class GroupMainMenuScene extends Scenes.BaseScene<IBotContext> {
 
       switch (serviceName) {
         case "music_guess":
-          await ctx.answerCbQuery();
           // Check that it's from admin (@khodis)
           if (ctx.from.username !== "khodis") {
-            await ctx.reply("Только @khodis может запустить событие :)");
+            await ctx.answerCbQuery(
+              "Только @khodis может запустить событие :)"
+            );
             return;
           }
-          await this.musicGuessService.startGame(ctx);
           await ctx.scene.enter("MUSIC_GAME_SCENE");
           break;
         case "other":
-          await ctx.answerCbQuery();
-          await ctx.reply("Извините, другие услуги пока в разработке.");
+          await ctx.answerCbQuery("Извините, другие услуги пока в разработке.");
           break;
       }
     });

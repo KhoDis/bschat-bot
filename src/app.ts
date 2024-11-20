@@ -1,19 +1,16 @@
 import { Scenes, session, Telegraf } from "telegraf";
 import { IConfigService } from "./config/config.interface";
 import { ConfigService } from "./config/config.service";
-import prisma from "./prisma/client";
 import { IBotContext } from "./context/context.interface";
 import { Command } from "./bot/commands/command.class";
-import { StartCommand } from "./bot/commands/start.command";
-import { IMusicGuessService } from "./bot/events/musicGuess.interface";
 import { MusicGuessService } from "./bot/services/musicGuess.service";
-import { message } from "telegraf/filters";
 import MainMenuScene from "./bot/scenes/private/PrivateMainMenuScene";
 import MusicGuessScene from "./bot/scenes/private/music/MusicGuessScene";
 import { UserService } from "./bot/services/UserService";
 import MusicUploadScene from "./bot/scenes/private/music/MusicUploadScene";
 import PrivateMainMenuScene from "./bot/scenes/private/PrivateMainMenuScene";
 import GroupMainMenuScene from "./bot/scenes/group/GroupMainMenuScene";
+import MusicGameScene from "./bot/scenes/group/music_guess/MusicGameScene";
 
 class Bot {
   bot: Telegraf<IBotContext>;
@@ -35,12 +32,19 @@ class Bot {
     const musicUploadScene = new MusicUploadScene(this.userService);
 
     // Create chat scenes
+    const groupMainMenuScene = new GroupMainMenuScene(this.musicGuessService);
+    const musicGameScene = new MusicGameScene(
+      this.musicGuessService,
+      this.userService
+    );
 
     // Create stage and add scenes
     this.stage = new Scenes.Stage<IBotContext>([
       mainMenuScene,
       musicGuessMenuScene,
       musicUploadScene,
+      groupMainMenuScene,
+      musicGameScene,
     ]);
 
     this.bot.use(this.stage.middleware());

@@ -2,6 +2,7 @@ import { Scenes } from "telegraf";
 import { IBotContext } from "../../../../context/context.interface";
 import { MusicGuessService } from "../../../services/musicGuess.service";
 import { UserService } from "../../../services/UserService";
+import PrivateMainMenuScene from "../PrivateMainMenuScene";
 
 // Music Guess Service Scene
 export class MusicGuessScene extends Scenes.BaseScene<IBotContext> {
@@ -54,7 +55,7 @@ export class MusicGuessScene extends Scenes.BaseScene<IBotContext> {
           break;
         case "back_to_main":
           await ctx.answerCbQuery();
-          await ctx.scene.enter("MAIN_MENU_SCENE");
+          await ctx.scene.enter(PrivateMainMenuScene.sceneName);
           break;
       }
     });
