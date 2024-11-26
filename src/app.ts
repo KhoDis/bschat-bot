@@ -16,7 +16,7 @@ import MusicWaitingScene from "./bot/scenes/group/music_guess/MusicWaitingScene"
 class Bot {
   bot: Telegraf<IBotContext>;
   commands: Command[] = [];
-  stage: Scenes.Stage<Scenes.SceneContext>;
+  stage: Scenes.Stage<IBotContext, Scenes.SceneSessionData>;
 
   constructor(
     private readonly configService: IConfigService,

@@ -64,8 +64,6 @@ export class MusicGuessService implements IMusicGuessService {
     this.gameState = new MusicGameState(tracks, userMap);
 
     ctx.reply("Игра началась!");
-
-    await this.processRound(ctx);
   }
 
   async processRound(ctx: Context) {
@@ -87,7 +85,6 @@ export class MusicGuessService implements IMusicGuessService {
     const users = [...gameState.users.values()];
 
     const buttons = users.map((user) => {
-      console.log(`На кнопке guess:${gameState.currentRound}_${user.id}`);
       return {
         text: user.name,
         callback_data: `guess:${gameState.currentRound}_${user.id}`,

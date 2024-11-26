@@ -5,6 +5,7 @@ import { UserService } from "../../../services/UserService";
 import Timer from "../../../../utils/Timer";
 import { formatTime } from "../../../../utils/timeUtils";
 import TimerInterval from "../../../../utils/TimerInterval";
+import MusicGameScene from "./MusicGameScene";
 
 interface TimerState {
   messageId: number | null;
@@ -64,13 +65,14 @@ class MusicWaitingScene extends Scenes.BaseScene<IBotContext> {
 
       // Stop timer and start next round
       await this.startGame(ctx);
+      await ctx.scene.enter(MusicGameScene.SCENE_NAME);
     });
 
     this.action(/^service:(.+)$/, async (ctx) => {
       const serviceName = ctx.match[1];
 
       switch (serviceName) {
-        case "next_round":
+        case "start_game":
           // Check if user sending this command is @khodis
           if (ctx.from.username !== "khodis") {
             await ctx.answerCbQuery(
@@ -81,6 +83,7 @@ class MusicWaitingScene extends Scenes.BaseScene<IBotContext> {
 
           // Stop timer and start next round
           await this.startGame(ctx);
+          await ctx.scene.enter(MusicGameScene.SCENE_NAME);
           break;
         case "add_30s":
           const response = await this.addExtraTime();
@@ -97,7 +100,7 @@ class MusicWaitingScene extends Scenes.BaseScene<IBotContext> {
           [
             {
               text: "Начать Игру",
-              callback_data: "service:next_round",
+              callback_data: "service:start_game",
             },
           ],
           [{ text: "Добавить 30 секунд", callback_data: "service:add_30s" }],

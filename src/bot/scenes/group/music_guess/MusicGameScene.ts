@@ -2,7 +2,6 @@ import { Context, Scenes } from "telegraf";
 import { IBotContext } from "../../../../context/context.interface";
 import { MusicGuessService } from "../../../services/musicGuess.service";
 import { UserService } from "../../../services/UserService";
-import Timer from "../../../../utils/Timer";
 import { formatTime } from "../../../../utils/timeUtils";
 import TimerInterval from "../../../../utils/TimerInterval";
 
@@ -36,7 +35,7 @@ class MusicGameScene extends Scenes.BaseScene<IBotContext> {
 
   private setupHandlers() {
     this.enter(async (ctx) => {
-      await ctx.reply("Раунд начинается!");
+      await this.musicGuessService.processRound(ctx);
 
       // Start timer
       await this.initializeGameTimer(ctx);
@@ -70,20 +69,17 @@ class MusicGameScene extends Scenes.BaseScene<IBotContext> {
       await this.nextRound(ctx);
     });
 
-    this.action("*", async (ctx) => {
-      await ctx.reply("СЛДОПАРЫЛВОРАЫВЛДО");
-      await ctx.answerCbQuery("СЛДОПАРЫЛВОРАЫВЛДО");
-
+    this.action(/^guess:(.+)$/, async (ctx) => {
       const guessData = ctx.match[1]!.split("_");
       const guessRound = guessData[0] ? parseInt(guessData[0]) : null;
       const guessedUserId = guessData[1] ? parseInt(guessData[1]) : null; // User's picked option
 
-      if (!guessedUserId) {
+      if (guessedUserId === null) {
         await ctx.answerCbQuery("Почему-то id пользователя не нашлось :(");
         return Promise.resolve();
       }
 
-      if (!guessRound) {
+      if (guessRound === null) {
         await ctx.answerCbQuery("Почему-то раунд не нашлось :(");
         return Promise.resolve();
       }
