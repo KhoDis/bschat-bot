@@ -12,6 +12,8 @@ import PrivateMainMenuScene from "./bot/scenes/private/PrivateMainMenuScene";
 import GroupMainMenuScene from "./bot/scenes/group/GroupMainMenuScene";
 import MusicGameScene from "./bot/scenes/group/music_guess/MusicGameScene";
 import MusicWaitingScene from "./bot/scenes/group/music_guess/MusicWaitingScene";
+import { RootScene, PongScene } from "./bot/temp/Scenes";
+import SceneService from "./bot/services/SceneService";
 
 class Bot {
   bot: Telegraf<IBotContext>;
@@ -21,7 +23,8 @@ class Bot {
   constructor(
     private readonly configService: IConfigService,
     private readonly musicGuessService: MusicGuessService,
-    private readonly userService: UserService
+    private readonly userService: UserService,
+    private readonly sceneService: SceneService
   ) {
     this.bot = new Telegraf<IBotContext>(this.configService.get("BOT_TOKEN"));
 
@@ -43,6 +46,9 @@ class Bot {
       this.userService
     );
 
+    const rootScene = new RootScene(this.sceneService);
+    const pongScene = new PongScene(this.sceneService);
+
     // Create stage and add scenes
     this.stage = new Scenes.Stage<IBotContext>([
       mainMenuScene,
@@ -51,6 +57,8 @@ class Bot {
       groupMainMenuScene,
       musicGameScene,
       musicWaitingScene,
+      rootScene,
+      pongScene,
     ]);
 
     this.bot.use(this.stage.middleware());
@@ -63,7 +71,8 @@ class Bot {
     this.bot.command("start", async (ctx) => {
       // Check if it's a private message
       if (ctx.chat.type === "private") {
-        await ctx.scene.enter(PrivateMainMenuScene.sceneName);
+        // await ctx.scene.enter(PrivateMainMenuScene.sceneName);
+        await ctx.scene.enter(RootScene.DEFINITION.displayName);
       } else {
         await ctx.scene.enter(GroupMainMenuScene.sceneName);
       }
@@ -83,7 +92,8 @@ class Bot {
 const bot = new Bot(
   new ConfigService(),
   new MusicGuessService(),
-  new UserService()
+  new UserService(),
+  new SceneService()
 );
 
 bot.init();
