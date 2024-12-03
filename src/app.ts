@@ -4,16 +4,16 @@ import { ConfigService } from "./config/config.service";
 import { IBotContext } from "./context/context.interface";
 import { Command } from "./bot/commands/command.class";
 import { MusicGuessService } from "./bot/services/musicGuess.service";
-import MainMenuScene from "./bot/scenes/private/PrivateMainMenuScene";
-import MusicGuessScene from "./bot/scenes/private/music/MusicGuessScene";
+import PrivateRootScene from "./bot/scenes/private/PrivateMainMenuScene";
 import { UserService } from "./bot/services/UserService";
-import MusicUploadScene from "./bot/scenes/private/music/MusicUploadScene";
-import PrivateMainMenuScene from "./bot/scenes/private/PrivateMainMenuScene";
+import MusicGuessUploadScene from "./bot/scenes/private/music/MusicGuessUploadScene";
 import GroupMainMenuScene from "./bot/scenes/group/GroupMainMenuScene";
 import MusicGameScene from "./bot/scenes/group/music_guess/MusicGameScene";
 import MusicWaitingScene from "./bot/scenes/group/music_guess/MusicWaitingScene";
 import { RootScene, PongScene } from "./bot/temp/Scenes";
 import SceneService from "./bot/services/SceneService";
+import MusicGuessScene from "./bot/scenes/private/music/MusicGuessScene";
+import PrivateMainMenuScene from "./bot/scenes/private/PrivateMainMenuScene";
 
 class Bot {
   bot: Telegraf<IBotContext>;
@@ -31,9 +31,15 @@ class Bot {
     this.bot.use(session());
 
     // Create private scenes
-    const mainMenuScene = new MainMenuScene();
-    const musicGuessMenuScene = new MusicGuessScene(this.userService);
-    const musicUploadScene = new MusicUploadScene(this.userService);
+    const mainMenuScene = new PrivateRootScene(this.sceneService);
+    const musicGuessMenuScene = new MusicGuessScene(
+      this.sceneService,
+      this.userService
+    );
+    const musicUploadScene = new MusicGuessUploadScene(
+      this.sceneService,
+      this.userService
+    );
 
     // Create chat scenes
     const groupMainMenuScene = new GroupMainMenuScene(this.musicGuessService);
@@ -71,8 +77,8 @@ class Bot {
     this.bot.command("start", async (ctx) => {
       // Check if it's a private message
       if (ctx.chat.type === "private") {
-        // await ctx.scene.enter(PrivateMainMenuScene.sceneName);
-        await ctx.scene.enter(RootScene.DEFINITION.displayName);
+        await ctx.scene.enter(PrivateMainMenuScene.DEFINITION.displayName);
+        // await ctx.scene.enter(RootScene.DEFINITION.displayName);
       } else {
         await ctx.scene.enter(GroupMainMenuScene.sceneName);
       }

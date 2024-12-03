@@ -20,7 +20,7 @@ export type SceneDefinition = {
 
 class BaseScene extends Scenes.BaseScene<IBotContext> {
   protected readonly BUTTONS_PER_ROW = 1;
-  protected scenes: SceneDefinition[] = [];
+  public scenes: SceneDefinition[] = [];
 
   constructor(
     protected sceneService: SceneService,
@@ -102,10 +102,7 @@ class BaseScene extends Scenes.BaseScene<IBotContext> {
     if (parent) {
       buttons.push([
         this.makeButton("🔙 Назад", `navigation:${parent.displayName}`),
-        this.makeButton(
-          "🔝 Главная",
-          `navigation:${this.sceneService.ROOT.displayName}`
-        ),
+        this.makeButton("🔝 Главная", `navigation:${this.sceneService.ROOT}`),
       ]);
     }
 
@@ -134,20 +131,8 @@ class BaseScene extends Scenes.BaseScene<IBotContext> {
 
   async registerCommands(): Promise<void> {
     for (const command of this.currentSceneDefinition.commands) {
-      this.command(command.command, async (ctx) => {
-        await command.execute(ctx);
-      });
+      command.register(this);
     }
-
-    this.action(/^command:(.+)$/, async (ctx) => {
-      const command = ctx.match[1];
-      const commandToExecute = this.currentSceneDefinition.commands.find(
-        (c) => c.command === command
-      );
-      if (commandToExecute) {
-        await commandToExecute.execute(ctx);
-      }
-    });
   }
 
   async registerNavigation(): Promise<void> {
@@ -192,4 +177,4 @@ class PongScene extends BaseScene {
   }
 }
 
-export { RootScene, PongScene };
+export { BaseScene, RootScene, PongScene };

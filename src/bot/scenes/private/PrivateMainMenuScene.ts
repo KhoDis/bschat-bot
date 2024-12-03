@@ -1,47 +1,18 @@
-import { Scenes } from "telegraf";
-import { IBotContext } from "../../../context/context.interface";
+import SceneService from "../../services/SceneService";
+import { BaseScene, SceneDefinition } from "../../temp/Scenes";
+import MusicGuessScene from "./music/MusicGuessScene";
 
-export class MainMenuScene extends Scenes.BaseScene<IBotContext> {
-  static sceneName = "PRIVATE_MAIN_MENU_SCENE";
+export class PrivateRootScene extends BaseScene {
+  static DEFINITION: SceneDefinition = {
+    displayName: "PRIVATE_ROOT_SCENE",
+    readableName: "Меню",
+    commands: [],
+    children: [MusicGuessScene.DEFINITION.displayName],
+  };
 
-  constructor() {
-    super(MainMenuScene.sceneName);
-
-    this.setupHandlers();
-  }
-
-  private setupHandlers() {
-    this.enter(async (ctx) => {
-      await ctx.reply("Выберите услугу:", {
-        reply_markup: {
-          inline_keyboard: [
-            [
-              {
-                text: "🎵 Угадай Музыку",
-                callback_data: "service:music_guess",
-              },
-              { text: "🎲 Другая услуга", callback_data: "service:other" },
-            ],
-          ],
-        },
-      });
-    });
-
-    this.action(/^service:(.+)$/, async (ctx) => {
-      const serviceName = ctx.match[1];
-
-      switch (serviceName) {
-        case "music_guess":
-          await ctx.answerCbQuery();
-          await ctx.scene.enter("MUSIC_GUESS_SCENE");
-          break;
-        case "other":
-          await ctx.answerCbQuery();
-          await ctx.reply("Извините, другие услуги пока в разработке.");
-          break;
-      }
-    });
+  constructor(sceneService: SceneService) {
+    super(sceneService, PrivateRootScene.DEFINITION);
   }
 }
 
-export default MainMenuScene;
+export default PrivateRootScene;
