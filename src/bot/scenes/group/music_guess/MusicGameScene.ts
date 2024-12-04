@@ -12,7 +12,7 @@ interface TimerState {
 
 class MusicGameScene extends Scenes.BaseScene<IBotContext> {
   static readonly SCENE_NAME = "MUSIC_GAME_SCENE";
-  private static readonly TIMER_UPDATE_INTERVAL = 5000;
+  private static readonly TIMER_UPDATE_INTERVAL = 3000;
   private static readonly INITIAL_WAIT_TIME = 2 * 60 * 1000; // 2 minutes
   private static readonly ADMIN_USERNAME = "khodis";
 
@@ -136,7 +136,7 @@ class MusicGameScene extends Scenes.BaseScene<IBotContext> {
   private async initializeGameTimer(ctx: Context): Promise<void> {
     const timerMessage = await ctx.reply(`Осталось: ...`);
 
-    this.timerState.messageId = timerMessage.message_id;
+    this.timerState.messageId = timerMessage.chat.id;
 
     const timerInterval = new TimerInterval(
       async () => await this.nextRound(ctx),

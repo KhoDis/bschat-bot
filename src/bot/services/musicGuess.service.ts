@@ -7,19 +7,22 @@ import { shuffleArray } from "../../utils/arrayUtils";
 import prisma from "../../prisma/client";
 import { IMusicGuessService } from "../events/musicGuess.interface";
 import { MusicSubmission, User } from "@prisma/client";
+import { AppUser } from "./UserService";
 
 class MusicRoundState {
-  track: MusicSubmission;
-  notYetGuessed: Set<number>;
-  rightGuesses: Set<number>;
-  wrongGuesses: Set<number>;
-  message: Message.TextMessage | undefined;
+  public notYetGuessed: Set<number>;
+  public rightGuesses: Set<number>;
+  public wrongGuesses: Set<number>;
+  public message: Message.TextMessage | undefined;
 
-  constructor(users: Set<number>, track: MusicSubmission) {
+  constructor(
+    users: Set<number>,
+    public track: MusicSubmission,
+    public index: number
+  ) {
     this.notYetGuessed = new Set(users);
     this.rightGuesses = new Set();
     this.wrongGuesses = new Set();
-    this.track = track;
     this.message;
   }
 }
@@ -27,48 +30,46 @@ class MusicRoundState {
 class MusicGameState {
   rounds: Map<number, MusicRoundState>;
   currentRound: number;
-  users: Map<number, User>;
+  users: Map<number, AppUser>;
 
-  constructor(submissions: MusicSubmission[], users: Map<number, User>) {
-    this.rounds = new Map(
-      submissions.map((track, index) => [
+  constructor(submissions: MusicSubmission[], users: Map<number, AppUser>) {
+    const rounds: [number, MusicRoundState][] = submissions.map(
+      (track, index) => [
         index,
-        new MusicRoundState(new Set(users.keys()), track),
-      ])
+        new MusicRoundState(new Set(users.keys()), track, index),
+      ]
     );
+
+    this.rounds = new Map(rounds);
     this.currentRound = 0;
     this.users = users;
   }
 }
 
-export class MusicGuessService implements IMusicGuessService {
+export class MusicGuessService {
   private gameState: MusicGameState | null = null;
 
   async getTracks() {
     return await prisma.musicSubmission.findMany();
   }
 
-  async startGame(ctx: Context) {
+  async startGame(ctx: Context, participants: AppUser[]) {
     const tracks = shuffleArray(await this.getTracks());
     if (!tracks.length) {
       await ctx.reply("Никто не решился учавствовать :(");
       return Promise.resolve();
     }
-
-    const userKeys = new Set(tracks.map((track) => Number(track.userId)));
-    const userMap = new Map(
-      (
-        await prisma.user.findMany({ where: { id: { in: [...userKeys] } } })
-      ).map((user) => [Number(user.id), user])
+    this.gameState = new MusicGameState(
+      tracks,
+      new Map(participants.map((p) => [p.id, p]))
     );
-    this.gameState = new MusicGameState(tracks, userMap);
 
-    ctx.reply("Игра началась!");
+    ctx.reply("Игра началась! Для следующего раунда нажми /next_round");
   }
 
   async processRound(ctx: Context) {
     if (!this.gameState) {
-      await ctx.reply("Игра еще не началась");
+      await ctx.reply("Не могу начать раунд, так как игра еще не началась");
       return Promise.resolve();
     }
 
@@ -82,16 +83,27 @@ export class MusicGuessService implements IMusicGuessService {
       return Promise.resolve();
     }
 
-    const users = [...gameState.users.values()];
+    this.playRound(ctx, [...gameState.users.values()], round);
+  }
 
-    const buttons = users.map((user) => {
+  /**
+   * Send audiofile
+   * Show buttons to guess
+   * Send round state info
+   */
+  private playRound(
+    ctx: Context,
+    participants: AppUser[],
+    currentRound: MusicRoundState
+  ) {
+    const buttons = participants.map((user) => {
       return {
         text: user.name,
-        callback_data: `guess:${gameState.currentRound}_${user.id}`,
+        callback_data: `guess:${currentRound.index}_${user.id}`,
       } as InlineKeyboardButton;
     });
 
-    ctx.replyWithAudio(round.track.fileId, {
+    ctx.replyWithAudio(currentRound.track.fileId, {
       caption: "Угадываем!",
       reply_markup: { inline_keyboard: this.chunkButtons(buttons, 3) },
     });
@@ -99,7 +111,11 @@ export class MusicGuessService implements IMusicGuessService {
     this.sendRoundInfo(ctx);
   }
 
-  async processGuess(ctx: Context, roundId: number, guesserId: number) {
+  async processGuess(
+    ctx: Context,
+    roundId: number,
+    guessedUserId: number
+  ): Promise<void> {
     if (!this.gameState) {
       await ctx.answerCbQuery("Игра еще не началась :(");
       return Promise.resolve();
@@ -124,7 +140,7 @@ export class MusicGuessService implements IMusicGuessService {
     }
 
     round.notYetGuessed.delete(guessingUserId);
-    if (Number(round.track.userId) === guesserId) {
+    if (Number(round.track.userId) === guessedUserId) {
       await ctx.answerCbQuery("🎉 Правильно! Никому пока не говори ответ :)");
       round.rightGuesses.add(guessingUserId);
     } else {
@@ -132,7 +148,7 @@ export class MusicGuessService implements IMusicGuessService {
       round.wrongGuesses.add(guessingUserId);
     }
 
-    await this.updateRoundInfo(ctx);
+    await this.updateRoundInfo(ctx, round);
   }
 
   isGameStarted() {
@@ -150,7 +166,7 @@ export class MusicGuessService implements IMusicGuessService {
 
   formatRoundInfo(gameState: MusicGameState, round: MusicRoundState) {
     return `
-            Раунд ${gameState.currentRound + 1}/${gameState.rounds.size}
+            Раунд ${round.index + 1}/${gameState.rounds.size}
             Ещё думают: ${[...round.notYetGuessed]
               .map((u) => gameState.users.get(u)?.name)
               .join(", ")}
@@ -176,13 +192,9 @@ export class MusicGuessService implements IMusicGuessService {
     round.message = await ctx.reply(this.formatRoundInfo(gameState, round));
   }
 
-  async updateRoundInfo(ctx: Context) {
+  async updateRoundInfo(ctx: Context, round: MusicRoundState) {
     const gameState = this.gameState;
     if (!gameState) {
-      return;
-    }
-    const round = gameState.rounds.get(gameState.currentRound);
-    if (!round) {
       return;
     }
     const chatId = round.message?.chat.id;

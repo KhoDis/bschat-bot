@@ -18,7 +18,7 @@ export class MusicGuessStatisticsCommand extends SimpleCommand {
   }
 
   public override async execute(ctx: Context): Promise<void> {
-    const users = await this.userService.getUserSubmissions();
+    const users = await this.userService.getSubmissionUsers();
     await ctx.reply(
       `Всего участников: ${users.length}\n\n` +
         users

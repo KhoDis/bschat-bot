@@ -1,5 +1,18 @@
 import { MusicSubmission } from "@prisma/client";
 import prisma from "../../prisma/client";
+import { Context } from "telegraf";
+
+type DBUser = {
+  id: bigint;
+  tag: string | null;
+  name: string;
+};
+
+export type AppUser = {
+  id: number;
+  tag: string | null;
+  name: string;
+};
 
 export class UserService {
   async saveOrUpdateUser(userData: {
@@ -33,13 +46,22 @@ export class UserService {
     return `${user.name} ${user.tag ? `(${user.tag})` : ""}`;
   }
 
-  async getUserSubmissions() {
+  async getSubmissionUsers() {
     const musicSubmissions = await prisma.musicSubmission.findMany({});
-    const uniqueUsers = new Set(musicSubmissions.map((s) => s.userId));
+    const uniqueUserIds = [...new Set(musicSubmissions.map((s) => s.userId))];
 
-    return await prisma.user.findMany({
-      where: { id: { in: [...uniqueUsers] } },
+    const users = await prisma.user.findMany({
+      where: { id: { in: uniqueUserIds } },
     });
+
+    return users.map(
+      (user) =>
+        ({
+          id: Number(user.id),
+          tag: user.tag,
+          name: user.name,
+        } as AppUser)
+    );
   }
 
   async getUserSubmission(userId: number) {
@@ -52,5 +74,26 @@ export class UserService {
       create: submission,
       update: submission,
     });
+  }
+
+  async pingParticipants(ctx: Context): Promise<boolean> {
+    const participants = await this.getSubmissionUsers();
+
+    if (!participants.length) {
+      await ctx.reply("Никто не решился учавствовать :(");
+      return false;
+    }
+
+    const formattedNames = await Promise.all(
+      participants.map(async (p) => this.formatParticipantName(p.id))
+    );
+
+    await ctx.replyWithMarkdown(formattedNames.join("\n"));
+    return true;
+  }
+
+  private async formatParticipantName(userId: number): Promise<string> {
+    const formattedUser = await this.getFormattedUser(userId);
+    return `[${formattedUser}](tg://user?id=${userId})`;
   }
 }
