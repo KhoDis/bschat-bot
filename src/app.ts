@@ -16,64 +16,25 @@ class Bot {
   stage: Scenes.Stage<IBotContext, Scenes.SceneSessionData>;
 
   constructor(
-    private readonly configService: IConfigService,
-    private readonly musicGuessService: MusicGuessService,
-    private readonly userService: UserService,
-    private readonly sceneService: SceneService
+    configService: IConfigService,
+    musicGuessService: MusicGuessService,
+    userService: UserService,
+    sceneService: SceneService,
   ) {
-    this.bot = new Telegraf<IBotContext>(this.configService.get("BOT_TOKEN"));
+    this.bot = new Telegraf<IBotContext>(configService.get("BOT_TOKEN"));
 
     this.bot.use(session());
 
-    // // Create private scenes
-    // const mainMenuScene = new PrivateRootScene(this.sceneService);
-    // const musicGuessMenuScene = new MusicGuessScene(
-    //   this.sceneService,
-    //   this.userService
-    // );
-    // const musicUploadScene = new MusicGuessUploadScene(
-    //   this.sceneService,
-    //   this.userService
-    // );
-
-    // // Create chat scenes
-    // const groupMainMenuScene = new GroupMainMenuScene(this.musicGuessService);
-    // const musicGameScene = new MusicGameScene(
-    //   this.musicGuessService,
-    //   this.userService
-    // );
-    // const musicWaitingScene = new MusicWaitingScene(
-    //   this.musicGuessService,
-    //   this.userService
-    // );
-
-    // const rootScene = new RootScene(this.sceneService);
-    // const pongScene = new PongScene(this.sceneService);
-
-    // const privateGlobalScene = new GlobalScene(userService);
     const globalScene = new GlobalScene(userService, musicGuessService);
     const musicGuessScene = new MusicGuessScene(userService);
     const musicGameScene = new MusicGameScene(musicGuessService, userService);
 
     // Create stage and add scenes
     this.stage = new Scenes.Stage<IBotContext>(
-      [
-        // mainMenuScene,
-        // musicGuessMenuScene,
-        // musicUploadScene,
-        // groupMainMenuScene,
-        // musicGameScene,
-        // musicWaitingScene,
-        // rootScene,
-        // pongScene,
-
-        globalScene,
-        musicGuessScene,
-        musicGameScene,
-      ],
+      [globalScene, musicGuessScene, musicGameScene],
       {
         default: "global",
-      }
+      },
     );
 
     this.bot.use(this.stage.middleware());
@@ -97,7 +58,7 @@ const bot = new Bot(
   new ConfigService(),
   new MusicGuessService(),
   new UserService(),
-  new SceneService()
+  new SceneService(),
 );
 
 bot.init();

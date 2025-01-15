@@ -116,39 +116,43 @@ export class MusicGuessService {
     roundId: number,
     guessedUserId: number
   ): Promise<void> {
-    if (!this.gameState) {
-      await ctx.answerCbQuery("Игра еще не началась :(");
-      return Promise.resolve();
+    try {
+      if (!this.gameState) {
+        await ctx.answerCbQuery("Игра еще не началась :(");
+        return Promise.resolve();
+      }
+
+      const round = this.gameState.rounds.get(roundId);
+      if (!round) {
+        await ctx.answerCbQuery("Нет такого раунда :(");
+        return Promise.resolve();
+      }
+
+      const guessingUserId = ctx.from?.id;
+
+      if (!guessingUserId) {
+        await ctx.answerCbQuery("У вас почему-то id нету, попробуйте ещё раз");
+        return Promise.resolve();
+      }
+
+      if (!round.notYetGuessed.has(guessingUserId)) {
+        await ctx.answerCbQuery("Вы уже сделали голос :(");
+        return Promise.resolve();
+      }
+
+      round.notYetGuessed.delete(guessingUserId);
+      if (Number(round.track.userId) === guessedUserId) {
+        await ctx.answerCbQuery("🎉 Правильно! Никому пока не говори ответ :)");
+        round.rightGuesses.add(guessingUserId);
+      } else {
+        await ctx.answerCbQuery("Эх, мимо...");
+        round.wrongGuesses.add(guessingUserId);
+      }
+
+      await this.updateRoundInfo(ctx, round);
+    } catch (e) {
+      console.error(e);
     }
-
-    const round = this.gameState.rounds.get(roundId);
-    if (!round) {
-      await ctx.answerCbQuery("Нет такого раунда :(");
-      return Promise.resolve();
-    }
-
-    const guessingUserId = ctx.from?.id;
-
-    if (!guessingUserId) {
-      await ctx.answerCbQuery("У вас почему-то id нету, попробуйте ещё раз");
-      return Promise.resolve();
-    }
-
-    if (!round.notYetGuessed.has(guessingUserId)) {
-      await ctx.answerCbQuery("Вы уже сделали голос :(");
-      return Promise.resolve();
-    }
-
-    round.notYetGuessed.delete(guessingUserId);
-    if (Number(round.track.userId) === guessedUserId) {
-      await ctx.answerCbQuery("🎉 Правильно! Никому пока не говори ответ :)");
-      round.rightGuesses.add(guessingUserId);
-    } else {
-      await ctx.answerCbQuery("Эх, мимо...");
-      round.wrongGuesses.add(guessingUserId);
-    }
-
-    await this.updateRoundInfo(ctx, round);
   }
 
   isGameStarted() {

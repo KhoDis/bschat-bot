@@ -20,7 +20,7 @@ export class UserService {
     username?: string | null;
     firstName: string;
   }) {
-    return await prisma.user.upsert({
+    return prisma.user.upsert({
       where: { id: userData.id },
       create: {
         id: userData.id,
@@ -35,7 +35,7 @@ export class UserService {
   }
 
   async getUser(userId: number) {
-    return await prisma.user.findUnique({ where: { id: userId } });
+    return prisma.user.findUnique({ where: { id: userId } });
   }
 
   async getFormattedUser(userId: number) {
@@ -60,16 +60,16 @@ export class UserService {
           id: Number(user.id),
           tag: user.tag,
           name: user.name,
-        } as AppUser)
+        }) as AppUser,
     );
   }
 
   async getUserSubmission(userId: number) {
-    return await prisma.musicSubmission.findMany({ where: { userId } });
+    return prisma.musicSubmission.findMany({ where: { userId } });
   }
 
   async saveOrUpdateSubmission(submission: { userId: number; fileId: string }) {
-    return await prisma.musicSubmission.upsert({
+    return prisma.musicSubmission.upsert({
       where: { userId: submission.userId },
       create: submission,
       update: submission,
@@ -85,7 +85,7 @@ export class UserService {
     }
 
     const formattedNames = await Promise.all(
-      participants.map(async (p) => this.formatParticipantName(p.id))
+      participants.map(async (p) => this.formatParticipantName(p.id)),
     );
 
     await ctx.replyWithMarkdown(formattedNames.join("\n"));

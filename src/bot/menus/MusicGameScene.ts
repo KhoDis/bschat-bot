@@ -1,13 +1,12 @@
 import { Scenes } from "telegraf";
 import { IBotContext } from "../../context/context.interface";
 import { UserService } from "../services/UserService";
-import handleCheckMusic from "../handlers/handleCheckMusic";
 import { MusicGuessService } from "../services/musicGuess.service";
 
 class MusicGameScene extends Scenes.BaseScene<IBotContext> {
   constructor(
     private musicGuessService: MusicGuessService,
-    private userService: UserService
+    private userService: UserService,
   ) {
     super("music_game");
 
@@ -25,22 +24,26 @@ class MusicGameScene extends Scenes.BaseScene<IBotContext> {
     });
 
     this.action(/^guess:(.+)$/, async (ctx) => {
-      const action = ctx.match[1];
-      if (!action) return;
-      const [roundId, guessId] = action.split("_");
-      console.log("Нажата кнопка", roundId, guessId);
+      try {
+        const action = ctx.match[1];
+        if (!action) return;
+        const [roundId, guessId] = action.split("_");
+        console.log("Нажата кнопка", roundId, guessId);
 
-      if (!roundId || !guessId) {
-        ctx.reply(`Не смог запарсить данные: ${action}`);
-        return;
+        if (!roundId || !guessId) {
+          ctx.reply(`Не смог запарсить данные: ${action}`);
+          return;
+        }
+        await this.musicGuessService.processGuess(ctx, +roundId, +guessId);
+      } catch (e) {
+        console.error(e);
       }
-      await this.musicGuessService.processGuess(ctx, +roundId, +guessId);
     });
 
     this.command("next_round", async (ctx) => {
       if (ctx.from.username !== "khodis") {
         await ctx.reply(
-          "Только @khodis может насильно начинать следующий раунд :)"
+          "Только @khodis может насильно начинать следующий раунд :)",
         );
         return;
       }
