@@ -5,8 +5,6 @@ import { IBotContext } from "./context/context.interface";
 import { MusicGuessService } from "./bot/services/musicGuess.service";
 import { UserService } from "./bot/services/UserService";
 import GlobalScene from "./bot/menus/GlobalScene";
-import MusicGuessScene from "./bot/menus/MusicGuessScene";
-import MusicGameScene from "./bot/menus/MusicGameScene";
 import { GameRepository } from "./bot/repositories/GameRepository";
 import { MusicSubmissionRepository } from "./bot/repositories/MusicSubmissionRepository";
 
@@ -24,16 +22,11 @@ class Bot {
     this.bot.use(session());
 
     const globalScene = new GlobalScene(userService, musicGuessService);
-    const musicGuessScene = new MusicGuessScene(userService);
-    const musicGameScene = new MusicGameScene(musicGuessService, userService);
 
     // Create stage and add scenes
-    this.stage = new Scenes.Stage<IBotContext>(
-      [globalScene, musicGuessScene, musicGameScene],
-      {
-        default: "global",
-      },
-    );
+    this.stage = new Scenes.Stage<IBotContext>([globalScene], {
+      default: "global",
+    });
 
     this.bot.use(this.stage.middleware());
   }

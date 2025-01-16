@@ -1,18 +1,8 @@
 import { Context } from "telegraf";
-import {
-  InlineKeyboardButton,
-  Message,
-} from "telegraf/typings/core/types/typegram";
+import { InlineKeyboardButton } from "telegraf/typings/core/types/typegram";
 import { shuffleArray } from "../../utils/arrayUtils";
-import prisma from "../../prisma/client";
-import { Game, GameRound, Guess, MusicSubmission } from "@prisma/client";
 import { GameRepository } from "../repositories/GameRepository";
-import {
-  AppGameRound,
-  AppMusicSubmission,
-  AppUser,
-  schemas,
-} from "../../schemas";
+import { AppGameRound, AppMusicSubmission, AppUser } from "../../schemas";
 import { MusicSubmissionRepository } from "../repositories/MusicSubmissionRepository";
 
 export class MusicGuessService {
@@ -20,6 +10,11 @@ export class MusicGuessService {
     private gameRepository: GameRepository,
     private musicSubmissionRepository: MusicSubmissionRepository,
   ) {}
+
+  async isGameStarted(): Promise<boolean> {
+    const game = await this.gameRepository.getCurrentGame();
+    return !!game;
+  }
 
   async startGame(ctx: Context) {
     const tracks: AppMusicSubmission[] = shuffleArray(
