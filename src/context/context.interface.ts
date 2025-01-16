@@ -1,7 +1,7 @@
 import { Context, Scenes, session } from "telegraf";
 
 export interface BotSession extends Scenes.SceneSession {
-  currentRound: number;
+  waitingForHint: boolean;
 }
 
 export interface IBotContext extends Context {

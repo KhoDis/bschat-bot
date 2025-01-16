@@ -16,12 +16,17 @@ class Bot {
     configService: IConfigService,
     musicGuessService: MusicGuessService,
     userService: UserService,
+    gameRepository: GameRepository,
   ) {
     this.bot = new Telegraf<IBotContext>(configService.get("BOT_TOKEN"));
 
     this.bot.use(session());
 
-    const globalScene = new GlobalScene(userService, musicGuessService);
+    const globalScene = new GlobalScene(
+      userService,
+      musicGuessService,
+      gameRepository,
+    );
 
     // Create stage and add scenes
     this.stage = new Scenes.Stage<IBotContext>([globalScene], {
@@ -45,10 +50,13 @@ class Bot {
   }
 }
 
+const gameRepository = new GameRepository();
+
 const bot = new Bot(
   new ConfigService(),
-  new MusicGuessService(new GameRepository(), new MusicSubmissionRepository()),
+  new MusicGuessService(gameRepository, new MusicSubmissionRepository()),
   new UserService(),
+  gameRepository,
 );
 
 bot.init();

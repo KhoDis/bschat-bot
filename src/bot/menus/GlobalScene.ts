@@ -4,11 +4,13 @@ import { UserService } from "../services/UserService";
 import handleCheckMusic from "../handlers/handleCheckMusic";
 import { message } from "telegraf/filters";
 import { MusicGuessService } from "../services/musicGuess.service";
+import { GameRepository } from "../repositories/GameRepository";
 
-class PrivateGlobalScene extends Scenes.BaseScene<IBotContext> {
+class GlobalScene extends Scenes.BaseScene<IBotContext> {
   constructor(
     private userService: UserService,
     private musicGuessService: MusicGuessService,
+    private gameRepository: GameRepository,
   ) {
     super("global");
 
@@ -129,9 +131,48 @@ class PrivateGlobalScene extends Scenes.BaseScene<IBotContext> {
         fileId,
       });
 
-      await ctx.reply("Спасибо за трек! Ждите эвент :)");
+      ctx.session.waitingForHint = true;
+
+      await ctx.reply(
+        "Эй, эй, стой, я конечно трек загрузил, но на этот раз я хочу тебя кое о чём попросить.\n\n" +
+          "Напиши какое-то сообщение как подсказку к треку. Я отправлю его посередине раунда. Может быть любой длины, хоть абзац, хоть слово.",
+      );
+    });
+
+    this.command("show_hint", async (ctx) => {
+      console.log("show_hint");
+      if (ctx.from.username !== "khodis") {
+        await ctx.reply("Только @khodis может показывать подсказки");
+        return;
+      }
+
+      console.log("show_hint");
+      await this.musicGuessService.showHint(ctx);
+    });
+
+    this.on(message("text"), async (ctx) => {
+      if (!ctx.from) {
+        return;
+      }
+      if (ctx.session.waitingForHint) {
+        const submission = await this.userService.getSubmissionByUserId(
+          ctx.from.id,
+        );
+        if (!submission) {
+          await ctx.reply(
+            "Что-то пошло не так... Напиши @khodis, пожалуйста, что ошибка какая-то возникла",
+          );
+          return;
+        }
+
+        await this.musicGuessService.addHint(submission.id, ctx.message.text);
+        ctx.session.waitingForHint = false;
+        await ctx.reply(
+          "Подсказка сохранена! Всё, жди эвента с чистой совестью теперь :)",
+        );
+      }
     });
   }
 }
 
-export default PrivateGlobalScene;
+export default GlobalScene;

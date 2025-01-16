@@ -11,6 +11,7 @@ const musicSubmissionSchema = z.object({
   id: z.number(),
   fileId: z.string(),
   userId: z.coerce.bigint(),
+  hint: z.string().nullable(),
 });
 
 const gameRoundSchema = z.object({
@@ -18,6 +19,7 @@ const gameRoundSchema = z.object({
   index: z.number(),
   gameId: z.number(),
   submissionId: z.number(),
+  hintShown: z.boolean(),
 });
 
 const gameSchema = z.object({
@@ -34,6 +36,8 @@ const guessSchema = z.object({
   guessedId: z.coerce.bigint(),
   isCorrect: z.boolean(),
   createdAt: z.date(),
+  points: z.number(),
+  isLateGuess: z.boolean(),
 });
 
 // Transformed schemas (for use in application)

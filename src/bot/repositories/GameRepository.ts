@@ -146,11 +146,37 @@ export class GameRepository {
     return schemas.app.game.parse(game);
   }
 
+  async updateRoundHint(
+    roundId: number,
+    hintShown: boolean,
+  ): Promise<AppGameRound> {
+    const round = await prisma.gameRound.update({
+      where: { id: roundId },
+      data: { hintShown },
+      include: {
+        submission: {
+          include: {
+            user: true,
+          },
+        },
+        guesses: {
+          include: {
+            user: true,
+          },
+        },
+      },
+    });
+
+    return schemas.app.gameRound.parse(round);
+  }
+
   async createGuess(data: {
     roundId: number;
     userId: number;
     guessedId: number;
     isCorrect: boolean;
+    points: number;
+    isLateGuess: boolean;
   }): Promise<AppGuess> {
     const guess = await prisma.guess.create({
       data: {
@@ -158,6 +184,8 @@ export class GameRepository {
         userId: BigInt(data.userId),
         guessedId: BigInt(data.guessedId),
         isCorrect: data.isCorrect,
+        points: data.points,
+        isLateGuess: data.isLateGuess,
       },
       include: {
         user: true,

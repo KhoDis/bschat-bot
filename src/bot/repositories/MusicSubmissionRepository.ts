@@ -13,6 +13,13 @@ export class MusicSubmissionRepository {
     return submission ? schemas.app.musicSubmission.parse(submission) : null;
   }
 
+  async updateHint(submissionId: number, hint: string): Promise<void> {
+    await prisma.musicSubmission.update({
+      where: { id: submissionId },
+      data: { hint },
+    });
+  }
+
   async findByUserId(userId: number): Promise<AppMusicSubmission | null> {
     const submission = await prisma.musicSubmission.findFirst({
       where: { userId: BigInt(userId) },

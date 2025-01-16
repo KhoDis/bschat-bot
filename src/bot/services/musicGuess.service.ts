@@ -4,12 +4,39 @@ import { shuffleArray } from "../../utils/arrayUtils";
 import { GameRepository } from "../repositories/GameRepository";
 import { AppGameRound, AppMusicSubmission, AppUser } from "../../schemas";
 import { MusicSubmissionRepository } from "../repositories/MusicSubmissionRepository";
+import { IBotContext } from "../../context/context.interface";
 
 export class MusicGuessService {
   constructor(
     private gameRepository: GameRepository,
     private musicSubmissionRepository: MusicSubmissionRepository,
   ) {}
+
+  async showHint(ctx: IBotContext) {
+    const round = await this.gameRepository.getCurrentRound();
+    if (!round) {
+      await ctx.reply("Нет активного раунда");
+      return;
+    }
+
+    if (round.hintShown) {
+      await ctx.reply("Подсказка уже была показана!");
+      return;
+    }
+
+    const hint = round.submission.hint;
+    if (!hint) {
+      await ctx.reply("Для этой песни нет подсказки :(");
+      return;
+    }
+
+    await this.gameRepository.updateRoundHint(round.id, true);
+    await ctx.reply(`🎵 Подсказка:\n\n${hint}`);
+  }
+
+  async addHint(submissionId: number, hint: string): Promise<void> {
+    await this.musicSubmissionRepository.updateHint(submissionId, hint);
+  }
 
   async isGameStarted(): Promise<boolean> {
     const game = await this.gameRepository.getCurrentGame();
@@ -103,18 +130,35 @@ export class MusicGuessService {
         return;
       }
 
-      // Create guess
+      // Determine if this is a late guess
+      const isLateGuess = roundIndex < game.currentRound;
+
+      // Calculate points based on conditions
       const isCorrect = round.submission.userId === guessedUserId;
+      let points = 0;
+      if (isCorrect) {
+        if (isLateGuess) {
+          points = 1; // Late guess
+        } else if (round.hintShown) {
+          points = 2; // Correct guess with hint
+        } else {
+          points = 4; // Correct guess without hint
+        }
+      }
+
+      // Create guess
       await this.gameRepository.createGuess({
         roundId: round.id,
         userId: guessingUserId,
         guessedId: guessedUserId,
         isCorrect,
+        points,
+        isLateGuess,
       });
 
       await ctx.answerCbQuery(
         isCorrect
-          ? "🎉 Правильно! Никому пока не говори ответ :)"
+          ? `🎉 Правильно! Вы получили ${points} ${this.getPointsWord(points)}!`
           : "Эх, мимо...",
       );
 
@@ -142,16 +186,26 @@ export class MusicGuessService {
       return;
     }
 
-    // Calculate user stats
-    const userStats = new Map<number, { correct: number; incorrect: number }>();
+    // Calculate user stats with points
+    const userStats = new Map<
+      number,
+      {
+        correct: number;
+        incorrect: number;
+        totalPoints: number;
+      }
+    >();
+
     for (const round of game.rounds) {
       for (const guess of round.guesses) {
         const stats = userStats.get(guess.userId) || {
           correct: 0,
           incorrect: 0,
+          totalPoints: 0,
         };
         if (guess.isCorrect) {
           stats.correct++;
+          stats.totalPoints += guess.points;
         } else {
           stats.incorrect++;
         }
@@ -159,19 +213,18 @@ export class MusicGuessService {
       }
     }
 
-    // Use game.rounds to form a map
     const getUserByIdMap = new Map<number, AppUser>();
     for (const round of game.rounds) {
       getUserByIdMap.set(round.submission.userId, round.submission.user);
     }
 
     const sortedLeaderboard = [...userStats.entries()]
-      .sort(([, a], [, b]) => b.correct - a.correct)
+      .sort(([, a], [, b]) => b.totalPoints - a.totalPoints)
       .map(
         ([userId, stats], index) =>
-          `${index + 1}. ${getUserByIdMap.get(userId)?.name || "Unknown"} — 🎯 ${
-            stats.correct
-          } угадано, ❌ ${stats.incorrect} не угадано`,
+          `${index + 1}. ${getUserByIdMap.get(userId)?.name || "Unknown"} — 🏆 ${
+            stats.totalPoints
+          } очков (🎯 ${stats.correct} угадано, ❌ ${stats.incorrect} не угадано)`,
       );
 
     // Calculate track difficulty
@@ -204,6 +257,12 @@ export class MusicGuessService {
     );
   }
 
+  private getPointsWord(points: number): string {
+    if (points === 1) return "очко";
+    if (points >= 2 && points <= 4) return "очка";
+    return "очков";
+  }
+
   async formatRoundInfo(round: AppGameRound) {
     const notYetGuessed = await this.gameRepository.getUsersNotGuessed(
       round.id,
@@ -211,10 +270,13 @@ export class MusicGuessService {
 
     return `
       Раунд ${round.index + 1}
+      ${round.hintShown ? "💡 Подсказка была показана" : ""}
       Ещё думают: ${notYetGuessed.map((u) => u.name).join(", ")}
       Угадали: ${round.guesses
         .filter((g) => g.isCorrect)
-        .map((g) => g.user.name)
+        .map(
+          (g) => `${g.user.name} (${g.points} ${this.getPointsWord(g.points)})`,
+        )
         .join(", ")}
       Не угадали: ${round.guesses
         .filter((g) => !g.isCorrect)

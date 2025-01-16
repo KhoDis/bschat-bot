@@ -59,8 +59,8 @@ export class UserService {
     );
   }
 
-  async getUserSubmission(userId: number) {
-    return prisma.musicSubmission.findMany({ where: { userId } });
+  async getSubmissionByUserId(userId: number) {
+    return prisma.musicSubmission.findUnique({ where: { userId } });
   }
 
   async saveOrUpdateSubmission(submission: { userId: number; fileId: string }) {
