@@ -2,24 +2,22 @@ import { Scenes, session, Telegraf } from "telegraf";
 import { IConfigService } from "./config/config.interface";
 import { ConfigService } from "./config/config.service";
 import { IBotContext } from "./context/context.interface";
-import { Command } from "./bot/commands/command.class";
 import { MusicGuessService } from "./bot/services/musicGuess.service";
 import { UserService } from "./bot/services/UserService";
-import SceneService from "./bot/services/SceneService";
 import GlobalScene from "./bot/menus/GlobalScene";
 import MusicGuessScene from "./bot/menus/MusicGuessScene";
 import MusicGameScene from "./bot/menus/MusicGameScene";
+import { GameRepository } from "./bot/repositories/GameRepository";
+import { MusicSubmissionRepository } from "./bot/repositories/MusicSubmissionRepository";
 
 class Bot {
   bot: Telegraf<IBotContext>;
-  commands: Command[] = [];
   stage: Scenes.Stage<IBotContext, Scenes.SceneSessionData>;
 
   constructor(
     configService: IConfigService,
     musicGuessService: MusicGuessService,
     userService: UserService,
-    sceneService: SceneService,
   ) {
     this.bot = new Telegraf<IBotContext>(configService.get("BOT_TOKEN"));
 
@@ -56,9 +54,8 @@ class Bot {
 
 const bot = new Bot(
   new ConfigService(),
-  new MusicGuessService(),
+  new MusicGuessService(new GameRepository(), new MusicSubmissionRepository()),
   new UserService(),
-  new SceneService(),
 );
 
 bot.init();

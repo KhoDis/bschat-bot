@@ -16,8 +16,7 @@ class MusicGameScene extends Scenes.BaseScene<IBotContext> {
   setupHandlers() {
     this.enter(async (ctx) => {
       // Initialize game state
-      const participants = await this.userService.getSubmissionUsers();
-      await this.musicGuessService.startGame(ctx, participants);
+      await this.musicGuessService.startGame(ctx);
 
       // Play first round (0-th round)
       await this.musicGuessService.processRound(ctx);

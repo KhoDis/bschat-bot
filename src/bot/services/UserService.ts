@@ -1,15 +1,10 @@
 import { MusicSubmission } from "@prisma/client";
 import prisma from "../../prisma/client";
 import { Context } from "telegraf";
+import { AppUser } from "../../schemas";
 
 type DBUser = {
   id: bigint;
-  tag: string | null;
-  name: string;
-};
-
-export type AppUser = {
-  id: number;
   tag: string | null;
   name: string;
 };
@@ -80,7 +75,7 @@ export class UserService {
     const participants = await this.getSubmissionUsers();
 
     if (!participants.length) {
-      await ctx.reply("Никто не решился учавствовать :(");
+      await ctx.reply("Никого нет, как я игру то начну :(");
       return false;
     }
 

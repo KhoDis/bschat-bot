@@ -5,285 +5,237 @@ import {
 } from "telegraf/typings/core/types/typegram";
 import { shuffleArray } from "../../utils/arrayUtils";
 import prisma from "../../prisma/client";
-import { IMusicGuessService } from "../events/musicGuess.interface";
-import { MusicSubmission, User } from "@prisma/client";
-import { AppUser } from "./UserService";
-
-class MusicRoundState {
-  public notYetGuessed: Set<number>;
-  public rightGuesses: Set<number>;
-  public wrongGuesses: Set<number>;
-  public message: Message.TextMessage | undefined;
-
-  constructor(
-    users: Set<number>,
-    public track: MusicSubmission,
-    public index: number
-  ) {
-    this.notYetGuessed = new Set(users);
-    this.rightGuesses = new Set();
-    this.wrongGuesses = new Set();
-    this.message;
-  }
-}
-
-class MusicGameState {
-  rounds: Map<number, MusicRoundState>;
-  currentRound: number;
-  users: Map<number, AppUser>;
-
-  constructor(submissions: MusicSubmission[], users: Map<number, AppUser>) {
-    const rounds: [number, MusicRoundState][] = submissions.map(
-      (track, index) => [
-        index,
-        new MusicRoundState(new Set(users.keys()), track, index),
-      ]
-    );
-
-    this.rounds = new Map(rounds);
-    this.currentRound = 0;
-    this.users = users;
-  }
-}
+import { Game, GameRound, Guess, MusicSubmission } from "@prisma/client";
+import { GameRepository } from "../repositories/GameRepository";
+import {
+  AppGameRound,
+  AppMusicSubmission,
+  AppUser,
+  schemas,
+} from "../../schemas";
+import { MusicSubmissionRepository } from "../repositories/MusicSubmissionRepository";
 
 export class MusicGuessService {
-  private gameState: MusicGameState | null = null;
+  constructor(
+    private gameRepository: GameRepository,
+    private musicSubmissionRepository: MusicSubmissionRepository,
+  ) {}
 
-  async getTracks() {
-    return await prisma.musicSubmission.findMany();
-  }
-
-  async startGame(ctx: Context, participants: AppUser[]) {
-    const tracks = shuffleArray(await this.getTracks());
+  async startGame(ctx: Context) {
+    const tracks: AppMusicSubmission[] = shuffleArray(
+      await this.musicSubmissionRepository.findAll(),
+    );
     if (!tracks.length) {
       await ctx.reply("Никто не решился учавствовать :(");
-      return Promise.resolve();
+      return;
     }
-    this.gameState = new MusicGameState(
-      tracks,
-      new Map(participants.map((p) => [p.id, p]))
-    );
 
-    ctx.reply("Игра началась! Для следующего раунда нажми /next_round");
+    const game = await this.gameRepository.createGame(tracks);
+
+    await ctx.reply("Игра началась! Для следующего раунда нажми /next_round");
+    return game;
   }
 
   async processRound(ctx: Context) {
-    if (!this.gameState) {
-      await ctx.reply("Не могу начать раунд, так как игра еще не началась");
-      return Promise.resolve();
+    const game = await this.gameRepository.getCurrentGame();
+    if (!game) {
+      await ctx.reply("Нету игры");
+      return;
     }
 
-    const gameState = this.gameState;
-
-    const round = gameState.rounds.get(gameState.currentRound);
-    if (!round) {
+    const currentRound = await this.gameRepository.getCurrentRound();
+    if (!currentRound) {
       await ctx.reply("Больше нет раундов");
-      // Show leaderboard
       await this.showLeaderboard(ctx);
-      return Promise.resolve();
+      await this.gameRepository.finishGame(game.id);
+      return;
     }
 
-    this.playRound(ctx, [...gameState.users.values()], round);
+    const participants = await this.gameRepository.getParticipants();
+
+    await this.playRound(ctx, participants, currentRound);
   }
 
-  /**
-   * Send audiofile
-   * Show buttons to guess
-   * Send round state info
-   */
-  private playRound(
+  private async playRound(
     ctx: Context,
     participants: AppUser[],
-    currentRound: MusicRoundState
+    currentRound: AppGameRound,
   ) {
-    const buttons = participants.map((user) => {
-      return {
-        text: user.name,
-        callback_data: `guess:${currentRound.index}_${user.id}`,
-      } as InlineKeyboardButton;
-    });
+    const buttons = participants.map((user) => ({
+      text: user.name,
+      callback_data: `guess:${currentRound.index}_${user.id}`,
+    }));
 
-    ctx.replyWithAudio(currentRound.track.fileId, {
+    await ctx.replyWithAudio(currentRound.submission.fileId, {
       caption: "Угадываем!",
       reply_markup: { inline_keyboard: this.chunkButtons(buttons, 3) },
     });
 
-    this.sendRoundInfo(ctx);
+    await this.sendRoundInfo(ctx);
   }
 
   async processGuess(
     ctx: Context,
-    roundId: number,
-    guessedUserId: number
+    roundIndex: number,
+    guessedUserId: number,
   ): Promise<void> {
     try {
-      if (!this.gameState) {
+      const game = await this.gameRepository.getCurrentGame();
+      if (!game) {
         await ctx.answerCbQuery("Игра еще не началась :(");
-        return Promise.resolve();
+        return;
       }
 
-      const round = this.gameState.rounds.get(roundId);
+      const round = game.rounds.find((r) => r.index === roundIndex);
       if (!round) {
         await ctx.answerCbQuery("Нет такого раунда :(");
-        return Promise.resolve();
+        return;
       }
 
       const guessingUserId = ctx.from?.id;
-
       if (!guessingUserId) {
         await ctx.answerCbQuery("У вас почему-то id нету, попробуйте ещё раз");
-        return Promise.resolve();
+        return;
       }
 
-      if (!round.notYetGuessed.has(guessingUserId)) {
+      // Check if user already guessed
+      const existingGuess = await this.gameRepository.findGuess(
+        round.id,
+        guessingUserId,
+      );
+      if (existingGuess) {
         await ctx.answerCbQuery("Вы уже сделали голос :(");
-        return Promise.resolve();
+        return;
       }
 
-      round.notYetGuessed.delete(guessingUserId);
-      if (Number(round.track.userId) === guessedUserId) {
-        await ctx.answerCbQuery("🎉 Правильно! Никому пока не говори ответ :)");
-        round.rightGuesses.add(guessingUserId);
-      } else {
-        await ctx.answerCbQuery("Эх, мимо...");
-        round.wrongGuesses.add(guessingUserId);
-      }
+      // Create guess
+      const isCorrect = round.submission.userId === guessedUserId;
+      await this.gameRepository.createGuess({
+        roundId: round.id,
+        userId: guessingUserId,
+        guessedId: guessedUserId,
+        isCorrect,
+      });
 
-      await this.updateRoundInfo(ctx, round);
+      await ctx.answerCbQuery(
+        isCorrect
+          ? "🎉 Правильно! Никому пока не говори ответ :)"
+          : "Эх, мимо...",
+      );
+
+      await this.sendRoundInfo(ctx);
     } catch (e) {
       console.error(e);
     }
   }
 
-  isGameStarted() {
-    return !!this.gameState;
-  }
-
   async nextRound(ctx: Context) {
-    if (!this.gameState) {
+    const game = await this.gameRepository.getCurrentGame();
+    if (!game) {
       await ctx.reply("Игра еще не началась");
-      return Promise.resolve();
+      return;
     }
-    this.gameState.currentRound += 1;
+
+    await this.gameRepository.updateGameRound(game.id, game.currentRound + 1);
     await this.processRound(ctx);
   }
 
-  formatRoundInfo(gameState: MusicGameState, round: MusicRoundState) {
-    return `
-            Раунд ${round.index + 1}/${gameState.rounds.size}
-            Ещё думают: ${[...round.notYetGuessed]
-              .map((u) => gameState.users.get(u)?.name)
-              .join(", ")}
-            Угадали: ${[...round.rightGuesses]
-              .map((u) => gameState.users.get(u)?.name)
-              .join(", ")}
-            Не угадали: ${[...round.wrongGuesses]
-              .map((u) => gameState.users.get(u)?.name)
-              .join(", ")}
-        `;
-  }
-
-  async sendRoundInfo(ctx: Context) {
-    const gameState = this.gameState;
-    if (!gameState) {
-      return;
-    }
-    const round = gameState.rounds.get(gameState.currentRound);
-    if (!round) {
-      return;
-    }
-
-    round.message = await ctx.reply(this.formatRoundInfo(gameState, round));
-  }
-
-  async updateRoundInfo(ctx: Context, round: MusicRoundState) {
-    const gameState = this.gameState;
-    if (!gameState) {
-      return;
-    }
-    const chatId = round.message?.chat.id;
-    if (!chatId) {
-      this.sendRoundInfo(ctx);
-      return;
-    }
-    const msg = round.message;
-    if (!msg) {
-      this.sendRoundInfo(ctx);
-      return;
-    }
-    await ctx.telegram.editMessageText(
-      chatId,
-      msg.message_id,
-      undefined,
-      this.formatRoundInfo(gameState, round)
-    );
-  }
-
   async showLeaderboard(ctx: Context) {
-    if (!this.gameState) {
+    const game = await this.gameRepository.getCurrentGame();
+    if (!game) {
       await ctx.reply("Игра еще не началась.");
       return;
     }
 
-    const guessLeaderboard = new Map<
-      number,
-      { correct: number; incorrect: number }
-    >();
-
-    // Collect user stats
-    for (const round of this.gameState.rounds.values()) {
-      for (const userId of round.rightGuesses) {
-        const stats = guessLeaderboard.get(userId) || {
+    // Calculate user stats
+    const userStats = new Map<number, { correct: number; incorrect: number }>();
+    for (const round of game.rounds) {
+      for (const guess of round.guesses) {
+        const stats = userStats.get(guess.userId) || {
           correct: 0,
           incorrect: 0,
         };
-        stats.correct++;
-        guessLeaderboard.set(userId, stats);
-      }
-
-      for (const userId of round.wrongGuesses) {
-        const stats = guessLeaderboard.get(userId) || {
-          correct: 0,
-          incorrect: 0,
-        };
-        stats.incorrect++;
-        guessLeaderboard.set(userId, stats);
+        if (guess.isCorrect) {
+          stats.correct++;
+        } else {
+          stats.incorrect++;
+        }
+        userStats.set(guess.userId, stats);
       }
     }
 
-    const sortedLeaderboard = [...guessLeaderboard.entries()]
-      .sort(([, a], [, b]) => b.correct - a.correct)
-      .map(([userId, stats], index) => {
-        const userName = this.gameState?.users.get(userId)?.name || "Unknown";
-        return `${index + 1}. ${userName} — 🎯 ${stats.correct} угадано, ❌ ${
-          stats.incorrect
-        } не угадано`;
-      })
-      .join("\n");
+    // Use game.rounds to form a map
+    const getUserByIdMap = new Map<number, AppUser>();
+    for (const round of game.rounds) {
+      getUserByIdMap.set(round.submission.userId, round.submission.user);
+    }
 
-    // Sort tracks by difficulty
-    const trackDifficulty = [...this.gameState.rounds.entries()]
-      .map(([index, round]) => ({
-        player:
-          this.gameState?.users.get(Number(round.track.userId))?.name ||
-          "Unknown",
-        correctGuesses: round.rightGuesses.size,
-      }))
-      .sort((a, b) => a.correctGuesses - b.correctGuesses) // Ascending order
+    const sortedLeaderboard = [...userStats.entries()]
+      .sort(([, a], [, b]) => b.correct - a.correct)
+      .map(
+        ([userId, stats], index) =>
+          `${index + 1}. ${getUserByIdMap.get(userId)?.name || "Unknown"} — 🎯 ${
+            stats.correct
+          } угадано, ❌ ${stats.incorrect} не угадано`,
+      );
+
+    // Calculate track difficulty
+    const trackDifficulty = game.rounds.map((round) => {
+      const correctGuesses = round.guesses.filter((g) => g.isCorrect).length;
+      return {
+        player: round.submission.user.name || "Unknown",
+        correctGuesses,
+        index: round.index,
+      };
+    });
+
+    const sortedTracks = trackDifficulty
+      .sort((a, b) => a.correctGuesses - b.correctGuesses)
       .map(
         (track, index) =>
-          `${index + 1}. "${track.player}" — ${track.correctGuesses} угадали`
+          `${index + 1}. "${track.player}" — ${track.correctGuesses} угадали`,
       )
       .join("\n");
 
+    const leaderboardText = (await Promise.all(sortedLeaderboard)).join("\n");
     await ctx.reply(
-      `🏆 Итоги игры 🏆\n\nИгроки:\n${sortedLeaderboard}\n\nСамые сложные треки:\n${trackDifficulty}`
+      `🏆 Итоги игры 🏆\n\nИгроки:\n${leaderboardText}\n\nСамые сложные треки:\n${sortedTracks}`,
     );
   }
 
   private chunkButtons(buttons: InlineKeyboardButton[], size: number) {
     return Array.from({ length: Math.ceil(buttons.length / size) }, (_, i) =>
-      buttons.slice(i * size, i * size + size)
+      buttons.slice(i * size, i * size + size),
     );
+  }
+
+  async formatRoundInfo(round: AppGameRound) {
+    const notYetGuessed = await this.gameRepository.getUsersNotGuessed(
+      round.id,
+    );
+
+    return `
+      Раунд ${round.index + 1}
+      Ещё думают: ${notYetGuessed.map((u) => u.name).join(", ")}
+      Угадали: ${round.guesses
+        .filter((g) => g.isCorrect)
+        .map((g) => g.user.name)
+        .join(", ")}
+      Не угадали: ${round.guesses
+        .filter((g) => !g.isCorrect)
+        .map((g) => g.user.name)
+        .join(", ")}
+    `;
+  }
+
+  async sendRoundInfo(ctx: Context) {
+    const round = await this.gameRepository.getCurrentRound();
+    if (!round) {
+      await ctx.reply("Больше нет раундов");
+      return;
+    }
+
+    const info = await this.formatRoundInfo(round);
+    await ctx.reply(info);
   }
 }
