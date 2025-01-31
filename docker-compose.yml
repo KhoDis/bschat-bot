@@ -1,0 +1,14 @@
+version: "3.8"
+
+services:
+  telegram-bot:
+    build: .
+    container_name: telegram-bot
+    restart: unless-stopped
+    volumes:
+      - ./logs:/usr/src/app/logs
+      - ./config:/usr/src/app/config
+    environment:
+      - BOT_TOKEN=your_telegram_bot_token_here
+    ports:
+      - "3000:3000"

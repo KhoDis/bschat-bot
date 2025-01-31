@@ -20,11 +20,15 @@ export class UserService {
       create: {
         id: userData.id,
         tag: userData.username || null,
-        name: userData.firstName,
+        name: userData.firstName
+          .normalize("NFKD")
+          .replace(/[\u0300-\u036f]/g, ""),
       },
       update: {
         tag: userData.username || null,
-        name: userData.firstName,
+        name: userData.firstName
+          .normalize("NFKD")
+          .replace(/[\u0300-\u036f]/g, ""),
       },
     });
   }

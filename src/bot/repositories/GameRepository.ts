@@ -43,7 +43,32 @@ export class GameRepository {
       orderBy: { createdAt: "desc" },
     });
 
-    // console.log("getCurrentGame", game);
+    console.log("GameRepository.getCurrentGame", game);
+
+    // If the game is null, find latest game
+    if (!game) {
+      const latestGame = await prisma.game.findFirst({
+        include: {
+          rounds: {
+            include: {
+              submission: {
+                include: {
+                  user: true,
+                },
+              },
+              guesses: {
+                include: {
+                  user: true,
+                },
+              },
+            },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+      });
+
+      return latestGame ? schemas.app.game.parse(latestGame) : null;
+    }
 
     return game ? schemas.app.game.parse(game) : null;
   }

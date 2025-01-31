@@ -20,7 +20,7 @@ class GlobalScene extends Scenes.BaseScene<IBotContext> {
   setupHandlers() {
     this.enter(async (ctx) => {
       await ctx.reply(
-        "Привет! Отправь мне музыку или проверь сколько участников с помощью команды /check_music",
+        "О, еще один человек, который думает, что я его личный ассистент. Ну ладно, отправь музыку или напиши /check_music.",
       );
     });
 
@@ -31,16 +31,17 @@ class GlobalScene extends Scenes.BaseScene<IBotContext> {
     this.command("music_guess", async (ctx) => {
       if (ctx.chat.type === "private") {
         await ctx.reply(
-          "Игра работает только в группе, нажмите /music_guess в группе",
+          "Ахаха, серьезно? Это работает только в группе. Попробуй ещё раз, но на этот раз в группе.",
         );
         return;
       }
       if (ctx.from.username !== "khodis") {
+        await ctx.reply("Ой, а ты кто? Решил тут командовать? Ну-ну.");
         return;
       }
 
       await ctx.reply(
-        "Привет! Это меню Угадай Музыку.\n\nКогда все будут готовы, нажмите 'Начать сейчас'",
+        "Ладно, добро пожаловать в игру 'Угадай Музыку'. Готовьтесь, будет весело. Или нет. Посмотрим.",
         {
           reply_markup: {
             inline_keyboard: [
@@ -55,6 +56,10 @@ class GlobalScene extends Scenes.BaseScene<IBotContext> {
         },
       );
 
+      await this.userService.pingParticipants(ctx);
+    });
+
+    this.command("ping_participants", async (ctx) => {
       await this.userService.pingParticipants(ctx);
     });
 
@@ -74,6 +79,10 @@ class GlobalScene extends Scenes.BaseScene<IBotContext> {
     this.action(/^service:(.+)$/, async (ctx) => {
       const action = ctx.match[1];
       if (action === "start_game") {
+        if (ctx.from.username !== "khodis") {
+          await ctx.reply("Только @khodis может насильно начинать игру :)");
+          return;
+        }
         // Initialize game state if there is no game yet
         const existingGame = await this.musicGuessService.isGameStarted();
         if (!existingGame) {
@@ -93,18 +102,26 @@ class GlobalScene extends Scenes.BaseScene<IBotContext> {
     this.command("next_round", async (ctx) => {
       if (ctx.from.username !== "khodis") {
         await ctx.reply(
-          "Только @khodis может насильно начинать следующий раунд :)",
+          "Ой, смотри-ка, у нас тут новый админ. Ах, нет, подождите, это просто кто-то пытается нажать кнопку без прав!",
         );
         return;
       }
       await this.musicGuessService.nextRound(ctx);
     });
 
+    this.command("show_leaderboards", async (ctx) => {
+      await this.musicGuessService.showLeaderboard(ctx);
+    });
+
+    this.command("fuck_music", async (ctx) => {
+      const username = ctx.from.username;
+      ctx.reply(`/fuck_${username} — вот это ты, да, именно ты.`);
+    });
     this.on(message("audio"), async (ctx) => {
       // Check if it's private message
       if (ctx.chat.type !== "private") {
         await ctx.reply(
-          "Если это музыка на событие, то отправьте ее в личку :)",
+          "А, ну конечно, кидать музыку в чат — гениальная идея. Нет, правда, никто до этого не додумался. Отправь её в личку, умник.",
         );
         return;
       }
@@ -121,7 +138,7 @@ class GlobalScene extends Scenes.BaseScene<IBotContext> {
 
       if (!userId || !fileId) {
         await ctx.reply(
-          `Что-то пошло не так :(, попробуйте ещё. Отправьте это сообщение @khodis:\nuserId: ${userId}, fileId: ${fileId}`,
+          `Ой-ой, что-то сломалось. Может, это твоя карма? Ладно, напиши @khodis: userId: ${userId}, fileId: ${fileId}`,
         );
         return;
       }
@@ -134,15 +151,16 @@ class GlobalScene extends Scenes.BaseScene<IBotContext> {
       ctx.session.waitingForHint = true;
 
       await ctx.reply(
-        "Эй, эй, стой, я конечно трек загрузил, но на этот раз я хочу тебя кое о чём попросить.\n\n" +
-          "Напиши какое-то сообщение как подсказку к треку. Я отправлю его посередине раунда. Может быть любой длины, хоть абзац, хоть слово.",
+        "Ого, ты отправил трек! А теперь попробуй написать к нему подсказку. Или не пиши. Мне-то что.",
       );
     });
 
     this.command("show_hint", async (ctx) => {
       console.log("show_hint");
       if (ctx.from.username !== "khodis") {
-        await ctx.reply("Только @khodis может показывать подсказки");
+        await ctx.reply(
+          "Нет, ты не @khodis, так что нет подсказки. Живи с этим.",
+        );
         return;
       }
 
@@ -154,13 +172,27 @@ class GlobalScene extends Scenes.BaseScene<IBotContext> {
       if (!ctx.from) {
         return;
       }
+      // If it's from the group chat
+      if (ctx.chat.type !== "private") {
+        if (ctx.message.text.toLowerCase() === "да") {
+          const responses = [
+            "О, да, конечно. И что дальше?",
+            "Ахаха, гениально. Просто да. Вот это уровень.",
+            "Я тоже так думаю. Ну, почти. На самом деле нет.",
+          ];
+          await ctx.reply(
+            responses[Math.floor(Math.random() * responses.length)] || "",
+          );
+          return;
+        }
+      }
       if (ctx.session.waitingForHint) {
         const submission = await this.userService.getSubmissionByUserId(
           ctx.from.id,
         );
         if (!submission) {
           await ctx.reply(
-            "Что-то пошло не так... Напиши @khodis, пожалуйста, что ошибка какая-то возникла",
+            "Что-то пошло не так... Может, просто выйдешь и зайдёшь заново?",
           );
           return;
         }
@@ -168,7 +200,7 @@ class GlobalScene extends Scenes.BaseScene<IBotContext> {
         await this.musicGuessService.addHint(submission.id, ctx.message.text);
         ctx.session.waitingForHint = false;
         await ctx.reply(
-          "Подсказка сохранена! Всё, жди эвента с чистой совестью теперь :)",
+          "Подсказка сохранена! Я бы тебя похвалил, но мне лень. Так что просто радуйся.",
         );
       }
     });
