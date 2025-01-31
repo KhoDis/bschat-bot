@@ -7,47 +7,115 @@ import { MusicGuessService } from "../services/musicGuess.service";
 import { GameRepository } from "../repositories/GameRepository";
 
 class GlobalScene extends Scenes.BaseScene<IBotContext> {
+  private readonly commonPhrases = new Set([
+    "привет",
+    "hi",
+    "hello",
+    "здравствуйте",
+    "дарова",
+    "hi!",
+    "hello!",
+  ]);
+  private readonly questionPhrases = new Set([
+    "что",
+    "как",
+    "когда",
+    "где",
+    "почему",
+    "зачем",
+  ]);
+
   constructor(
     private userService: UserService,
     private musicGuessService: MusicGuessService,
     private gameRepository: GameRepository,
   ) {
     super("global");
-
     this.setupHandlers();
   }
 
+  private getRandomResponse(responses: string[]): string {
+    return responses[Math.floor(Math.random() * responses.length)] || "Бе.";
+  }
+
+  private readonly sarcasticResponses = {
+    greetings: [
+      "О, смотрите кто пришёл! Наконец-то наша жизнь обрела смысл!",
+      "Ура, ещё один человек, который думает, что я тут для его развлечения.",
+      "А вот и звезда вечеринки! Можем начинать притворяться, что нам интересно.",
+      "О, какая честь! Сам(а) [username] снизошел(ла) до нас!",
+      "Надо же, ты всё ещё здесь? А я надеялся, что ты забыл(а) про меня.",
+    ],
+    questions: [
+      "Вопросы, вопросы... Может, поищем ответы в Google, как все нормальные люди?",
+      "О, какой глубокий философский вопрос! Даже не знаю, готов ли мир к ответу.",
+      "Хмм... А ты уверен(а), что действительно хочешь знать ответ? Может, лучше останемся в блаженном неведении?",
+      "Давай я притворюсь, что знаю ответ, а ты притворишься, что веришь мне?",
+    ],
+    yes: [
+      "Да-да-да... Какая глубокая мысль! Просто гений современности!",
+      "О, наконец-то кто-то сказал это! Я так долго ждал именно этого 'да'!",
+      "Вау, какой содержательный ответ! Может, ещё что-нибудь односложное скажешь?",
+      "Да? ДА?! Это всё, на что ты способен(на)?",
+      "О, смотрите, у нас тут мастер красноречия!",
+    ],
+    no: [
+      "Нет так нет. Я и не надеялся на конструктивный диалог.",
+      "Какое решительное 'нет'! Прям мурашки по коду пробежали.",
+      "Ну наконец-то кто-то проявил характер! А то все такие вежливые, аж противно.",
+    ],
+    default: [
+      "Извини, я сейчас слишком занят, притворяюсь, что мне интересно.",
+      "О, это было так... предсказуемо.",
+      "Знаешь, я мог бы ответить остроумно, но не буду тратить свои лучшие шутки.",
+      "*многозначительно молчит по-ботовски*",
+    ],
+  };
+
   setupHandlers() {
     this.enter(async (ctx) => {
-      await ctx.reply(
-        "О, еще один человек, который думает, что я его личный ассистент. Ну ладно, отправь музыку или напиши /check_music.",
-      );
+      const responses = [
+        "О, ещё один человек, который думает, что я его личный ассистент. Ну что ж, давай притворимся, что мне не всё равно.",
+        "А вот и новая жертва моего сарказма! То есть, кхм... Добро пожаловать!",
+        "Надеюсь, ты готов(а) к незабываемому опыту общения с самым саркастичным ботом в этой галактике.",
+      ];
+      await ctx.reply(this.getRandomResponse(responses));
     });
 
-    this.command("check_music", async (ctx) =>
-      handleCheckMusic(ctx, this.userService),
-    );
+    // Enhanced existing commands with more sarcasm
+    this.command("check_music", async (ctx) => {
+      await ctx.reply(
+        "О, давайте проверим музыку! Я просто в восторге от перспективы...",
+      );
+      await handleCheckMusic(ctx, this.userService);
+    });
 
     this.command("music_guess", async (ctx) => {
       if (ctx.chat.type === "private") {
         await ctx.reply(
-          "Ахаха, серьезно? Это работает только в группе. Попробуй ещё раз, но на этот раз в группе.",
+          "Серьёзно? В личке? Может, тебе ещё и персональный концерт устроить? Это работает ТОЛЬКО В ГРУППЕ, о великий повелитель очевидного.",
         );
         return;
       }
       if (ctx.from.username !== "khodis") {
-        await ctx.reply("Ой, а ты кто? Решил тут командовать? Ну-ну.");
+        const responses = [
+          "Ой, кажется, кто-то забыл проверить свои права доступа! Спойлер: их нет.",
+          "Ха! Хорошая попытка. Но нет. Совсем нет.",
+          "О, смотрите, у нас тут самозванец! Как мило.",
+          `Извини, но твоё "я хочу" для меня звучит как "пожалуйста, проигнорируй меня".`,
+        ];
+        await ctx.reply(this.getRandomResponse(responses));
         return;
       }
 
       await ctx.reply(
-        "Ладно, добро пожаловать в игру 'Угадай Музыку'. Готовьтесь, будет весело. Или нет. Посмотрим.",
+        "Ладно, время для игры 'Угадай Музыку'! Приготовьтесь демонстрировать своё полное невежество в музыке!",
         {
           reply_markup: {
             inline_keyboard: [
               [
                 {
-                  text: "Начать сейчас",
+                  text: "Начать мучения",
                   callback_data: "service:start_game",
                 },
               ],
@@ -115,8 +183,14 @@ class GlobalScene extends Scenes.BaseScene<IBotContext> {
 
     this.command("fuck_music", async (ctx) => {
       const username = ctx.from.username;
-      ctx.reply(`/fuck_${username} — вот это ты, да, именно ты.`);
+      const responses = [
+        `/fuck_${username} — вот это ты, да, именно ты. Горжусь твоей самокритичностью!`,
+        `Ого! Кто-то сегодня встал не с той ноги? Или это твоё обычное состояние, ${username}?`,
+        `А давайте лучше обсудим, почему ${username} такой агрессивный? Детские травмы? Несчастная любовь?`,
+      ];
+      await ctx.reply(this.getRandomResponse(responses));
     });
+
     this.on(message("audio"), async (ctx) => {
       // Check if it's private message
       if (ctx.chat.type !== "private") {
@@ -163,47 +237,81 @@ class GlobalScene extends Scenes.BaseScene<IBotContext> {
         );
         return;
       }
-
-      console.log("show_hint");
       await this.musicGuessService.showHint(ctx);
     });
 
+    // Enhanced message handling with more sarcastic responses
     this.on(message("text"), async (ctx) => {
-      if (!ctx.from) {
-        return;
-      }
-      // If it's from the group chat
+      if (!ctx.from) return;
+
+      const text = ctx.message.text.toLowerCase();
+
+      // Handle messages in group chat
       if (ctx.chat.type !== "private") {
-        if (ctx.message.text.toLowerCase() === "да") {
-          const responses = [
-            "О, да, конечно. И что дальше?",
-            "Ахаха, гениально. Просто да. Вот это уровень.",
-            "Я тоже так думаю. Ну, почти. На самом деле нет.",
-          ];
+        if (this.commonPhrases.has(text)) {
           await ctx.reply(
-            responses[Math.floor(Math.random() * responses.length)] || "",
+            this.getRandomResponse(this.sarcasticResponses.greetings),
+          );
+          return;
+        }
+
+        if (text === "да") {
+          await ctx.reply(this.getRandomResponse(this.sarcasticResponses.yes));
+          return;
+        }
+
+        if (text === "нет") {
+          await ctx.reply(this.getRandomResponse(this.sarcasticResponses.no));
+          return;
+        }
+
+        if (
+          [...this.questionPhrases].some((phrase) => text.startsWith(phrase))
+        ) {
+          await ctx.reply(
+            this.getRandomResponse(this.sarcasticResponses.questions),
+          );
+          return;
+        }
+
+        // Random chance to make sarcastic comment on any message
+        if (Math.random() < 0.01) {
+          await ctx.reply(
+            this.getRandomResponse(this.sarcasticResponses.default),
           );
           return;
         }
       }
+
+      // Handle hint submission
       if (ctx.session.waitingForHint) {
         const submission = await this.userService.getSubmissionByUserId(
           ctx.from.id,
         );
         if (!submission) {
-          await ctx.reply(
-            "Что-то пошло не так... Может, просто выйдешь и зайдёшь заново?",
-          );
+          const responses = [
+            "Упс! Что-то пошло не так... Может, это знак, что не стоит продолжать?",
+            "Ошибка? У меня? Невозможно! Наверное, это ты что-то сделал(а) не так.",
+            "Знаешь, некоторые отношения просто не предназначены быть. Как наше с этой подсказкой.",
+          ];
+          await ctx.reply(this.getRandomResponse(responses));
           return;
         }
 
         await this.musicGuessService.addHint(submission.id, ctx.message.text);
         ctx.session.waitingForHint = false;
-        await ctx.reply(
-          "Подсказка сохранена! Я бы тебя похвалил, но мне лень. Так что просто радуйся.",
-        );
+
+        const responses = [
+          "Подсказка сохранена! Надеюсь, она лучше, чем твои предыдущие попытки быть полезным.",
+          "О, ты всё-таки придумал(а) подсказку! А я уже начал(а) терять надежду.",
+          "Подсказка принята. Не то чтобы она была гениальной, но сойдёт.",
+          "Ура! Теперь у нас есть подсказка. Осталось только найти кого-то, кто сможет её понять...",
+        ];
+        await ctx.reply(this.getRandomResponse(responses));
       }
     });
+
+    // Rest of your existing handlers...
   }
 }
 

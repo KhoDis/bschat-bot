@@ -7,31 +7,90 @@ import { MusicSubmissionRepository } from "../repositories/MusicSubmissionReposi
 import { IBotContext } from "../../context/context.interface";
 
 export class MusicGuessService {
+  private readonly sarcasticResponses = {
+    noGame: [
+      "Ой, а игры-то нет! Может, она существует в параллельной вселенной?",
+      "Игра? Какая игра? Я тут просто для красоты стою...",
+      "404: Игра не найдена. Попробуйте включить и выключить своё воображение.",
+    ],
+    noRounds: [
+      "Всё, раунды закончились! Можете расходиться по домам.",
+      "Ура! То есть... эхм... больше раундов нет. Какая жалость (не очень).",
+      "Раунды закончились. Надеюсь, вы довольны тем, что натворили.",
+    ],
+    hintAlreadyShown: [
+      "Подсказка УЖЕ была показана! Может, стоит записывать такие вещи?",
+      "О, кто-то прослушал момент с подсказкой? Неожиданно (нет).",
+      "Серьёзно? Опять просите подсказку? А памятью как у золотой рыбки ничего не страдаем?",
+    ],
+    noHint: [
+      "Для этой песни нет подсказки. Видимо, автор решил сделать вашу жизнь ещё сложнее.",
+      "Без подсказки? Ха! Удачи с угадыванием!",
+      "Упс, подсказки нет. Придётся включить мозг... если найдёте.",
+    ],
+    gameStarted: [
+      "О, великий момент настал! Игра началась! Приготовьтесь демонстрировать своё музыкальное невежество!",
+      "Да начнётся битва титанов! Или кто тут у нас... обычных смертных?",
+      "Игра стартовала! Надеюсь, вы готовы к полному разгрому ваших музыкальных амбиций!",
+    ],
+    noTracks: [
+      "Никто не отправил треки. Видимо, все внезапно стали скромными. Как необычно!",
+      "Ой, а треков-то нет! Может, организуем караоке?",
+      "Без треков игра так себе получится. Если только не играть в тишину...",
+    ],
+    correctGuess: (points: number) => [
+      `🎉 Невероятно! Вы действительно это угадали! ${points} ${this.getPointsWord(points)} вашему благородию!`,
+      `🎉 Да вы, никак, знаток! Получите ${points} ${this.getPointsWord(points)} в копилку вашего эго!`,
+      `🎉 Кто-то тут гуглил или просто повезло? ${points} ${this.getPointsWord(points)} за ваши старания!`,
+    ],
+    wrongGuess: [
+      "Эх, мимо... Может, стоит подучить матчасть?",
+      "Не то! Но попытка была... скажем так, интересная.",
+      "Мимо! Но не расстраивайтесь, бывает и хуже... Хотя нет, не бывает.",
+    ],
+    alreadyGuessed: [
+      "Вы уже голосовали! Склероз замучил?",
+      "Повторное голосование? Кто-то явно не уверен в себе...",
+      "А вот и любитель двойных стандартов! Но нет, один голос - это всё, что вы заслуживаете.",
+    ],
+    nextRound: [
+      "Следующий раунд! Приготовьтесь к новым разочарованиям!",
+      "О, вы ещё здесь? Ну ладно, продолжаем мучения...",
+      "Новый раунд! Новые возможности опозориться!",
+    ],
+  };
+
   constructor(
     private gameRepository: GameRepository,
     private musicSubmissionRepository: MusicSubmissionRepository,
   ) {}
 
+  private getRandomResponse(responses: string[]): string {
+    return responses[Math.floor(Math.random() * responses.length)] || "Бе.";
+  }
+
   async showHint(ctx: IBotContext) {
     const round = await this.gameRepository.getCurrentRound();
     if (!round) {
-      await ctx.reply("Нет активного раунда");
+      await ctx.reply(this.getRandomResponse(this.sarcasticResponses.noGame));
       return;
     }
 
     if (round.hintShown) {
-      await ctx.reply("Подсказка уже была показана!");
+      await ctx.reply(
+        this.getRandomResponse(this.sarcasticResponses.hintAlreadyShown),
+      );
       return;
     }
 
     const hint = round.submission.hint;
     if (!hint) {
-      await ctx.reply("Для этой песни нет подсказки :(");
+      await ctx.reply(this.getRandomResponse(this.sarcasticResponses.noHint));
       return;
     }
 
     await this.gameRepository.updateRoundHint(round.id, true);
-    await ctx.reply(`🎵 Подсказка:\n\n${hint}`);
+    await ctx.reply(`🎵 Подсказка (для тех, кто совсем отчаялся):\n\n${hint}`);
   }
 
   async addHint(submissionId: number, hint: string): Promise<void> {
@@ -48,33 +107,33 @@ export class MusicGuessService {
       await this.musicSubmissionRepository.findAll(),
     );
     if (!tracks.length) {
-      await ctx.reply("Никто не решился учавствовать :(");
+      await ctx.reply(this.getRandomResponse(this.sarcasticResponses.noTracks));
       return;
     }
 
     const game = await this.gameRepository.createGame(tracks);
-
-    await ctx.reply("Игра началась! Для следующего раунда нажми /next_round");
+    await ctx.reply(
+      this.getRandomResponse(this.sarcasticResponses.gameStarted),
+    );
     return game;
   }
 
   async processRound(ctx: Context) {
     const game = await this.gameRepository.getCurrentGame();
     if (!game) {
-      await ctx.reply("Нету игры");
+      await ctx.reply(this.getRandomResponse(this.sarcasticResponses.noGame));
       return;
     }
 
     const currentRound = await this.gameRepository.getCurrentRound();
     if (!currentRound) {
-      await ctx.reply("Больше нет раундов");
+      await ctx.reply(this.getRandomResponse(this.sarcasticResponses.noRounds));
       await this.showLeaderboard(ctx);
       await this.gameRepository.finishGame(game.id);
       return;
     }
 
     const participants = await this.gameRepository.getParticipants();
-
     await this.playRound(ctx, participants, currentRound);
   }
 
@@ -88,14 +147,20 @@ export class MusicGuessService {
       callback_data: `guess:${currentRound.index}_${user.id}`,
     }));
 
+    const captions = [
+      "Угадываем! Или хотя бы делаем вид...",
+      "Время показать свою музыкальную ~безграмотность~ эрудицию!",
+      "Ну что, готовы к новым музыкальным открытиям?",
+      "Внимание! Сейчас будет что-то... интересное.",
+    ];
+
     await ctx.replyWithAudio(currentRound.submission.fileId, {
-      caption: "Угадываем!",
+      caption: this.getRandomResponse(captions),
       reply_markup: { inline_keyboard: this.chunkButtons(buttons, 3) },
     });
 
     await this.sendRoundInfo(ctx);
   }
-
   async processGuess(
     ctx: Context,
     roundIndex: number,
@@ -104,49 +169,51 @@ export class MusicGuessService {
     try {
       const game = await this.gameRepository.getCurrentGame();
       if (!game) {
-        await ctx.answerCbQuery("Игра еще не началась :(");
+        await ctx.answerCbQuery(
+          this.getRandomResponse(this.sarcasticResponses.noGame),
+        );
         return;
       }
 
       const round = game.rounds.find((r) => r.index === roundIndex);
       if (!round) {
-        await ctx.answerCbQuery("Нет такого раунда :(");
+        await ctx.answerCbQuery(
+          "Этот раунд существует только в вашем воображении...",
+        );
         return;
       }
 
       const guessingUserId = ctx.from?.id;
       if (!guessingUserId) {
-        await ctx.answerCbQuery("У вас почему-то id нету, попробуйте ещё раз");
+        await ctx.answerCbQuery("Хм... А вы точно существуете? ID не найден!");
         return;
       }
 
-      // Check if user already guessed
       const existingGuess = await this.gameRepository.findGuess(
         round.id,
         guessingUserId,
       );
       if (existingGuess) {
-        await ctx.answerCbQuery("Вы уже сделали голос :(");
+        await ctx.answerCbQuery(
+          this.getRandomResponse(this.sarcasticResponses.alreadyGuessed),
+        );
         return;
       }
 
-      // Determine if this is a late guess
       const isLateGuess = roundIndex < game.currentRound;
-
-      // Calculate points based on conditions
       const isCorrect = round.submission.userId === guessedUserId;
       let points = 0;
+
       if (isCorrect) {
         if (isLateGuess) {
-          points = 1; // Late guess
+          points = 1;
         } else if (round.hintShown) {
-          points = 2; // Correct guess with hint
+          points = 2;
         } else {
-          points = 4; // Correct guess without hint
+          points = 4;
         }
       }
 
-      // Create guess
       await this.gameRepository.createGuess({
         roundId: round.id,
         userId: guessingUserId,
@@ -158,31 +225,34 @@ export class MusicGuessService {
 
       await ctx.answerCbQuery(
         isCorrect
-          ? `🎉 Правильно! Вы получили ${points} ${this.getPointsWord(points)}!`
-          : "Эх, мимо...",
+          ? this.getRandomResponse(this.sarcasticResponses.correctGuess(points))
+          : this.getRandomResponse(this.sarcasticResponses.wrongGuess),
       );
 
       await this.sendRoundInfo(ctx);
     } catch (e) {
       console.error(e);
+      await ctx.answerCbQuery("Что-то пошло не так... Наверное, это карма!");
     }
   }
 
   async nextRound(ctx: Context) {
     const game = await this.gameRepository.getCurrentGame();
     if (!game) {
-      await ctx.reply("Игра еще не началась");
+      await ctx.reply(this.getRandomResponse(this.sarcasticResponses.noGame));
       return;
     }
 
+    await ctx.reply(this.getRandomResponse(this.sarcasticResponses.nextRound));
     await this.gameRepository.updateGameRound(game.id, game.currentRound + 1);
     await this.processRound(ctx);
   }
-
   async showLeaderboard(ctx: Context) {
     const game = await this.gameRepository.getCurrentGame();
     if (!game) {
-      await ctx.reply("Игра еще не началась.");
+      await ctx.reply(
+        "О, хотите посмотреть на свои достижения? Но сначала неплохо бы начать игру!",
+      );
       return;
     }
 
@@ -245,10 +315,70 @@ export class MusicGuessService {
       )
       .join("\n");
 
+    const leaderboardIntros = [
+      "🏆 Внимание! Сейчас будет очень смешно... то есть, итоги игры! 🏆",
+      "🏆 Барабанная дробь! Время узнать, кто тут самый... ну, скажем так, музыкальный! 🏆",
+      "🏆 Итоги игры! Приготовьте платочки - будет и смешно, и грустно! 🏆",
+    ];
+
+    const trackIntros = [
+      "\n\nА теперь самое интересное - треки, которые вызвали больше всего страданий:",
+      "\n\nРейтинг треков 'Почему я этого не знаю?!':",
+      "\n\nСамые коварные треки этой игры:",
+    ];
+
     const leaderboardText = (await Promise.all(sortedLeaderboard)).join("\n");
     await ctx.reply(
-      `🏆 Итоги игры 🏆\n\nИгроки:\n${leaderboardText}\n\nСамые сложные треки:\n${sortedTracks}`,
+      `${this.getRandomResponse(leaderboardIntros)}\n\nГерои нашего времени:\n${leaderboardText}${this.getRandomResponse(trackIntros)}\n${sortedTracks}`,
     );
+  }
+
+  private async formatRoundInfo(round: AppGameRound) {
+    const notYetGuessed = await this.gameRepository.getUsersNotGuessed(
+      round.id,
+    );
+    const thinkingPhrases = [
+      "Всё ещё в раздумьях",
+      "Мучаются с ответом",
+      "Погружены в глубокие размышления",
+      "Изображают мыслительный процесс",
+    ];
+
+    const correctPhrases = [
+      "Счастливчики угадавшие",
+      "Знатоки (или везунчики?)",
+      "Каким-то чудом угадали",
+    ];
+
+    const wrongPhrases = [
+      "Промахнулись мимо кассы",
+      "Не угадали (как неожиданно!)",
+      "Попытались, но увы",
+    ];
+
+    return `
+        🎯 Раунд ${round.index + 1} - продолжаем веселиться!
+        ${round.hintShown ? "💡 Подсказка была показана (для особо одарённых)" : ""}
+        
+        ${this.getRandomResponse(thinkingPhrases)}: ${notYetGuessed.map((u) => u.name).join(", ")}
+        
+        ${this.getRandomResponse(correctPhrases)}: ${
+          round.guesses
+            .filter((g) => g.isCorrect)
+            .map(
+              (g) =>
+                `${g.user.name} (${g.points} ${this.getPointsWord(g.points)})`,
+            )
+            .join(", ") || "Пока никто! Неужели так сложно?"
+        }
+        
+        ${this.getRandomResponse(wrongPhrases)}: ${
+          round.guesses
+            .filter((g) => !g.isCorrect)
+            .map((g) => g.user.name)
+            .join(", ") || "Пока никто не ошибся. Но это ненадолго!"
+        }
+      `;
   }
 
   private chunkButtons(buttons: InlineKeyboardButton[], size: number) {
@@ -261,28 +391,6 @@ export class MusicGuessService {
     if (points === 1) return "очко";
     if (points >= 2 && points <= 4) return "очка";
     return "очков";
-  }
-
-  async formatRoundInfo(round: AppGameRound) {
-    const notYetGuessed = await this.gameRepository.getUsersNotGuessed(
-      round.id,
-    );
-
-    return `
-      Раунд ${round.index + 1}
-      ${round.hintShown ? "💡 Подсказка была показана" : ""}
-      Ещё думают: ${notYetGuessed.map((u) => u.name).join(", ")}
-      Угадали: ${round.guesses
-        .filter((g) => g.isCorrect)
-        .map(
-          (g) => `${g.user.name} (${g.points} ${this.getPointsWord(g.points)})`,
-        )
-        .join(", ")}
-      Не угадали: ${round.guesses
-        .filter((g) => !g.isCorrect)
-        .map((g) => g.user.name)
-        .join(", ")}
-    `;
   }
 
   async sendRoundInfo(ctx: Context) {
