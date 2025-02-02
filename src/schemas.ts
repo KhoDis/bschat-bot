@@ -100,6 +100,12 @@ export type AppMusicSubmission = z.infer<typeof appMusicSubmissionSchema>;
 export type AppGameRound = z.infer<typeof appGameRoundSchema>;
 export type AppGame = z.infer<typeof appGameSchema>;
 
+export type User = AppUser;
+export type Guess = AppGuess;
+export type MusicSubmission = AppMusicSubmission;
+export type GameRound = AppGameRound;
+export type Game = AppGame;
+
 // Export both schemas and parsers
 export const schemas = {
   db: {

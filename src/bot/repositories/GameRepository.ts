@@ -21,6 +21,30 @@ function safeParse<T>(schema: ZodSchema<T>, data: unknown, context: string): T {
 }
 
 export class GameRepository {
+  async getGameById(id: number): Promise<AppGame> {
+    const game = await prisma.game.findUnique({
+      where: { id },
+      include: {
+        rounds: {
+          include: {
+            submission: {
+              include: {
+                user: true,
+              },
+            },
+            guesses: {
+              include: {
+                user: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return schemas.app.game.parse(game);
+  }
+
   async getCurrentGame(): Promise<AppGame | null> {
     const game = await prisma.game.findFirst({
       where: { status: "ACTIVE" },
