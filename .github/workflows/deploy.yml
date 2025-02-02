@@ -50,14 +50,14 @@ jobs:
           tags: |
             ghcr.io/khodis/prod-bschat-bot:latest
 
-      - name: "Copy docker-compose.prod-ci.yml to server"
+      - name: "Copy docker-compose.yml to server"
         uses: appleboy/scp-action@v0.1.4
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USERNAME }}
           password: ${{ secrets.SERVER_PASSWORD }}
           port: ${{ secrets.SERVER_PORT }}
-          source: "docker-compose.prod-ci.yml"
+          source: "docker-compose.yml"
           target: "/srv/deployments/prod-bschat-bot/"
 
       - name: "Deploy on server"
