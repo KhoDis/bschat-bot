@@ -1,0 +1,76 @@
+name: Docker Image CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: "Checkout repository"
+        uses: actions/checkout@v4
+
+      - name: "Create env file"
+        run: |
+          touch .env
+          echo "${{ secrets.DEPLOY_ENV }}" > .env
+
+      - name: "Copy .env to server"
+        uses: appleboy/scp-action@v0.1.4
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USERNAME }}
+          password: ${{ secrets.SERVER_PASSWORD }}
+          port: ${{ secrets.SERVER_PORT }}
+          source: ".env"
+          target: "/srv/deployments/prod-bschat-bot/"
+
+      - name: "Set up QEMU"
+        uses: docker/setup-qemu-action@v1
+
+      - name: "Set up Docker Buildx"
+        uses: docker/setup-buildx-action@v3
+
+      - name: "Login to GitHub Registry"
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: "KhoDis"
+          password: ${{ secrets.REGISTRY_KEY }}
+
+      - name: "Build & Push bschat-bot Image"
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          no-cache: true
+          tags: |
+            ghcr.io/khodis/prod-bschat-bot:latest
+
+      - name: "Copy docker-compose.prod-ci.yml to server"
+        uses: appleboy/scp-action@v0.1.4
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USERNAME }}
+          password: ${{ secrets.SERVER_PASSWORD }}
+          port: ${{ secrets.SERVER_PORT }}
+          source: "docker-compose.prod-ci.yml"
+          target: "/srv/deployments/prod-bschat-bot/"
+
+      - name: "Deploy on server"
+        uses: appleboy/ssh-action@master
+        with:
+          timeout: 60m
+          command_timeout: 60m
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USERNAME }}
+          password: ${{ secrets.SERVER_PASSWORD }}
+          port: ${{ secrets.SERVER_PORT }}
+          script: |
+            cd /srv/deployments/prod-bschat-bot
+            sudo docker compose -f docker-compose.yml -p bschat down
+            sudo docker compose -f docker-compose.yml -p bschat pull
+            sudo docker compose -f docker-compose.yml -p bschat up -d

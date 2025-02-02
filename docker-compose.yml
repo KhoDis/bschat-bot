@@ -1,14 +1,32 @@
-version: "3.8"
-
 services:
-  telegram-bot:
-    build: .
-    container_name: telegram-bot
-    restart: unless-stopped
-    volumes:
-      - ./logs:/usr/src/app/logs
-      - ./config:/usr/src/app/config
+  db:
+    image: postgres:latest
+    restart: always
     environment:
-      - BOT_TOKEN=your_telegram_bot_token_here
+      POSTGRES_DB: bschat
+      POSTGRES_USER: bschat_user
+      POSTGRES_PASSWORD: bschat_password
+    networks:
+      - bschat-net
     ports:
-      - "3000:3000"
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  bot:
+    depends_on:
+      - db
+    env_file:
+      - .env
+    image: ghcr.io/khodis/prod-bschat-bot:latest
+    networks:
+      - bschat-net
+    restart: always
+
+networks:
+  bschat-net:
+    name: bschat-net
+    driver: bridge
+
+volumes:
+  pgdata:

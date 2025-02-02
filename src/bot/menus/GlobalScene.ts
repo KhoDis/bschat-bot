@@ -373,6 +373,10 @@ class GlobalScene extends Scenes.BaseScene<IBotContext> {
       await ctx.reply("@BEHruzM_17");
     });
 
+    this.command("chatid", async (ctx) => {
+      await ctx.reply(JSON.stringify(ctx.chat.id));
+    });
+
     // Enhanced message handling with more sarcastic responses
     this.on(message("text"), async (ctx) => {
       if (!ctx.from) return;

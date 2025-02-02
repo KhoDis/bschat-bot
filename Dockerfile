@@ -1,18 +1,35 @@
-FROM node:18
+FROM node:20.10-alpine AS base
 
-# Create app directory
-WORKDIR /usr/src/app
+WORKDIR /app
 
-# Install app dependencies
-COPY package*.json ./
+# Install dependencies
+FROM base AS deps
+RUN apk add --no-cache libc6-compat
+COPY package.json package-lock.json ./
+RUN npm ci
 
-RUN npm install
-
-# Copy the bot's source code
+# Copy source and build (if necessary)
+FROM base AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Expose necessary ports (if needed)
-EXPOSE 3000
+RUN npx prisma generate
 
-# Command to run the bot
-CMD ["node", "index.js"]
+# Production runner
+FROM base AS runner
+WORKDIR /app
+
+ENV NODE_ENV=production
+
+# Add system user
+RUN addgroup --system --gid 1001 botuser
+RUN adduser --system --uid 1001 botuser --ingroup botuser
+
+# Copy necessary files
+COPY --from=builder /app ./
+RUN chown -R botuser:botuser /app
+
+USER botuser
+
+CMD ["node", "bot.js"]
