@@ -15,6 +15,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 RUN npx prisma generate
+RUN npm run build
 
 # Production runner
 FROM base AS runner
@@ -27,9 +28,13 @@ RUN addgroup --system --gid 1001 botuser
 RUN adduser --system --uid 1001 botuser --ingroup botuser
 
 # Copy necessary files
-COPY --from=builder /app ./
-RUN chown -R botuser:botuser /app
+COPY --from=builder --chown=botuser:botuser /app ./
+COPY --from=builder --chown=botuser:botuser /app/prisma ./prisma
 
 USER botuser
 
-CMD ["node", "bot.js"]
+COPY --chown=botuser:botuser migrate-and-start.sh ./
+
+RUN chmod +x migrate-and-start.sh
+
+CMD ["sh", "./migrate-and-start.sh"]

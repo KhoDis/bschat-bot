@@ -1,0 +1,35 @@
+services:
+  db:
+    image: postgres:latest
+    restart: always
+    environment:
+      POSTGRES_DB: bschat
+      POSTGRES_USER: bschat_user
+      POSTGRES_PASSWORD: bschat_password
+    networks:
+      - bschat-net
+    ports:
+      - "5443:5432" # Use a different port from production to avoid conflicts
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  bot:
+    depends_on:
+      - db
+    build: .
+    env_file:
+      - .env
+    networks:
+      - bschat-net
+    volumes:
+      - .:/app # Mount local directory for live code updates
+    command: npm run dev # Run bot in development mode
+    restart: unless-stopped
+
+networks:
+  bschat-net:
+    name: bschat-net
+    driver: bridge
+
+volumes:
+  pgdata:
