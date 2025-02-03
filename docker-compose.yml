@@ -19,6 +19,8 @@ services:
     env_file:
       - .env
     image: ghcr.io/khodis/prod-bschat-bot:latest
+    volumes:
+      - ./.env:/app/.env
     networks:
       - bschat-net
     restart: always

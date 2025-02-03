@@ -31,9 +31,6 @@ RUN adduser --system --uid 1001 botuser --ingroup botuser
 COPY --from=builder --chown=botuser:botuser /app ./
 COPY --from=builder --chown=botuser:botuser /app/prisma ./prisma
 
-# Copy .env file
-COPY .env .env
-
 USER botuser
 
 COPY --chown=botuser:botuser migrate-and-start.sh ./
