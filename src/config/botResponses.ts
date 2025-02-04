@@ -19,6 +19,11 @@ export const botResponses = {
       "Да начнётся битва титанов! Или кто тут у нас... обычных смертных?",
     ],
   },
+  musicGame: {
+    listPlayers: (players: string[]) => [
+      `Всего участников: ${players.length}\n\n` + players.join("\n"),
+    ],
+  },
   rounds: {
     noMoreRounds: ["Да, да, да, да... Кажется, мы закончились раундами."],
     noSuchRound: ["Этот раунд существует только в твоём воображении..."],

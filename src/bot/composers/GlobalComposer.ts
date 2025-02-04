@@ -1,10 +1,9 @@
-import { message } from "telegraf/filters";
 import { IBotContext } from "../../context/context.interface";
-import { Composer } from "telegraf";
+import { Composer, NarrowedContext } from "telegraf";
 import { UserService } from "../services/UserService";
-import handleCheckMusic from "../handlers/handleCheckMusic";
 import { BotResponses, getRandomResponse } from "../../config/botResponses";
 import { LeaderboardService } from "../services/LeaderboardService";
+import { Update } from "telegraf/types";
 
 export class GlobalComposer extends Composer<IBotContext> {
   constructor(
@@ -18,23 +17,39 @@ export class GlobalComposer extends Composer<IBotContext> {
   }
 
   private setupHandlers() {
-    this.command("check_music", async (ctx) => {
-      await ctx.reply(
-        "О, давайте проверим музыку! Я просто в восторге от перспективы...",
-      );
-      await handleCheckMusic(ctx, this.userService);
-    });
+    this.command("check_music", this.handleCheckMusic.bind(this));
 
-    this.command("show_leaderboards", async (ctx) => {
-      await this.leaderboardService.showLeaderboard(ctx);
-    });
+    this.command("show_leaderboards", this.handleShowLeaderboard.bind(this));
 
-    this.command("ping_participants", async (ctx) => {
-      await this.userService.pingParticipants(ctx);
-    });
+    this.command("ping_participants", this.handlePingParticipants.bind(this));
 
-    this.command("chatid", async (ctx) => {
-      await ctx.reply(JSON.stringify(ctx.chat.id));
-    });
+    this.command("chatid", this.handleChatId.bind(this));
+  }
+
+  private async handleCheckMusic(ctx: IBotContext): Promise<void> {
+    const submissionUsers = await this.userService.getSubmissionUsers();
+    // TODO: instead of doing this, findMany with joins, so we can get the names
+    const formattedUsers: (string | null)[] = await Promise.all(
+      submissionUsers.map((u) => this.userService.getFormattedUser(u.id)),
+    );
+    const users = formattedUsers.filter((u): u is string => u !== null);
+
+    await ctx.reply(
+      getRandomResponse(this.botResponses.musicGame.listPlayers(users)),
+    );
+  }
+
+  private async handleShowLeaderboard(ctx: IBotContext): Promise<void> {
+    await this.leaderboardService.showLeaderboard(ctx);
+  }
+
+  private async handlePingParticipants(ctx: IBotContext): Promise<void> {
+    await this.userService.pingParticipants(ctx);
+  }
+
+  private async handleChatId(
+    ctx: NarrowedContext<IBotContext, Update.MessageUpdate>,
+  ): Promise<void> {
+    await ctx.reply(JSON.stringify(ctx.chat.id));
   }
 }

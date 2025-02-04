@@ -1,12 +1,21 @@
-import { message } from "telegraf/filters";
 import { IBotContext } from "../../context/context.interface";
-import { Composer } from "telegraf";
+import { Composer, NarrowedContext } from "telegraf";
 import { UserService } from "../services/UserService";
 import { BotResponses, getRandomResponse } from "../../config/botResponses";
 import { RoundService } from "../services/RoundService";
 import { GuessService } from "../services/GuessService";
 import { MusicGameService } from "../services/musicGameService";
 import { LeaderboardService } from "../services/LeaderboardService";
+import { Update } from "telegraf/types";
+
+const ADMIN_USERNAME = "khodis";
+
+type CallbackQueryContext = NarrowedContext<
+  IBotContext,
+  Update.CallbackQueryUpdate
+> & {
+  match: RegExpExecArray;
+};
 
 export class GroupComposer extends Composer<IBotContext> {
   constructor(
@@ -22,117 +31,108 @@ export class GroupComposer extends Composer<IBotContext> {
     this.setupHandlers();
   }
 
+  private isAdmin(username: string): boolean {
+    return username === ADMIN_USERNAME;
+  }
+
+  private async handleAdminCheck(ctx: IBotContext): Promise<boolean> {
+    if (!this.isAdmin(ctx.from?.username || "")) {
+      await ctx.reply(getRandomResponse(this.botResponses.user.notAdmin));
+      return false;
+    }
+    return true;
+  }
+
   private setupHandlers() {
-    this.command("music_guess", async (ctx) => {
-      // TODO: add contracts
-      if (ctx.chat.type === "private") {
-        await ctx.reply(
-          "Серьёзно? В личке? Может, тебе ещё и персональный концерт устроить? Это работает ТОЛЬКО В ГРУППЕ, о великий повелитель очевидного.",
-        );
-        return;
-      }
-      if (ctx.from.username !== "khodis") {
-        await ctx.reply(getRandomResponse(this.botResponses.user.notAdmin));
-        return;
-      }
+    this.command("music_guess", this.handleMusicGuess.bind(this));
+    this.command("next_round", this.handleNextRound.bind(this));
+    this.command("show_hint", this.handleShowHint.bind(this));
+    this.action(/^guess:(.+)$/, this.handleGuessAction.bind(this));
+    this.action(/^service:(.+)$/, this.handleServiceAction.bind(this));
+  }
 
-      await ctx.reply(
-        "Ладно, время для игры 'Угадай Музыку'! Приготовьтесь демонстрировать своё полное невежество в музыке!",
-        {
-          reply_markup: {
-            inline_keyboard: [
-              [
-                {
-                  text: "Начать мучения",
-                  callback_data: "service:start_game",
-                },
-              ],
-            ],
+  private async handleMusicGuess(ctx: IBotContext): Promise<void> {
+    if (!(await this.handleAdminCheck(ctx))) return;
+
+    const keyboard = {
+      inline_keyboard: [
+        [
+          {
+            text: "Начать мучения",
+            callback_data: "service:start_game",
           },
-        },
+        ],
+      ],
+    };
+
+    await ctx.reply(
+      "Ладно, время для игры 'Угадай Музыку'! Приготовьтесь демонстрировать своё полное невежество в музыке!",
+      { reply_markup: keyboard },
+    );
+
+    await this.userService.pingParticipants(ctx);
+  }
+
+  private async handleNextRound(ctx: IBotContext): Promise<void> {
+    if (!(await this.handleAdminCheck(ctx))) return;
+    await this.roundService.nextRound(ctx, () => this.handleGameEnd(ctx));
+  }
+
+  private async handleGameEnd(ctx: IBotContext): Promise<void> {
+    await ctx.reply(getRandomResponse(this.botResponses.rounds.noMoreRounds));
+    await this.leaderboardService.showLeaderboard(ctx);
+  }
+
+  private async handleShowHint(ctx: IBotContext): Promise<void> {
+    if (!(await this.handleAdminCheck(ctx))) return;
+    await this.roundService.showHint(ctx);
+  }
+
+  private async handleGuessAction(ctx: CallbackQueryContext): Promise<void> {
+    const action = ctx.match[1];
+    if (!action) return;
+
+    const [roundId, guessId] = action.split("_").map(Number);
+
+    if (!roundId || !guessId) {
+      await ctx.reply(`Не смог запарсить данные: ${action}`);
+      return;
+    }
+
+    try {
+      await this.guessService.processGuess(
+        ctx,
+        roundId,
+        guessId,
+        async () => await this.roundService.sendRoundInfo(ctx),
       );
+    } catch (error) {
+      console.error("Error processing guess:", error);
+      await ctx.answerCbQuery("Что-то пошло не так... Наверное, это карма!");
+    }
+  }
 
-      await this.userService.pingParticipants(ctx);
-    });
+  private async handleServiceAction(ctx: CallbackQueryContext): Promise<void> {
+    const action = ctx.match[1];
+    if (action !== "start_game") return;
 
-    this.command("next_round", async (ctx) => {
-      if (ctx.from.username !== "khodis") {
-        await ctx.reply(getRandomResponse(this.botResponses.user.notAdmin));
-        return;
-      }
-      await this.roundService.nextRound(ctx, async () => {
-        await ctx.reply(
-          getRandomResponse(this.botResponses.rounds.noMoreRounds),
-        );
-        await this.leaderboardService.showLeaderboard(ctx);
-        // await this.gameRepository.finishGame(game.id);
-      });
-    });
+    if (!(await this.handleAdminCheck(ctx))) return;
 
-    this.action(/^guess:(.+)$/, async (ctx) => {
-      const action = ctx.match[1];
-      if (!action) return;
-      const [roundId, guessId] = action.split("_");
-      console.log("Нажата кнопка", roundId, guessId);
+    try {
+      const existingGame = await this.musicGuessService.isGameStarted();
 
-      if (!roundId || !guessId) {
-        ctx.reply(`Не смог запарсить данные: ${action}`);
-        return;
-      }
-
-      try {
-        await this.guessService.processGuess(
-          ctx,
-          +roundId,
-          +guessId,
-          async () => {
-            await this.roundService.sendRoundInfo(ctx);
-          },
-        );
-      } catch (e) {
-        console.error(e);
-        await ctx.answerCbQuery("Что-то пошло не так... Наверное, это карма!");
-      }
-    });
-
-    this.action(/^service:(.+)$/, async (ctx) => {
-      const action = ctx.match[1];
-      if (action === "start_game") {
-        if (ctx.from.username !== "khodis") {
-          await ctx.reply("Только @khodis может насильно начинать игру :)");
-          return;
-        }
-        // Initialize game state if there is no game yet
-        const existingGame = await this.musicGuessService.isGameStarted();
-        if (!existingGame) {
-          await ctx.reply("Я не нашёл уже существующей игры, начинаю новую");
-          await this.musicGuessService.startGame(ctx);
-        }
-
+      if (!existingGame) {
+        await ctx.reply("Я не нашёл уже существующей игры, начинаю новую");
+        await this.musicGuessService.startGame(ctx);
+      } else {
         await ctx.reply("Я нашёл уже существующую игру, продолжаю её");
-
-        // Play first round (0-th round)
-        await this.roundService.processRound(ctx, async () => {
-          await ctx.reply(
-            getRandomResponse(this.botResponses.rounds.noMoreRounds),
-          );
-          await this.leaderboardService.showLeaderboard(ctx);
-          // await this.gameRepository.finishGame(game.id);
-        });
-
-        await ctx.answerCbQuery();
       }
-    });
 
-    this.command("show_hint", async (ctx) => {
-      console.log("show_hint");
-      if (ctx.from.username !== "khodis") {
-        await ctx.reply(
-          "Нет, ты не @khodis, так что нет подсказки. Живи с этим.",
-        );
-        return;
-      }
-      await this.roundService.showHint(ctx);
-    });
+      await this.roundService.processRound(ctx, () => this.handleGameEnd(ctx));
+      await ctx.answerCbQuery();
+    } catch (error) {
+      console.error("Error handling service action:", error);
+      await ctx.reply("Произошла ошибка при запуске игры");
+    }
   }
 }
