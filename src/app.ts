@@ -28,12 +28,12 @@ class Bot {
   ) {
     this.bot = new Telegraf<IBotContext>(configService.get("BOT_TOKEN"));
 
+    this.bot.use(session());
+
     const privateMiddleware = privateComposer.middleware();
     const groupMiddleware = groupComposer.middleware();
     const globalMiddleware = globalComposer.middleware();
     const jokerMiddleware = jokerComposer.middleware();
-
-    this.bot.use(session());
 
     this.bot.use((ctx, next) => {
       if (!ctx.chat) {
