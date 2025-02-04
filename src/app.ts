@@ -33,6 +33,8 @@ class Bot {
     const globalMiddleware = globalComposer.middleware();
     const jokerMiddleware = jokerComposer.middleware();
 
+    this.bot.use(session());
+
     this.bot.use((ctx, next) => {
       if (!ctx.chat) {
         return next();
@@ -46,8 +48,6 @@ class Bot {
 
     this.bot.use(globalMiddleware);
     this.bot.use(jokerMiddleware);
-
-    this.bot.use(session());
   }
 
   init() {
