@@ -1,52 +1,53 @@
-import { Scenes, session, Telegraf } from "telegraf";
+import { session, Telegraf } from "telegraf";
 import { IConfigService } from "./config/config.interface";
 import { ConfigService } from "./config/config.service";
 import { IBotContext } from "./context/context.interface";
 import { MusicGameService } from "./bot/services/musicGameService";
 import { UserService } from "./bot/services/UserService";
-import GlobalScene from "./bot/menus/GlobalScene";
 import { GameRepository } from "./bot/repositories/GameRepository";
 import { MusicSubmissionRepository } from "./bot/repositories/MusicSubmissionRepository";
 import { LeaderboardService } from "./bot/services/LeaderboardService";
 import { RoundService } from "./bot/services/RoundService";
 import { GuessService } from "./bot/services/GuessService";
-import { botResponses, BotResponses } from "./config/botResponses";
+import { botResponses } from "./config/botResponses";
 import { GuessValidationService } from "./bot/services/GuessValidationService";
+import { GlobalComposer } from "./bot/composers/GlobalComposer";
+import { PrivateComposer } from "./bot/composers/PrivateComposer";
+import { JokerComposer } from "./bot/composers/JokerComposer";
+import { GroupComposer } from "./bot/composers/GroupComposer";
 
 class Bot {
   bot: Telegraf<IBotContext>;
-  stage: Scenes.Stage<IBotContext, Scenes.SceneSessionData>;
 
   constructor(
+    privateComposer: PrivateComposer,
+    groupComposer: GroupComposer,
+    globalComposer: GlobalComposer,
+    jokerComposer: JokerComposer,
     configService: IConfigService,
-    musicGuessService: MusicGameService,
-    userService: UserService,
-    gameRepository: GameRepository,
-    botResponses: BotResponses,
-    guessService: GuessService,
-    roundService: RoundService,
-    leaderboardService: LeaderboardService,
   ) {
     this.bot = new Telegraf<IBotContext>(configService.get("BOT_TOKEN"));
 
-    this.bot.use(session());
+    const privateMiddleware = privateComposer.middleware();
+    const groupMiddleware = groupComposer.middleware();
+    const globalMiddleware = globalComposer.middleware();
+    const jokerMiddleware = jokerComposer.middleware();
 
-    const globalScene = new GlobalScene(
-      userService,
-      musicGuessService,
-      gameRepository,
-      botResponses,
-      guessService,
-      roundService,
-      leaderboardService,
-    );
-
-    // Create stage and add scenes
-    this.stage = new Scenes.Stage<IBotContext>([globalScene], {
-      default: "global",
+    this.bot.use((ctx, next) => {
+      if (!ctx.chat) {
+        return next();
+      }
+      if (ctx.chat.type === "private") {
+        return privateMiddleware(ctx, next);
+      } else {
+        return groupMiddleware(ctx, next);
+      }
     });
 
-    this.bot.use(this.stage.middleware());
+    this.bot.use(globalMiddleware);
+    this.bot.use(jokerMiddleware);
+
+    this.bot.use(session());
   }
 
   init() {
@@ -65,19 +66,32 @@ class Bot {
 
 const gameRepository = new GameRepository();
 
-const bot = new Bot(
-  new ConfigService(),
-  new MusicGameService(gameRepository, new MusicSubmissionRepository()),
-  new UserService(),
+const userService = new UserService();
+const musicGameService = new MusicGameService(
   gameRepository,
+  new MusicSubmissionRepository(),
+);
+const roundService = new RoundService(gameRepository, botResponses);
+const leaderboardService = new LeaderboardService(gameRepository, botResponses);
+const guessService = new GuessService(
+  gameRepository,
+  new GuessValidationService(gameRepository, botResponses),
   botResponses,
-  new GuessService(
-    gameRepository,
-    new GuessValidationService(gameRepository, botResponses),
+);
+
+const bot = new Bot(
+  new PrivateComposer(userService, musicGameService, botResponses),
+  new GroupComposer(
+    userService,
+    roundService,
+    musicGameService,
+    guessService,
+    leaderboardService,
     botResponses,
   ),
-  new RoundService(gameRepository, botResponses),
-  new LeaderboardService(gameRepository, botResponses),
+  new GlobalComposer(userService, leaderboardService, botResponses),
+  new JokerComposer(userService, botResponses),
+  new ConfigService(),
 );
 
 bot.init();
