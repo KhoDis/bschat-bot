@@ -6,12 +6,6 @@ import { MusicSubmissionRepository } from "../repositories/MusicSubmissionReposi
 import { getRandomResponse } from "../../config/botResponses";
 
 export class MusicGameService {
-  private getPointsWord(points: number): string {
-    if (points === 1) return "очко";
-    if (points >= 2 && points <= 4) return "очка";
-    return "очков";
-  }
-
   private readonly sarcasticResponses = {
     noGame: [
       "Ой, а игры-то нет! Может, она существует в параллельной вселенной?",
@@ -72,6 +66,7 @@ export class MusicGameService {
       return;
     }
     await this.gameRepository.deleteGame(game.id);
+    await this.musicSubmissionRepository.deleteAll();
     await ctx.reply(getRandomResponse(this.sarcasticResponses.resetGame));
   }
 

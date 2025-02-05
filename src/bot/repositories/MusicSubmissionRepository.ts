@@ -31,6 +31,10 @@ export class MusicSubmissionRepository {
     return submission ? schemas.app.musicSubmission.parse(submission) : null;
   }
 
+  async deleteAll() {
+    await prisma.musicSubmission.deleteMany();
+  }
+
   async create(data: {
     fileId: string;
     userId: number;
