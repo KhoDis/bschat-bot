@@ -35,9 +35,7 @@ export class PrivateComposer extends Composer<IBotContext> {
   }
 
   private async handleTextMessage(ctx: TextMessageContext): Promise<void> {
-    if (ctx.session.waitingForHint) {
-      await this.processHintSubmission(ctx);
-    }
+    await this.processHintSubmission(ctx);
   }
 
   private async saveUser(ctx: AudioMessageContext): Promise<void> {
@@ -63,8 +61,6 @@ export class PrivateComposer extends Composer<IBotContext> {
       userId,
       fileId,
     });
-
-    ctx.session.waitingForHint = true;
 
     await ctx.reply(
       "Ого, ты отправил трек! А теперь попробуй написать к нему подсказку. Или не пиши. Мне-то что.",
@@ -96,7 +92,6 @@ export class PrivateComposer extends Composer<IBotContext> {
     }
 
     await this.musicGuessService.addHint(submission.id, ctx.message.text);
-    ctx.session.waitingForHint = false;
     await this.sendHintConfirmation(ctx);
   }
 
@@ -104,9 +99,10 @@ export class PrivateComposer extends Composer<IBotContext> {
     ctx: TextMessageContext,
   ): Promise<void> {
     const errorResponses = [
-      "Упс! Что-то пошло не так... Может, это знак, что не стоит продолжать?",
-      "Ошибка? У меня? Невозможно! Наверное, это ты что-то сделал(а) не так.",
-      "Знаешь, некоторые отношения просто не предназначены быть. Как наше с этой подсказкой.",
+      "Гениальный ход! Попытаться дать подсказку к треку, которого нет. Может, попробуешь сначала его загрузить?",
+      "Ого, невидимый трек! Жаль, я ещё не научился считывать мысли. Попробуй отправить его по-настоящему.",
+      "Ты пытаешься дать подсказку к воздуху? Интересный эксперимент! А теперь загрузи трек, как нормальные люди.",
+      "Может, я, конечно, и волшебный бот, но даже мне нужен хотя бы намёк на музыку. Давай без фокусов, отправляй трек!",
     ];
     await ctx.reply(getRandomResponse(errorResponses));
   }

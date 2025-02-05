@@ -28,6 +28,8 @@ class Bot {
   ) {
     this.bot = new Telegraf<IBotContext>(configService.get("BOT_TOKEN"));
 
+    this.bot.use(session());
+
     const privateMiddleware = privateComposer.middleware();
     const groupMiddleware = groupComposer.middleware();
     const globalMiddleware = globalComposer.middleware();
@@ -46,8 +48,6 @@ class Bot {
 
     this.bot.use(globalMiddleware);
     this.bot.use(jokerMiddleware);
-
-    this.bot.use(session());
   }
 
   init() {
