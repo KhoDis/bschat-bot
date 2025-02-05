@@ -94,7 +94,12 @@ export class GroupComposer extends Composer<IBotContext> {
 
     const [roundId, guessId] = action.split("_").map(Number);
 
-    if (!roundId || !guessId) {
+    if (
+      roundId === null ||
+      roundId === undefined ||
+      guessId === null ||
+      guessId === undefined
+    ) {
       await ctx.reply(`Не смог запарсить данные: ${action}`);
       return;
     }
