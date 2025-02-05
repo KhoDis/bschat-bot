@@ -47,6 +47,7 @@ export class GroupComposer extends Composer<IBotContext> {
     this.command("music_guess", this.handleMusicGuess.bind(this));
     this.command("next_round", this.handleNextRound.bind(this));
     this.command("show_hint", this.handleShowHint.bind(this));
+    this.command("clear_game", this.handleClearGame.bind(this));
     this.action(/^guess:(.+)$/, this.handleGuessAction.bind(this));
     this.action(/^service:(.+)$/, this.handleServiceAction.bind(this));
   }
@@ -71,6 +72,11 @@ export class GroupComposer extends Composer<IBotContext> {
     );
 
     await this.userService.pingParticipants(ctx);
+  }
+
+  private async handleClearGame(ctx: IBotContext): Promise<void> {
+    if (!(await this.handleAdminCheck(ctx))) return;
+    await this.musicGuessService.clearGame(ctx);
   }
 
   private async handleNextRound(ctx: IBotContext): Promise<void> {

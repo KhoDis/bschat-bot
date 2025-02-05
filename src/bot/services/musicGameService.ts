@@ -1,8 +1,7 @@
 import { Context } from "telegraf";
-import { InlineKeyboardButton } from "telegraf/typings/core/types/typegram";
 import { shuffleArray } from "../../utils/arrayUtils";
 import { GameRepository } from "../repositories/GameRepository";
-import { AppGameRound, AppMusicSubmission, AppUser } from "../../schemas";
+import { AppMusicSubmission } from "../../schemas";
 import { MusicSubmissionRepository } from "../repositories/MusicSubmissionRepository";
 import { getRandomResponse } from "../../config/botResponses";
 
@@ -54,6 +53,7 @@ export class MusicGameService {
       "Не то! Но попытка была... скажем так, интересная.",
       "Мимо! Но не расстраивайтесь, бывает и хуже... Хотя нет, не бывает.",
     ],
+    resetGame: ["Игра сброшена."],
   };
 
   constructor(
@@ -63,6 +63,16 @@ export class MusicGameService {
 
   async addHint(submissionId: number, hint: string): Promise<void> {
     await this.musicSubmissionRepository.updateHint(submissionId, hint);
+  }
+
+  async clearGame(ctx: Context) {
+    const game = await this.gameRepository.getCurrentGame();
+    if (!game) {
+      await ctx.reply(getRandomResponse(this.sarcasticResponses.noGame));
+      return;
+    }
+    await this.gameRepository.deleteGame(game.id);
+    await ctx.reply(getRandomResponse(this.sarcasticResponses.resetGame));
   }
 
   async isGameStarted(): Promise<boolean> {

@@ -7,18 +7,6 @@ import {
   AppUser,
   schemas,
 } from "../../schemas";
-import { ZodSchema } from "zod";
-
-function safeParse<T>(schema: ZodSchema<T>, data: unknown, context: string): T {
-  const result = schema.safeParse(data);
-  if (!result.success) {
-    console.error(`Validation failed in ${context}`, result.error.errors);
-    throw new Error(
-      `Validation error in ${context}: ${JSON.stringify(result.error.errors)}`,
-    );
-  }
-  return result.data;
-}
 
 export class GameRepository {
   async getGameById(id: number): Promise<AppGame> {
@@ -43,6 +31,21 @@ export class GameRepository {
     });
 
     return schemas.app.game.parse(game);
+  }
+
+  async deleteGame(id: number): Promise<void> {
+    // Remove guesses
+    await prisma.guess.deleteMany({
+      where: { round: { gameId: id } },
+    });
+    // Remove rounds
+    await prisma.gameRound.deleteMany({
+      where: { gameId: id },
+    });
+    // Remove game
+    await prisma.game.delete({
+      where: { id },
+    });
   }
 
   async getCurrentGame(): Promise<AppGame | null> {
