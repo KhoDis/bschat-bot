@@ -60,7 +60,11 @@ export class MusicGameService {
       await ctx.reply(getRandomResponse(this.sarcasticResponses.noGame));
       return;
     }
-    await this.gameRepository.deleteGame(game.id);
+    try {
+      await this.gameRepository.deleteGame(game.id);
+    } catch (e) {
+      await ctx.reply("Брух, что это: " + e);
+    }
     await this.musicSubmissionRepository.deleteAll();
     await ctx.reply(getRandomResponse(this.sarcasticResponses.resetGame));
   }
