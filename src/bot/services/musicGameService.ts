@@ -58,6 +58,9 @@ export class MusicGameService {
     const game = await this.gameRepository.getCurrentGame();
     if (!game) {
       await ctx.reply(getRandomResponse(this.sarcasticResponses.noGame));
+      await this.musicSubmissionRepository.deleteAll();
+      await ctx.reply("Игры не было, но треки удалены.");
+      await ctx.reply(getRandomResponse(this.sarcasticResponses.resetGame));
       return;
     }
     try {
@@ -66,6 +69,7 @@ export class MusicGameService {
       await ctx.reply("Брух, что это: " + e);
     }
     await this.musicSubmissionRepository.deleteAll();
+    await ctx.reply("Удалил игру и треки.");
     await ctx.reply(getRandomResponse(this.sarcasticResponses.resetGame));
   }
 
