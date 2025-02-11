@@ -20,6 +20,8 @@ const gameRoundSchema = z.object({
   gameId: z.number(),
   submissionId: z.number(),
   hintShown: z.boolean(),
+  infoMessageId: z.number().nullable(),
+  chatId: z.number().nullable(),
 });
 
 const gameSchema = z.object({
@@ -82,6 +84,7 @@ const appGameRoundSchema = gameRoundSchema
     ...round,
     submission: appMusicSubmissionSchema.parse(round.submission),
     guesses: round.guesses.map((guess) => appGuessSchema.parse(guess)),
+    chatId: Number(round.chatId),
   }));
 
 const appGameSchema = gameSchema

@@ -65,7 +65,40 @@ export class RoundService {
     }
 
     const info = await this.formatRoundInfo(round);
+
+    if (round.infoMessageId && round.chatId) {
+      try {
+        await ctx.telegram.editMessageText(
+          round.chatId,
+          round.infoMessageId,
+          undefined,
+          info,
+          { parse_mode: "HTML" },
+        );
+      } catch (error) {
+        console.error("Failed to edit message, sending new one:", error);
+        await this.sendNewRoundInfo(ctx, round, info);
+      }
+    } else {
+      await this.sendNewRoundInfo(ctx, round, info);
+    }
+
     await ctx.reply(info);
+  }
+
+  private async sendNewRoundInfo(
+    ctx: Context,
+    round: AppGameRound,
+    info: string,
+  ) {
+    const message = await ctx.reply(info, { parse_mode: "HTML" });
+
+    // Update the round with the new message ID and chat ID
+    await this.gameRepository.updateRoundMessageInfo(
+      round.id,
+      message.message_id,
+      message.chat.id,
+    );
   }
 
   private chunkButtons(buttons: InlineKeyboardButton[], size: number) {

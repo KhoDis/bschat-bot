@@ -33,6 +33,20 @@ export class GameRepository {
     return schemas.app.game.parse(game);
   }
 
+  async updateRoundMessageInfo(
+    roundId: number,
+    messageId: number,
+    chatId: number,
+  ): Promise<void> {
+    await prisma.gameRound.update({
+      where: { id: roundId },
+      data: {
+        infoMessageId: messageId,
+        chatId: chatId,
+      },
+    });
+  }
+
   async deleteGame(id: number): Promise<void> {
     // Remove guesses
     await prisma.guess.deleteMany({
