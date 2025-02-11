@@ -7,6 +7,7 @@ import { GuessService } from "../services/GuessService";
 import { MusicGameService } from "../services/musicGameService";
 import { LeaderboardService } from "../services/LeaderboardService";
 import { Update } from "telegraf/types";
+import prisma from "../../prisma/client";
 
 const ADMIN_USERNAME = "khodis";
 
@@ -48,6 +49,7 @@ export class GroupComposer extends Composer<IBotContext> {
     this.command("next_round", this.handleNextRound.bind(this));
     this.command("show_hint", this.handleShowHint.bind(this));
     this.command("clear_game", this.handleClearGame.bind(this));
+    this.command("dump_db", this.dumpDatabase.bind(this));
     this.action(/^guess:(.+)$/, this.handleGuessAction.bind(this));
     this.action(/^service:(.+)$/, this.handleServiceAction.bind(this));
   }
@@ -121,6 +123,18 @@ export class GroupComposer extends Composer<IBotContext> {
       console.error("Error processing guess:", error);
       await ctx.answerCbQuery("Что-то пошло не так... Наверное, это карма!");
     }
+  }
+
+  private async dumpDatabase(ctx: IBotContext): Promise<void> {
+    const users = await prisma.user.findMany();
+    const guesses = await prisma.guess.findMany();
+    const rounds = await prisma.gameRound.findMany();
+    const games = await prisma.game.findMany();
+    const submissions = await prisma.musicSubmission.findMany();
+
+    await ctx.reply(
+      JSON.stringify({ users, guesses, rounds, games, submissions }, null, 2),
+    );
   }
 
   private async handleServiceAction(ctx: CallbackQueryContext): Promise<void> {

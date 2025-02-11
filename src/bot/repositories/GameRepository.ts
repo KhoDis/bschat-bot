@@ -84,8 +84,6 @@ export class GameRepository {
       orderBy: { createdAt: "desc" },
     });
 
-    console.log("GameRepository.getCurrentGame", game);
-
     // If the game is null, find latest game
     if (!game) {
       const latestGame = await prisma.game.findFirst({
