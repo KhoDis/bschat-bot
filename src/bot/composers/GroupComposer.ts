@@ -6,7 +6,7 @@ import { RoundService } from "../services/RoundService";
 import { GuessService } from "../services/GuessService";
 import { MusicGameService } from "../services/musicGameService";
 import { LeaderboardService } from "../services/LeaderboardService";
-import { Update } from "telegraf/types";
+import { Message, Update } from "telegraf/types";
 import prisma from "../../prisma/client";
 
 const ADMIN_USERNAME = "khodis";
@@ -50,8 +50,267 @@ export class GroupComposer extends Composer<IBotContext> {
     this.command("show_hint", this.handleShowHint.bind(this));
     this.command("clear_game", this.handleClearGame.bind(this));
     this.command("dump_db", this.dumpDatabase.bind(this));
+
     this.action(/^guess:(.+)$/, this.handleGuessAction.bind(this));
     this.action(/^service:(.+)$/, this.handleServiceAction.bind(this));
+
+    this.command("view_games", this.handleViewGames.bind(this));
+    this.command("view_rounds", this.handleViewRounds.bind(this));
+    this.command("view_users", this.handleViewUsers.bind(this));
+    // this.command("view_guesses", this.handleViewGuesses.bind(this));
+
+    this.command("set_game_status", this.handleSetGameStatus.bind(this));
+    this.command("set_current_round", this.handleSetCurrentRound.bind(this));
+    this.command("set_hint", this.handleSetHint.bind(this));
+    this.command("delete_guess", this.handleDeleteGuess.bind(this));
+    this.command("update_points", this.handleUpdatePoints.bind(this));
+  }
+
+  private async handleViewGames(ctx: IBotContext): Promise<void> {
+    if (!(await this.handleAdminCheck(ctx))) return;
+
+    const games = await prisma.game.findMany({
+      include: {
+        rounds: {
+          select: {
+            id: true,
+            index: true,
+            hintShown: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    const formattedGames = games
+      .map(
+        (game) => `
+Game ID: ${game.id}
+Status: ${game.status}
+Current Round: ${game.currentRound}
+Created: ${game.createdAt.toLocaleString()}
+Rounds: ${game.rounds.length}
+  `,
+      )
+      .join("\n---\n");
+
+    await ctx.reply(formattedGames || "No games found");
+  }
+
+  private async handleViewRounds(
+    ctx: NarrowedContext<
+      IBotContext,
+      Update.MessageUpdate<Message.TextMessage>
+    >,
+  ): Promise<void> {
+    if (!(await this.handleAdminCheck(ctx))) return;
+
+    const [_, gameId] = ctx.message.text.split(" ");
+
+    if (!gameId) {
+      await ctx.reply("Usage: /view_rounds <gameId>");
+      return;
+    }
+
+    const rounds = await prisma.gameRound.findMany({
+      where: {
+        gameId: parseInt(gameId),
+      },
+      include: {
+        submission: true,
+        guesses: {
+          select: {
+            id: true,
+            userId: true,
+            isCorrect: true,
+            points: true,
+          },
+        },
+      },
+      orderBy: { index: "asc" },
+    });
+
+    const formattedRounds = rounds
+      .map(
+        (round) => `
+Round ID: ${round.id}
+Game ID: ${round.gameId}
+Index: ${round.index}
+Hint Shown: ${round.hintShown}
+Hint: ${round.submission.hint || "No hint"}
+Correct Guesses: ${round.guesses.filter((g) => g.isCorrect).length}
+Total Points: ${round.guesses.reduce((sum, g) => sum + g.points, 0)}
+  `,
+      )
+      .join("\n---\n");
+
+    await ctx.reply(formattedRounds || "No rounds found");
+  }
+
+  private async handleViewUsers(ctx: IBotContext): Promise<void> {
+    if (!(await this.handleAdminCheck(ctx))) return;
+
+    const users = await prisma.user.findMany({
+      include: {
+        guesses: {
+          select: {
+            isCorrect: true,
+            points: true,
+          },
+        },
+        musicSubmission: true,
+      },
+    });
+
+    const formattedUsers = users
+      .map(
+        (user) => `
+User ID: ${user.id}
+Name: ${user.name}
+Tag: ${user.tag || "No tag"}
+Total Points: ${user.guesses.reduce((sum, g) => sum + g.points, 0)}
+Correct Guesses: ${user.guesses.filter((g) => g.isCorrect).length}
+Has Submission: ${!!user.musicSubmission}
+  `,
+      )
+      .join("\n---\n");
+
+    await ctx.reply(formattedUsers || "No users found");
+  }
+
+  // Update handlers
+  private async handleSetGameStatus(
+    ctx: NarrowedContext<
+      IBotContext,
+      Update.MessageUpdate<Message.TextMessage>
+    >,
+  ): Promise<void> {
+    if (!(await this.handleAdminCheck(ctx))) return;
+
+    const [_, gameId, newStatus] = ctx.message.text.split(" ");
+
+    if (!gameId || !newStatus) {
+      await ctx.reply("Usage: /set_game_status <gameId> <ACTIVE|FINISHED>");
+      return;
+    }
+
+    try {
+      const game = await prisma.game.update({
+        where: { id: parseInt(gameId) },
+        data: { status: newStatus },
+      });
+      await ctx.reply(`Updated game ${gameId} status to ${newStatus}`);
+    } catch (error) {
+      await ctx.reply(
+        `Failed to update game status: ${(error as any).message}`,
+      );
+    }
+  }
+
+  private async handleSetCurrentRound(
+    ctx: NarrowedContext<
+      IBotContext,
+      Update.MessageUpdate<Message.TextMessage>
+    >,
+  ): Promise<void> {
+    if (!(await this.handleAdminCheck(ctx))) return;
+
+    const [_, gameId, roundIndex] = ctx.message.text.split(" ");
+
+    if (!gameId || !roundIndex) {
+      await ctx.reply("Usage: /set_current_round <gameId> <roundIndex>");
+      return;
+    }
+
+    try {
+      const game = await prisma.game.update({
+        where: { id: parseInt(gameId) },
+        data: { currentRound: parseInt(roundIndex) },
+      });
+      await ctx.reply(`Updated game ${gameId} current round to ${roundIndex}`);
+    } catch (error) {
+      await ctx.reply(
+        `Failed to update current round: ${(error as any).message}`,
+      );
+    }
+  }
+
+  private async handleSetHint(
+    ctx: NarrowedContext<
+      IBotContext,
+      Update.MessageUpdate<Message.TextMessage>
+    >,
+  ): Promise<void> {
+    if (!(await this.handleAdminCheck(ctx))) return;
+
+    const [_, submissionId, ...hintParts] = ctx.message.text.split(" ");
+    const hint = hintParts.join(" ");
+
+    if (!submissionId || !hint) {
+      await ctx.reply("Usage: /set_hint <submissionId> <new hint text>");
+      return;
+    }
+
+    try {
+      await prisma.musicSubmission.update({
+        where: { id: parseInt(submissionId) },
+        data: { hint },
+      });
+      await ctx.reply(`Updated submission ${submissionId} hint`);
+    } catch (error) {
+      await ctx.reply(`Failed to update hint: ${(error as any).message}`);
+    }
+  }
+
+  private async handleDeleteGuess(
+    ctx: NarrowedContext<
+      IBotContext,
+      Update.MessageUpdate<Message.TextMessage>
+    >,
+  ): Promise<void> {
+    if (!(await this.handleAdminCheck(ctx))) return;
+
+    const [_, guessId] = ctx.message.text.split(" ");
+
+    if (!guessId) {
+      await ctx.reply("Usage: /delete_guess <guessId>");
+      return;
+    }
+
+    try {
+      await prisma.guess.delete({
+        where: { id: parseInt(guessId) },
+      });
+      await ctx.reply(`Deleted guess ${guessId}`);
+    } catch (error) {
+      await ctx.reply(`Failed to delete guess: ${(error as any).message}`);
+    }
+  }
+
+  private async handleUpdatePoints(
+    ctx: NarrowedContext<
+      IBotContext,
+      Update.MessageUpdate<Message.TextMessage>
+    >,
+  ): Promise<void> {
+    if (!(await this.handleAdminCheck(ctx))) return;
+
+    const [_, guessId, points] = ctx.message.text.split(" ");
+
+    if (!guessId || !points) {
+      await ctx.reply("Usage: /update_points <guessId> <points>");
+      return;
+    }
+
+    try {
+      await prisma.guess.update({
+        where: { id: parseInt(guessId) },
+        data: { points: parseInt(points) },
+      });
+      await ctx.reply(`Updated guess ${guessId} points to ${points}`);
+    } catch (error) {
+      await ctx.reply(`Failed to update points: ${(error as any).message}`);
+    }
   }
 
   private async handleMusicGuess(ctx: IBotContext): Promise<void> {
@@ -134,7 +393,7 @@ export class GroupComposer extends Composer<IBotContext> {
 
     await ctx.reply(
       JSON.stringify(
-        { users, guesses, rounds, games, submissions },
+        { games, rounds },
         (key, value) => (typeof value === "bigint" ? value.toString() : value), // return everything else unchanged
         2,
       ),
