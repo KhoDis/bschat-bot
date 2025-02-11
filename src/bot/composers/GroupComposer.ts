@@ -133,7 +133,11 @@ export class GroupComposer extends Composer<IBotContext> {
     const submissions = await prisma.musicSubmission.findMany();
 
     await ctx.reply(
-      JSON.stringify({ users, guesses, rounds, games, submissions }, null, 2),
+      JSON.stringify(
+        { users, guesses, rounds, games, submissions },
+        (key, value) => (typeof value === "bigint" ? value.toString() : value), // return everything else unchanged
+        2,
+      ),
     );
   }
 
