@@ -21,7 +21,7 @@ const gameRoundSchema = z.object({
   submissionId: z.number(),
   hintShown: z.boolean(),
   infoMessageId: z.number().nullable(),
-  chatId: z.number().nullable(),
+  chatId: z.coerce.bigint().nullable(),
 });
 
 const gameSchema = z.object({
