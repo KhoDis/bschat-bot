@@ -58,18 +58,14 @@ export class RoundService {
       reply_markup: { inline_keyboard: this.chunkButtons(buttons, 3) },
     });
 
-    const round = await this.gameRepository.getCurrentRound();
-    if (!round) {
-      await ctx.reply("Больше нет раундов в playRound");
-      return;
-    }
-    await this.sendRoundInfo(ctx, round.id);
+    console.log("Current round id", currentRound.id);
+    await this.sendRoundInfo(ctx, currentRound.id);
   }
 
   async sendRoundInfo(ctx: Context, roundId: number) {
     const round = await this.gameRepository.findRoundById(roundId);
     if (!round) {
-      await ctx.reply("Больше нет раундов в sendRoundInfo");
+      await ctx.reply("Больше нет раундов в sendRoundInfo " + roundId);
       return;
     }
 
