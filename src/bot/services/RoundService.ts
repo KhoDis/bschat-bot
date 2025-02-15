@@ -60,7 +60,7 @@ export class RoundService {
 
     const round = await this.gameRepository.getCurrentRound();
     if (!round) {
-      await ctx.reply("Больше нет раундов");
+      await ctx.reply("Больше нет раундов в playRound");
       return;
     }
     await this.sendRoundInfo(ctx, round.id);
@@ -69,13 +69,15 @@ export class RoundService {
   async sendRoundInfo(ctx: Context, roundId: number) {
     const round = await this.gameRepository.findRoundById(roundId);
     if (!round) {
-      await ctx.reply("Больше нет раундов");
+      await ctx.reply("Больше нет раундов в sendRoundInfo");
       return;
     }
 
-    const info = await this.formatRoundInfo(round);
+    const info =
+      String(round.infoMessageId) + "\n" + (await this.formatRoundInfo(round));
 
     if (round.infoMessageId && round.chatId) {
+      console.log("I found message info", round.infoMessageId, round.chatId);
       try {
         await ctx.telegram.editMessageText(
           round.chatId.toString(),
@@ -89,6 +91,7 @@ export class RoundService {
         await this.sendNewRoundInfo(ctx, round, info);
       }
     } else {
+      console.log("Could not find message info, sending new one");
       await this.sendNewRoundInfo(ctx, round, info);
     }
   }
