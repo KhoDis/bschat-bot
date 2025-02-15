@@ -1,4 +1,4 @@
-import { session, Telegraf } from "telegraf";
+import { Composer, session, Telegraf } from "telegraf";
 import { IConfigService } from "./config/config.interface";
 import { ConfigService } from "./config/config.service";
 import { IBotContext } from "./context/context.interface";
@@ -40,6 +40,12 @@ class Bot {
     const globalMiddleware = globalComposer.middleware();
     const jokerMiddleware = jokerComposer.middleware();
 
+    // Combine non-private middlewares into a single middleware
+    const nonPrivateMiddleware = Composer.compose([
+      musicGameMiddleware,
+      participantMiddleware,
+    ]);
+
     this.bot.use((ctx, next) => {
       if (!ctx.chat) {
         return next();
@@ -47,9 +53,7 @@ class Bot {
       if (ctx.chat.type === "private") {
         return privateMiddleware(ctx, next);
       } else {
-        const musicGameMiddlewareResult = musicGameMiddleware(ctx, next);
-        const participantMiddlewareResult = participantMiddleware(ctx, next);
-        return musicGameMiddlewareResult || participantMiddlewareResult;
+        return nonPrivateMiddleware(ctx, next);
       }
     });
 
