@@ -86,8 +86,6 @@ export class RoundService {
     } else {
       await this.sendNewRoundInfo(ctx, round, info);
     }
-
-    await ctx.reply(info);
   }
 
   private async sendNewRoundInfo(ctx: Context, round: GameRound, info: string) {
