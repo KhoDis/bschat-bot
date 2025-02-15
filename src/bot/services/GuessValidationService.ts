@@ -23,12 +23,12 @@ export class GuessValidationService {
 
   async validateGuess(
     ctx: Context,
-    roundIndex: number,
+    roundId: number,
     guessedUserId: number,
   ): Promise<Result<GuessContext, string>> {
     const game = await this.validateGame();
     return game
-      .andThen((game) => this.validateRound(game, roundIndex))
+      .andThen((game) => this.validateRound(game, roundId))
       .andThen((context) => this.validateUser(context, ctx.from?.id))
       .andThenAsync(
         async (context) =>
@@ -46,9 +46,9 @@ export class GuessValidationService {
 
   private validateRound(
     game: GameWithData,
-    roundIndex: number,
+    roundId: number,
   ): Result<{ game: GameWithData; round: GameRound }, string> {
-    const round = game.rounds.find((r) => r.index === roundIndex);
+    const round = game.rounds.find((r) => r.id === roundId);
     return round
       ? Result.ok({ game, round } as { game: GameWithData; round: GameRound })
       : Result.err(getRandomResponse(this.botResponses.rounds.noSuchRound));

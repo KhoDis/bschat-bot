@@ -12,20 +12,21 @@ export class GuessService {
 
   async processGuess(
     ctx: Context,
-    roundIndex: number,
+    roundId: number,
     guessedUserId: number,
     onSuccess?: () => Promise<void>,
   ) {
+    const round = await this.gameRepository.findRoundById(roundId);
     const validationResult = await this.validationService.validateGuess(
       ctx,
-      roundIndex,
+      roundId,
       guessedUserId,
     );
 
     return validationResult.match(
       async (context) => {
         const { game, round, guessingUserId } = context;
-        const isLateGuess = roundIndex < game.currentRound;
+        const isLateGuess = round.index < game.currentRound;
         const isCorrect = Number(round.submission.userId) === guessedUserId;
         // If it's a person guessing themselves, they get no points
         const points = this.calculatePoints(
