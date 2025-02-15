@@ -76,9 +76,10 @@ export class GameRepository {
       orderBy: { createdAt: "desc" },
     });
 
-    console.log("Current game:", game);
-
-    return game?.rounds[game.currentRound] || null;
+    // NOTE: rounds are not sorted by id!!!!!!!!!
+    return (
+      game?.rounds.find((round) => round.index === game.currentRound) || null
+    );
   }
 
   async createGame(submissions: MusicSubmission[]): Promise<GameWithData> {

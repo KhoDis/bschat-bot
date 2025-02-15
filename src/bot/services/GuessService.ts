@@ -36,15 +36,6 @@ export class GuessService {
           isCorrect,
         );
 
-        console.log("Creating guess", {
-          roundId: round.id,
-          userId: guessingUserId,
-          guessedId: guessedUserId,
-          isCorrect,
-          points,
-          isLateGuess,
-        });
-
         await this.gameRepository.createGuess({
           roundId: round.id,
           userId: guessingUserId,
