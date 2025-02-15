@@ -43,7 +43,8 @@ export class RoundService {
   ) {
     const buttons = participants.map((user) => ({
       text: user.name,
-      callback_data: `guess:${currentRound.index}_${user.id}`,
+      // NOTE: USE ID HERE, BECAUSE IT IS UNIQUE, NOT ROUND INDEX
+      callback_data: `guess:${currentRound.id}_${user.id}`,
     }));
 
     const captions = [
@@ -69,8 +70,7 @@ export class RoundService {
       return;
     }
 
-    const info =
-      String(round.infoMessageId) + "\n" + (await this.formatRoundInfo(round));
+    const info = await this.formatRoundInfo(round);
 
     if (round.infoMessageId && round.chatId) {
       console.log("I found message info", round.infoMessageId, round.chatId);
