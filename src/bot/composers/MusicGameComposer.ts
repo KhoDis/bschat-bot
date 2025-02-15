@@ -100,7 +100,8 @@ export class MusicGameComposer extends Composer<IBotContext> {
     if (!action) return;
 
     const [roundId, guessId] = action.split("_").map(Number);
-    if (!roundId || !guessId) {
+    // NOTE: don't change === undefined to !, because it can be 0!!!
+    if (roundId === undefined || guessId === undefined) {
       await ctx.reply(`Не смог запарсить данные: ${action}`);
       return;
     }
