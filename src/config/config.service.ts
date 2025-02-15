@@ -2,7 +2,7 @@ import { config, DotenvParseOutput } from "dotenv";
 import { IConfigService } from "./config.interface";
 
 export class ConfigService implements IConfigService {
-  private config: DotenvParseOutput;
+  private readonly config: DotenvParseOutput;
 
   constructor() {
     const { error, parsed } = config();

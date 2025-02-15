@@ -1,12 +1,16 @@
 import { Context } from "telegraf";
-import { Game, GameRound, Guess } from "../../schemas";
-import { GameRepository } from "../repositories/GameRepository";
-import { Result } from "../../utils/Result";
-import { BotResponses, getRandomResponse } from "../../config/botResponses";
+import {
+  GameRepository,
+  GameWithData,
+  RoundWithGuesses,
+} from "../repositories/GameRepository";
+import { Result } from "@/utils/Result";
+import { BotTemplates, getRandomResponse } from "@/config/botTemplates";
+import { GameRound, Guess } from "@prisma/client";
 
 interface GuessContext {
-  game: Game;
-  round: GameRound;
+  game: GameWithData;
+  round: RoundWithGuesses;
   guessingUserId: number;
   existingGuess: Guess | null;
 }
@@ -14,7 +18,7 @@ interface GuessContext {
 export class GuessValidationService {
   constructor(
     private gameRepository: GameRepository,
-    private readonly botResponses: BotResponses,
+    private readonly botResponses: BotTemplates,
   ) {}
 
   async validateGuess(
@@ -32,32 +36,36 @@ export class GuessValidationService {
       );
   }
 
-  private async validateGame(): Promise<Result<Game, string>> {
-    const game: Game | null = await this.gameRepository.getCurrentGame();
+  private async validateGame(): Promise<Result<GameWithData, string>> {
+    const game: GameWithData | null =
+      await this.gameRepository.getCurrentGame();
     return game
       ? Result.ok(game)
       : Result.err(getRandomResponse(this.botResponses.gameState.noGame));
   }
 
   private validateRound(
-    game: Game,
+    game: GameWithData,
     roundIndex: number,
-  ): Result<{ game: Game; round: GameRound }, string> {
+  ): Result<{ game: GameWithData; round: GameRound }, string> {
     const round = game.rounds.find((r) => r.index === roundIndex);
     return round
-      ? Result.ok({ game, round })
+      ? Result.ok({ game, round } as { game: GameWithData; round: GameRound })
       : Result.err(getRandomResponse(this.botResponses.rounds.noSuchRound));
   }
 
   private validateUser(
-    context: { game: Game; round: GameRound },
+    context: { game: GameWithData; round: GameRound },
     userId?: number,
   ): Result<
     Omit<GuessContext, "existingGuess"> & { guessingUserId: number },
     string
   > {
     return userId
-      ? Result.ok({ ...context, guessingUserId: userId })
+      ? Result.ok({ ...context, guessingUserId: userId } as Omit<
+          GuessContext,
+          "existingGuess"
+        > & { guessingUserId: number })
       : Result.err(getRandomResponse(this.botResponses.user.notFound));
   }
 

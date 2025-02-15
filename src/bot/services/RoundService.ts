@@ -1,15 +1,19 @@
 import { Context } from "telegraf";
-import { GameRepository } from "../repositories/GameRepository";
-import { BotResponses, getRandomResponse } from "../../config/botResponses";
-import { AppGameRound, AppUser, Game, GameRound } from "../../schemas";
-import { IBotContext } from "../../context/context.interface";
-import { Result } from "../../utils/Result";
+import {
+  GameRepository,
+  GameWithData,
+  RoundWithGuesses,
+} from "../repositories/GameRepository";
+import { BotTemplates, getRandomResponse } from "@/config/botTemplates";
+import { IBotContext } from "@/context/context.interface";
+import { Result } from "@/utils/Result";
 import { InlineKeyboardButton } from "telegraf/typings/core/types/typegram";
+import { Game, GameRound, User } from "@/types";
 
 export class RoundService {
   constructor(
     private gameRepository: GameRepository,
-    private readonly botResponses: BotResponses,
+    private readonly botResponses: BotTemplates,
   ) {}
 
   async processRound(ctx: Context, onNoRound: () => Promise<void>) {
@@ -34,8 +38,8 @@ export class RoundService {
 
   private async playRound(
     ctx: Context,
-    participants: AppUser[],
-    currentRound: AppGameRound,
+    participants: User[],
+    currentRound: RoundWithGuesses,
   ) {
     const buttons = participants.map((user) => ({
       text: user.name,
@@ -69,7 +73,7 @@ export class RoundService {
     if (round.infoMessageId && round.chatId) {
       try {
         await ctx.telegram.editMessageText(
-          round.chatId,
+          round.chatId.toString(),
           round.infoMessageId,
           undefined,
           info,
@@ -86,11 +90,7 @@ export class RoundService {
     await ctx.reply(info);
   }
 
-  private async sendNewRoundInfo(
-    ctx: Context,
-    round: AppGameRound,
-    info: string,
-  ) {
+  private async sendNewRoundInfo(ctx: Context, round: GameRound, info: string) {
     const message = await ctx.reply(info, { parse_mode: "HTML" });
 
     // Update the round with the new message ID and chat ID
@@ -144,8 +144,8 @@ export class RoundService {
   }
 
   private validateRound(
-    game: Game | null,
-  ): Result<{ game: Game; round: GameRound }, string> {
+    game: GameWithData | null,
+  ): Result<{ game: GameWithData; round: RoundWithGuesses }, string> {
     if (!game) {
       return Result.err(getRandomResponse(this.botResponses.gameState.noGame));
     }
@@ -158,8 +158,8 @@ export class RoundService {
 
   private validateHintShown(
     game: Game,
-    round: GameRound,
-  ): Result<{ game: Game; round: GameRound }, string> {
+    round: RoundWithGuesses,
+  ): Result<{ game: Game; round: RoundWithGuesses }, string> {
     if (round.hintShown) {
       return Result.err(
         getRandomResponse(this.botResponses.hints.hintAlreadyShown),
@@ -168,19 +168,7 @@ export class RoundService {
     return Result.ok({ game, round });
   }
 
-  // private validateNoHint(
-  //   game: Game,
-  //   round: GameRound,
-  // ): Result<{ game: Game; round: GameRound }, string> {
-  //   if (round.submission.hint) {
-  //     return Result.err(
-  //       getRandomResponse(this.botResponses.hints.hintAlreadyShown),
-  //     );
-  //   }
-  //   return Result.ok({ game, round });
-  // }
-
-  private async formatRoundInfo(round: AppGameRound) {
+  private async formatRoundInfo(round: RoundWithGuesses) {
     const notYetGuessed = await this.gameRepository.getUsersNotGuessed(
       round.id,
     );

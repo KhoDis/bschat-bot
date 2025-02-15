@@ -1,13 +1,13 @@
 import { Context } from "telegraf";
 import { GameRepository } from "../repositories/GameRepository";
-import { BotResponses, getRandomResponse } from "../../config/botResponses";
+import { BotTemplates, getRandomResponse } from "@/config/botTemplates";
 import { GuessValidationService } from "./GuessValidationService";
 
 export class GuessService {
   constructor(
     private gameRepository: GameRepository,
     private validationService: GuessValidationService,
-    private readonly botResponses: BotResponses,
+    private readonly botResponses: BotTemplates,
   ) {}
 
   async processGuess(
@@ -26,7 +26,7 @@ export class GuessService {
       async (context) => {
         const { game, round, guessingUserId } = context;
         const isLateGuess = roundIndex < game.currentRound;
-        const isCorrect = round.submission.userId === guessedUserId;
+        const isCorrect = Number(round.submission.userId) === guessedUserId;
         // If it's a person guessing themselves, they get no points
         const points = this.calculatePoints(
           isCorrect,

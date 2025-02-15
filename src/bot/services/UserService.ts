@@ -1,98 +1,54 @@
-import { MusicSubmission } from "@prisma/client";
-import prisma from "../../prisma/client";
-import { Context } from "telegraf";
-import { AppUser } from "../../schemas";
+import { IUserRepository } from "@/bot/repositories/UserRepository";
+import { MusicSubmission, User } from "@/types";
 
-type DBUser = {
-  id: bigint;
-  tag: string | null;
-  name: string;
-};
+export interface IUserService {
+  saveOrUpdateUser(userData: {
+    id: bigint;
+    username?: string | null;
+    firstName: string;
+  }): Promise<User>;
+  getSubmissionUsers(): Promise<User[]>;
+  getSubmissionByUserId(userId: number): Promise<MusicSubmission | null>;
+  saveOrUpdateSubmission(submission: {
+    userId: number;
+    fileId: string;
+  }): Promise<MusicSubmission>;
+}
 
-export class UserService {
+export class UserService implements IUserService {
+  constructor(private userRepository: IUserRepository) {}
+
   async saveOrUpdateUser(userData: {
-    id: number;
+    id: bigint;
     username?: string | null;
     firstName: string;
   }) {
-    return prisma.user.upsert({
-      where: { id: userData.id },
-      create: {
-        id: userData.id,
-        tag: userData.username || null,
-        name: userData.firstName
-          .normalize("NFKD")
-          .replace(/[\u0300-\u036f]/g, ""),
-      },
-      update: {
-        tag: userData.username || null,
-        name: userData.firstName
-          .normalize("NFKD")
-          .replace(/[\u0300-\u036f]/g, ""),
-      },
-    });
+    return await this.userRepository.upsertUser(userData);
   }
 
-  async getUser(userId: number) {
-    return prisma.user.findUnique({ where: { id: userId } });
+  async getSubmissionUsers(): Promise<User[]> {
+    return await this.userRepository.findUsersWithSubmissions();
   }
 
-  async getFormattedUser(userId: number) {
-    const user = await this.getUser(userId);
-
-    if (!user) return null;
-
-    return `${user.name} ${user.tag ? `(${user.tag})` : ""}`;
-  }
-
-  async getSubmissionUsers() {
-    const musicSubmissions = await prisma.musicSubmission.findMany({});
-    const uniqueUserIds = [...new Set(musicSubmissions.map((s) => s.userId))];
-
-    const users = await prisma.user.findMany({
-      where: { id: { in: uniqueUserIds } },
-    });
-
-    return users.map(
-      (user) =>
-        ({
-          id: Number(user.id),
-          tag: user.tag,
-          name: user.name,
-        }) as AppUser,
-    );
-  }
-
-  async getSubmissionByUserId(userId: number) {
-    return prisma.musicSubmission.findUnique({ where: { userId } });
+  async getSubmissionByUserId(userId: number): Promise<MusicSubmission | null> {
+    return await this.userRepository.findSubmissionByUserId(userId);
   }
 
   async saveOrUpdateSubmission(submission: { userId: number; fileId: string }) {
-    return prisma.musicSubmission.upsert({
-      where: { userId: submission.userId },
-      create: submission,
-      update: submission,
-    });
+    return await this.userRepository.upsertSubmission(submission);
   }
 
-  async pingParticipants(ctx: Context): Promise<boolean> {
-    const participants = await this.getSubmissionUsers();
-
-    if (!participants.length) {
-      await ctx.reply("Никого нет, как я игру то начну :(");
-      return false;
-    }
-
-    const formattedNames = await Promise.all(
-      participants.map(async (p) => this.formatParticipantName(p.id)),
-    );
-
-    await ctx.replyWithMarkdown(formattedNames.join("\n"));
-    return true;
+  // TODO: consider Telegram ping limit in one message
+  formatPingNames(participants: User[]): string {
+    return participants.map((p) => this.formatParticipantName(p)).join("\n");
   }
 
-  private async formatParticipantName(userId: number): Promise<string> {
-    const formattedUser = await this.getFormattedUser(userId);
-    return `[${formattedUser}](tg://user?id=${userId})`;
+  private formatParticipantName(user: User): string {
+    const formattedUser = this.getFormattedUser(user);
+    return `[${formattedUser}](tg://user?id=${user.id})`;
+  }
+
+  private getFormattedUser(user: User) {
+    return `${user.name} ${user.tag ? `(${user.tag})` : ""}`;
   }
 }

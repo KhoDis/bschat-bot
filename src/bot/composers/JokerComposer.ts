@@ -1,8 +1,8 @@
-import { IBotContext } from "../../context/context.interface";
+import { IBotContext } from "@/context/context.interface";
 import { Composer, NarrowedContext } from "telegraf";
 import { Message, Update } from "telegraf/types";
 import { UserService } from "../services/UserService";
-import { BotResponses, getRandomResponse } from "../../config/botResponses";
+import { BotTemplates, getRandomResponse } from "@/config/botTemplates";
 
 type CommandContext = NarrowedContext<
   IBotContext,
@@ -47,7 +47,7 @@ export class JokerComposer extends Composer<IBotContext> {
 
   constructor(
     private readonly userService: UserService,
-    private readonly botResponses: BotResponses,
+    private readonly botResponses: BotTemplates,
   ) {
     super();
     this.setupHandlers();

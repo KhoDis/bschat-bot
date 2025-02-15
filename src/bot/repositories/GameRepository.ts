@@ -1,49 +1,50 @@
+import { Guess, Prisma, User } from "@prisma/client";
 import prisma from "../../prisma/client";
-import {
-  AppGame,
-  AppGameRound,
-  AppGuess,
-  AppMusicSubmission,
-  AppUser,
-  schemas,
-} from "../../schemas";
+import { MusicSubmission } from "@/types";
 
-export class GameRepository {
-  async getGameById(id: number): Promise<AppGame> {
-    const game = await prisma.game.findUnique({
-      where: { id },
-      include: {
-        rounds: {
-          include: {
-            submission: {
-              include: {
-                user: true,
-              },
-            },
-            guesses: {
-              include: {
-                user: true,
-              },
-            },
-          },
+const gameWithData = Prisma.validator<Prisma.GameInclude>()({
+  rounds: {
+    include: {
+      submission: {
+        include: {
+          user: true,
         },
       },
-    });
-
-    return schemas.app.game.parse(game);
-  }
-
-  async updateRoundMessageInfo(
-    roundId: number,
-    messageId: number,
-    chatId: number,
-  ): Promise<void> {
-    await prisma.gameRound.update({
-      where: { id: roundId },
-      data: {
-        infoMessageId: messageId,
-        chatId: chatId,
+      guesses: {
+        include: {
+          user: true,
+        },
       },
+    },
+  },
+});
+
+export type GameWithData = Prisma.GameGetPayload<{
+  include: typeof gameWithData;
+}>;
+
+const roundWithGuesses = Prisma.validator<Prisma.GameRoundInclude>()({
+  guesses: {
+    include: {
+      user: true,
+    },
+  },
+  submission: {
+    include: {
+      user: true,
+    },
+  },
+});
+
+export type RoundWithGuesses = Prisma.GameRoundGetPayload<{
+  include: typeof roundWithGuesses;
+}>;
+
+export class GameRepository {
+  async getGameById(id: number): Promise<GameWithData | null> {
+    return prisma.game.findUnique({
+      where: { id },
+      include: gameWithData,
     });
   }
 
@@ -62,95 +63,24 @@ export class GameRepository {
     });
   }
 
-  async getCurrentGame(): Promise<AppGame | null> {
+  async getCurrentGame(): Promise<GameWithData | null> {
+    return prisma.game.findFirst({
+      include: gameWithData,
+      orderBy: { createdAt: "desc" },
+    });
+  }
+
+  async getCurrentRound(): Promise<RoundWithGuesses | null> {
     const game = await prisma.game.findFirst({
-      where: { status: "ACTIVE" },
-      include: {
-        rounds: {
-          include: {
-            submission: {
-              include: {
-                user: true,
-              },
-            },
-            guesses: {
-              include: {
-                user: true,
-              },
-            },
-          },
-        },
-      },
+      include: gameWithData,
       orderBy: { createdAt: "desc" },
     });
 
-    // If the game is null, find latest game
-    if (!game) {
-      const latestGame = await prisma.game.findFirst({
-        include: {
-          rounds: {
-            include: {
-              submission: {
-                include: {
-                  user: true,
-                },
-              },
-              guesses: {
-                include: {
-                  user: true,
-                },
-              },
-            },
-          },
-        },
-        orderBy: { createdAt: "desc" },
-      });
-
-      return latestGame ? schemas.app.game.parse(latestGame) : null;
-    }
-
-    return game ? schemas.app.game.parse(game) : null;
+    return game?.rounds[game.currentRound] || null;
   }
 
-  async getCurrentRound(): Promise<AppGameRound | null> {
-    const game = await prisma.game.findFirst({
-      where: { status: "ACTIVE" },
-      include: {
-        rounds: {
-          include: {
-            submission: {
-              include: {
-                user: true,
-              },
-            },
-            guesses: {
-              include: {
-                user: true,
-              },
-            },
-          },
-        },
-      },
-      orderBy: { createdAt: "desc" },
-    });
-
-    // console.log("getCurrentRound", game);
-
-    if (!game) {
-      return null;
-    }
-
-    if (game.currentRound >= game.rounds.length) {
-      return null;
-    }
-
-    return game
-      ? schemas.app.gameRound.parse(game.rounds[game.currentRound])
-      : null;
-  }
-
-  async createGame(submissions: AppMusicSubmission[]): Promise<AppGame> {
-    const game = await prisma.game.create({
+  async createGame(submissions: MusicSubmission[]): Promise<GameWithData> {
+    return prisma.game.create({
       data: {
         rounds: {
           create: submissions.map((track, index) => ({
@@ -159,79 +89,26 @@ export class GameRepository {
           })),
         },
       },
-      include: {
-        rounds: {
-          include: {
-            submission: {
-              include: {
-                user: true,
-              },
-            },
-            guesses: {
-              include: {
-                user: true,
-              },
-            },
-          },
-        },
-      },
+      include: gameWithData,
     });
-
-    // console.dir(game, { depth: null });
-
-    return schemas.app.game.parse(game);
   }
 
   async updateGameRound(
     gameId: number,
     currentRound: number,
-  ): Promise<AppGame> {
-    const game = await prisma.game.update({
+  ): Promise<GameWithData> {
+    return prisma.game.update({
       where: { id: gameId },
       data: { currentRound },
-      include: {
-        rounds: {
-          include: {
-            submission: {
-              include: {
-                user: true,
-              },
-            },
-            guesses: {
-              include: {
-                user: true,
-              },
-            },
-          },
-        },
-      },
+      include: gameWithData,
     });
-
-    return schemas.app.game.parse(game);
   }
 
-  async updateRoundHint(
-    roundId: number,
-    hintShown: boolean,
-  ): Promise<AppGameRound> {
-    const round = await prisma.gameRound.update({
+  async updateRoundHint(roundId: number, hintShown: boolean): Promise<void> {
+    await prisma.gameRound.update({
       where: { id: roundId },
       data: { hintShown },
-      include: {
-        submission: {
-          include: {
-            user: true,
-          },
-        },
-        guesses: {
-          include: {
-            user: true,
-          },
-        },
-      },
     });
-
-    return schemas.app.gameRound.parse(round);
   }
 
   async createGuess(data: {
@@ -241,79 +118,42 @@ export class GameRepository {
     isCorrect: boolean;
     points: number;
     isLateGuess: boolean;
-  }): Promise<AppGuess> {
-    const guess = await prisma.guess.create({
+  }): Promise<Guess> {
+    return prisma.guess.create({
       data: {
         roundId: data.roundId,
-        userId: BigInt(data.userId),
-        guessedId: BigInt(data.guessedId),
+        userId: data.userId,
+        guessedId: data.guessedId,
         isCorrect: data.isCorrect,
         points: data.points,
         isLateGuess: data.isLateGuess,
       },
-      include: {
-        user: true,
-      },
     });
-
-    return schemas.app.guess.parse(guess);
   }
 
-  async findGuess(roundId: number, userId: number): Promise<AppGuess | null> {
-    const guess = await prisma.guess.findUnique({
+  async findGuess(roundId: number, userId: number): Promise<Guess | null> {
+    return prisma.guess.findUnique({
       where: {
         roundId_userId: {
           roundId,
           userId: BigInt(userId),
         },
       },
-      include: {
-        user: true,
-      },
     });
-
-    return guess ? schemas.app.guess.parse(guess) : null;
   }
 
-  async finishGame(gameId: number): Promise<AppGame> {
-    const game = await prisma.game.update({
-      where: { id: gameId },
-      data: { status: "FINISHED" },
-      include: {
-        rounds: {
-          include: {
-            submission: {
-              include: {
-                user: true,
-              },
-            },
-            guesses: {
-              include: {
-                user: true,
-              },
-            },
-          },
-        },
-      },
-    });
-
-    return schemas.app.game.parse(game);
-  }
-
-  async getParticipants(): Promise<AppUser[]> {
-    const users = await prisma.user.findMany({
+  async getParticipants(): Promise<User[]> {
+    return prisma.user.findMany({
       where: {
         musicSubmission: {
           isNot: null,
         },
       },
     });
-
-    return users.map((user) => schemas.app.user.parse(user));
   }
 
-  async getUsersNotGuessed(roundId: number): Promise<AppUser[]> {
-    const users = await prisma.user.findMany({
+  async getUsersNotGuessed(roundId: number): Promise<User[]> {
+    return prisma.user.findMany({
       where: {
         musicSubmission: { isNot: null },
         NOT: {
@@ -325,7 +165,16 @@ export class GameRepository {
         },
       },
     });
+  }
 
-    return users.map((user) => schemas.app.user.parse(user));
+  async updateRoundMessageInfo(
+    roundId: number,
+    messageId: number,
+    chatId: number,
+  ) {
+    await prisma.gameRound.update({
+      where: { id: roundId },
+      data: { infoMessageId: messageId, chatId },
+    });
   }
 }

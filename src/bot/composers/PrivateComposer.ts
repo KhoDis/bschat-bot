@@ -1,10 +1,10 @@
 import { message } from "telegraf/filters";
-import { IBotContext } from "../../context/context.interface";
+import { IBotContext } from "@/context/context.interface";
 import { Composer, NarrowedContext } from "telegraf";
 import { Message, Update } from "telegraf/types";
 import { UserService } from "../services/UserService";
-import { BotResponses, getRandomResponse } from "../../config/botResponses";
-import { MusicGameService } from "../services/musicGameService";
+import { BotTemplates, getRandomResponse } from "@/config/botTemplates";
+import { MusicGameService } from "../services/MusicGameService";
 
 type MessageContext<T extends Message = Message> = NarrowedContext<
   IBotContext,
@@ -17,7 +17,7 @@ export class PrivateComposer extends Composer<IBotContext> {
   constructor(
     private readonly userService: UserService,
     private readonly musicGuessService: MusicGameService,
-    private readonly _: BotResponses,
+    private readonly _: BotTemplates,
   ) {
     super();
 
@@ -40,7 +40,7 @@ export class PrivateComposer extends Composer<IBotContext> {
 
   private async saveUser(ctx: AudioMessageContext): Promise<void> {
     await this.userService.saveOrUpdateUser({
-      id: ctx.from.id,
+      id: BigInt(ctx.from.id),
       username: ctx.from.username || null,
       firstName: ctx.from.first_name,
     });

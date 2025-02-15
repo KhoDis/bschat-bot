@@ -1,26 +1,27 @@
 import { GameRepository } from "../repositories/GameRepository";
-import { Context } from "telegraf";
-import { BotResponses, getRandomResponse } from "../../config/botResponses";
-import { AppUser } from "../../schemas";
+import { BotTemplates, getRandomResponse } from "@/config/botTemplates";
+import { User } from "@/types";
 
 export class LeaderboardService {
   constructor(
     private gameRepository: GameRepository,
-    private botResponses: BotResponses,
+    private botResponses: BotTemplates,
   ) {}
 
-  async showLeaderboard(ctx: Context) {
+  async showLeaderboard(): Promise<string | null> {
     const game = await this.gameRepository.getCurrentGame();
     if (!game) {
-      await ctx.reply(getRandomResponse(this.botResponses.gameState.noGame));
-      return;
+      return null;
     }
 
     const userStats = await this.calculateUserStats(game.id);
 
-    const getUserByIdMap = new Map<number, AppUser>();
+    const getUserByIdMap = new Map<number, User>();
     for (const round of game.rounds) {
-      getUserByIdMap.set(round.submission.userId, round.submission.user);
+      getUserByIdMap.set(
+        Number(round.submission.userId),
+        round.submission.user,
+      );
     }
 
     const sortedLeaderboard = [...userStats.entries()]
@@ -42,19 +43,19 @@ export class LeaderboardService {
 
     const mostPoints = (await Promise.all(sortedLeaderboard)).join("\n");
 
-    await ctx.reply(
-      getRandomResponse(this.botResponses.leaderboard.mostPoints) +
-        "\n\n" +
-        mostPoints +
-        "\n\n" +
-        getRandomResponse(this.botResponses.leaderboard.leastGuessed) +
-        "\n\n" +
-        sortedTrackDifficulty.join("\n"),
-    );
+    return [
+      getRandomResponse(this.botResponses.leaderboard.mostPoints),
+      mostPoints,
+      getRandomResponse(this.botResponses.leaderboard.leastGuessed),
+      sortedTrackDifficulty.join("\n"),
+    ].join("\n\n");
   }
 
   async calculateUserStats(gameId: number) {
     const game = await this.gameRepository.getGameById(gameId);
+    // TODO: handle game not found properly
+    if (!game) throw new Error("Game not found");
+
     const userStats = new Map<
       number,
       {
@@ -67,7 +68,7 @@ export class LeaderboardService {
     // Logic for calculating user stats
     for (const round of game.rounds) {
       for (const guess of round.guesses) {
-        const stats = userStats.get(guess.userId) || {
+        const stats = userStats.get(Number(guess.userId)) || {
           correct: 0,
           incorrect: 0,
           totalPoints: 0,
@@ -78,7 +79,7 @@ export class LeaderboardService {
         } else {
           stats.incorrect++;
         }
-        userStats.set(guess.userId, stats);
+        userStats.set(Number(guess.userId), stats);
       }
     }
 
@@ -87,9 +88,11 @@ export class LeaderboardService {
 
   async calculateTrackDifficulty(gameId: number) {
     const game = await this.gameRepository.getGameById(gameId);
+    // TODO: handle game not found properly
+    if (!game) throw new Error("Game not found");
 
     // Logic for calculating track difficulty
-    const trackDifficulty = game.rounds.map((round) => {
+    return game.rounds.map((round) => {
       const correctGuesses = round.guesses.filter((g) => g.isCorrect).length;
       return {
         player: round.submission.user.name || "Unknown",
@@ -97,7 +100,5 @@ export class LeaderboardService {
         index: round.index,
       };
     });
-
-    return trackDifficulty;
   }
 }

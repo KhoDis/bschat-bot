@@ -1,0 +1,42 @@
+import { Composer, Context } from "telegraf";
+import { IBotContext } from "@/context/context.interface";
+import { botTemplates } from "@/config/botTemplates";
+import { UserService } from "@/bot/services/UserService";
+import { TextService } from "@/bot/services/TextService";
+
+// TODO: add @Group decorator
+export class ParticipantComposer extends Composer<IBotContext> {
+  constructor(
+    private userService: UserService,
+    private text: TextService,
+  ) {
+    super();
+
+    this.command("ping_participants", this.handlePingParticipants.bind(this));
+    this.command("check_music", this.handleCheckMusic.bind(this));
+  }
+
+  async handlePingParticipants(ctx: Context): Promise<void> {
+    const users = await this.userService.getSubmissionUsers();
+
+    if (!users.length) {
+      await ctx.reply("Никого нет, как я игру то начну :(");
+      return;
+    }
+
+    await ctx.replyWithMarkdown(this.userService.formatPingNames(users));
+  }
+
+  private async handleCheckMusic(ctx: IBotContext): Promise<void> {
+    const submissionUsers = await this.userService.getSubmissionUsers();
+
+    if (!submissionUsers.length) {
+      await ctx.reply("Никого нет, как я игру то начну :(");
+      return;
+    }
+
+    const users = this.userService.formatPingNames(submissionUsers);
+
+    await ctx.reply(this.text.get(botTemplates.musicGame.listPlayers(users)));
+  }
+}

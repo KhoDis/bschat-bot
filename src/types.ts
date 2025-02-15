@@ -1,24 +1,13 @@
-import { Context, Scenes } from "telegraf";
-import { Message } from "telegraf/typings/core/types/typegram";
+import {
+  MusicSubmission as PrismaMusicSubmission,
+  User as PrismaUser,
+  Guess as PrismaGuess,
+  Game as PrismaGame,
+  GameRound as PrismaGameRound,
+} from "@prisma/client";
 
-// interface GameSession extends Scenes.SceneSessionData {
-//   gameState: {
-//     currentRound: number;
-//     totalRounds: number;
-//     scores: Map<number, number>;
-//     currentMessage?: Message.AudioMessage;
-//   };
-// }
-
-// export interface GameContext extends Context {
-//   scene: Scenes.SceneContextScene<GameContext>;
-//   session: GameSession;
-// }
-
-// export interface RoundState {
-//   musicEntry: MusicEntry;
-//   correctUserId: number;
-//   guessing: Set<number>;
-//   rightGuesses: Set<number>;
-//   wrongGuesses: Set<number>;
-// }
+export type User = PrismaUser;
+export type MusicSubmission = PrismaMusicSubmission;
+export type Guess = PrismaGuess;
+export type Game = PrismaGame;
+export type GameRound = PrismaGameRound;
