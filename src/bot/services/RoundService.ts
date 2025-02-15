@@ -63,6 +63,7 @@ export class RoundService {
 
   async sendRoundInfo(ctx: Context) {
     const round = await this.gameRepository.getCurrentRound();
+    console.log("Sending round info:", round);
     if (!round) {
       await ctx.reply("Больше нет раундов");
       return;

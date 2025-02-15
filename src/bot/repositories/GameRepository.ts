@@ -76,6 +76,8 @@ export class GameRepository {
       orderBy: { createdAt: "desc" },
     });
 
+    console.log("Current game:", game);
+
     return game?.rounds[game.currentRound] || null;
   }
 
