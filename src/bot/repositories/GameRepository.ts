@@ -48,6 +48,13 @@ export class GameRepository {
     });
   }
 
+  async findRoundById(id: number): Promise<RoundWithGuesses | null> {
+    return prisma.gameRound.findUnique({
+      where: { id },
+      include: roundWithGuesses,
+    });
+  }
+
   async deleteGame(id: number): Promise<void> {
     // Remove guesses
     await prisma.guess.deleteMany({

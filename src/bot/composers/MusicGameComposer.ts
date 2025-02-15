@@ -111,7 +111,7 @@ export class MusicGameComposer extends Composer<IBotContext> {
         ctx,
         roundId,
         guessId,
-        async () => await this.roundService.sendRoundInfo(ctx),
+        async () => await this.roundService.sendRoundInfo(ctx, roundId),
       );
     } catch (error) {
       console.error("Error processing guess:", error);
