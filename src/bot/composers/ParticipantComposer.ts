@@ -1,6 +1,5 @@
 import { Composer, Context } from "telegraf";
 import { IBotContext } from "@/context/context.interface";
-import { botTemplates } from "@/config/botTemplates";
 import { UserService } from "@/bot/services/UserService";
 import { TextService } from "@/bot/services/TextService";
 
@@ -37,6 +36,10 @@ export class ParticipantComposer extends Composer<IBotContext> {
 
     const users = this.userService.formatPingNames(submissionUsers);
 
-    await ctx.reply(this.text.get(botTemplates.musicGame.listPlayers(users)));
+    await ctx.reply(
+      this.text.get("musicGame.listPlayers", {
+        players: users,
+      }),
+    );
   }
 }

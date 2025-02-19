@@ -104,7 +104,7 @@ const bot = new Bot(
   ),
   new ParticipantComposer(userService, textService),
   new GlobalComposer(leaderboardService, botTemplates),
-  new JokerComposer(userService, botTemplates),
+  new JokerComposer(userService, botTemplates, textService),
   new ConfigService(),
 );
 
