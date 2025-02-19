@@ -27,10 +27,23 @@ export class TextService implements ITextService {
   public get = <Ns extends Namespace = DefaultNamespace, KPrefix = undefined>(
     ...tArgs: Parameters<TFunction<Ns, KPrefix>>
   ) => {
-    try {
-      return i18next.t(...tArgs);
-    } catch (e) {
+    let values = [];
+    for (let i = 1; i < tArgs.length; i++) {
+      values.push(tArgs[i]);
+    }
+    const value = i18next.t(tArgs[0], {
+      returnObjects: true,
+      postProcess: "sprintf",
+      sprintf: values,
+    });
+
+    if (!value) {
       throw new TextServiceError(`Translation for ${tArgs[0]} not found`);
+    }
+    if (Array.isArray(value)) {
+      return value[Math.floor(Math.random() * value.length)];
+    } else {
+      return value;
     }
   };
 }
