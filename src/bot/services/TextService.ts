@@ -1,20 +1,36 @@
-import { getRandomResponse } from "@/config/botTemplates";
+import i18next, { DefaultNamespace, Namespace, TFunction } from "i18next";
+import I18NexFsBackend from "i18next-fs-backend";
+import path from "node:path";
+
+export interface ITextService {
+  get: <Ns extends Namespace = DefaultNamespace, KPrefix = undefined>(
+    ...tArgs: Parameters<TFunction<Ns, KPrefix>>
+  ) => string;
+}
 
 export class TextServiceError extends Error {}
 
-// TODO: make it type-safe using zod and recursive types
-// TODO: add nested templates (apple.banana)
-// TODO: use proper template engine or i18n library
-export class TextService {
+export class TextService implements ITextService {
   constructor() {
-    // TODO
+    i18next.use(I18NexFsBackend).init({
+      lng: "ru",
+      fallbackLng: "ru",
+      backend: {
+        loadPath: path.join(process.cwd(), "locales/{{lng}}.json"),
+      },
+      interpolation: {
+        escapeValue: false,
+      },
+    });
   }
 
-  get(key: string[]): string {
-    return getRandomResponse(key);
-  }
-
-  private getRandomResponse<T>(responses: T[]): T {
-    return responses[Math.floor(Math.random() * responses.length)] as T;
-  }
+  public get = <Ns extends Namespace = DefaultNamespace, KPrefix = undefined>(
+    ...tArgs: Parameters<TFunction<Ns, KPrefix>>
+  ) => {
+    try {
+      return i18next.t(...tArgs);
+    } catch (e) {
+      throw new TextServiceError(`Translation for ${tArgs[0]} not found`);
+    }
+  };
 }

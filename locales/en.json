@@ -1,0 +1,120 @@
+{
+  "greetings": [
+    "Oh, look who showed up! Finally, our life has meaning!",
+    "Hooray, another person who thinks I'm here for their entertainment.",
+    "And here comes the life of the party! Let’s start pretending we care.",
+    "Oh, what an honor! The great {{username}} has graced us with their presence!",
+    "Wow, you're still here? I was hoping you forgot about me.",
+    "Oh, another person who thinks I'm their personal assistant. Well, let’s pretend I don't mind."
+  ],
+  "gameState": {
+    "noGame": [
+      "Oops, no game! Maybe it exists in a parallel universe?",
+      "Game? What game? I'm just here for decoration...",
+      "404: Game not found. Try turning your imagination on and off."
+    ],
+    "gameStarted": [
+      "Oh, the great moment has arrived! The game has started! Prepare to showcase your musical ignorance!",
+      "Let the battle of titans begin! Or, wait... who are these mere mortals?",
+      "The game has started! Hope you're ready for a total destruction of your musical ambitions!"
+    ]
+  },
+  "musicGame": {
+    "listPlayers": [
+      "Total players: {{players}}"
+    ],
+    "noTracks": [
+      "No tracks were submitted. Looks like everyone suddenly became shy. How unusual!",
+      "Oops, no tracks! How about we do karaoke instead?",
+      "Without tracks, the game won’t work. Unless you want to play in silence..."
+    ],
+    "resetGame": [
+      "The game has been reset."
+    ]
+  },
+  "rounds": {
+    "noMoreRounds": [
+      "Yep, yep, yep... Looks like we're out of rounds.",
+      "That's it, rounds are over! Time to head home.",
+      "Yay! I mean... no more rounds. How sad (not really).",
+      "Rounds are over. Hope you're happy with what you've done."
+    ],
+    "noSuchRound": [
+      "This round only exists in your imagination..."
+    ],
+    "onRoundStarted": [
+      "Guessing time! Or at least pretending to...",
+      "Time to show your musical ~illiteracy~ expertise!",
+      "Ready for new musical discoveries?",
+      "Attention! Something... interesting is about to happen."
+    ],
+    "nextRound": [
+      "Next round! Get ready for more disappointments!",
+      "Oh, you're still here? Alright, let’s continue the torture...",
+      "New round! New opportunities to embarrass yourself!"
+    ]
+  },
+  "user": {
+    "notFound": [
+      "Hmm... Are you sure you exist? ID not found!",
+      "Looks like you don't know what an ID is. Try again."
+    ],
+    "notAdmin": [
+      "Oops, seems like someone forgot to check their access rights! Spoiler: They don't have them.",
+      "Ha! Nice try. But no. Not even close.",
+      "Oh, look, we have a pretender here! How cute.",
+      "Sorry, but your 'I want' sounds like 'please ignore me'.",
+      "Oh, look, we have a new admin. Oh wait, no, just someone trying to press a button without permission!"
+    ]
+  },
+  "guessing": {
+    "correctGuess": [
+      "🎉 Incredible! You really guessed it! {{points}} {{pointsWord}} for your nobility!",
+      "🎉 Wow, you're a real expert! Take {{points}} {{pointsWord}} for your ego’s piggy bank!"
+    ],
+    "wrongGuess": [
+      "Oops, wrong... Maybe you should study the subject more?",
+      "Not quite! But the attempt was... let’s say, interesting.",
+      "Wrong! But don’t worry, it could be worse... Actually, no, it couldn’t."
+    ],
+    "alreadyGuessed": [
+      "You've already voted! Is your memory that bad?",
+      "Another vote? Someone’s not sure about themselves...",
+      "Oh, a fan of double standards! But no, one vote is all you get."
+    ]
+  },
+  "hints": {
+    "noHint": [
+      "No hint for this song. Looks like the author wanted to make your life harder.",
+      "No hint? Ha! Good luck guessing!",
+      "Oops, no hint. You’ll have to use your brain... if you can find it."
+    ],
+    "hintAlreadyShown": [
+      "The hint has ALREADY been shown! Maybe start taking notes?",
+      "Oh, someone missed the hint? Not surprised (not).",
+      "Seriously? Asking for a hint again? Does memory not serve you?"
+    ],
+    "hintLayout": [
+      "🎵 Hint (for those who’ve completely given up):\n\n{{hint}}",
+      "🎵 Can't do it without a hint?\n\n{{hint}}"
+    ]
+  },
+  "leaderboard": {
+    "mostPoints": [
+      "🏆 Attention! This is about to get funny... I mean, it's time to see the game results! 🏆",
+      "🏆 Drumroll! Time to find out who’s the most... let's say, musical! 🏆",
+      "🏆 The game results! Get your tissues ready – it's going to be funny and sad! 🏆"
+    ],
+    "leastGuessed": [
+      "\n\nAnd now for the most interesting part – the tracks that caused the most suffering:",
+      "\n\nThe 'Why Don’t I Know This?!' track leaderboard:",
+      "\n\nThe most devious tracks of this game:",
+      "\n\nHeroes of our time:"
+    ]
+  },
+  "fuckMusic": [
+    "/fuck_{{username}} — that's you, right? I’m proud of your self-criticism!",
+    "Whoa! Someone woke up on the wrong side of the bed today? Or is that your usual state, {{username}}?",
+    "Let’s talk about why {{username}} is so aggressive. Childhood trauma? Unrequited love?"
+  ]
+}

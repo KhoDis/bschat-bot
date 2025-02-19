@@ -3,6 +3,7 @@ import { Composer, NarrowedContext } from "telegraf";
 import { Message, Update } from "telegraf/types";
 import { UserService } from "../services/UserService";
 import { BotTemplates, getRandomResponse } from "@/config/botTemplates";
+import { ITextService } from "@/bot/services/TextService";
 
 type CommandContext = NarrowedContext<
   IBotContext,
@@ -48,6 +49,7 @@ export class JokerComposer extends Composer<IBotContext> {
   constructor(
     private readonly userService: UserService,
     private readonly botResponses: BotTemplates,
+    private readonly text: ITextService,
   ) {
     super();
     this.setupHandlers();
@@ -67,6 +69,11 @@ export class JokerComposer extends Composer<IBotContext> {
     this.command("delete_account", this.handleDeleteAccount.bind(this));
     this.command("self_destruct", this.handleSelfDestruct.bind(this));
     this.command("ping_behruz", this.handlePingBehruz.bind(this));
+    this.command("greet", this.handleGreet.bind(this));
+  }
+
+  private async handleGreet(ctx: CommandContext): Promise<void> {
+    await ctx.reply(this.text.get("greetings"));
   }
 
   private async handleBanbs(ctx: CommandContext): Promise<void> {
