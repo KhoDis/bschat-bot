@@ -21,16 +21,13 @@ export class TextService implements ITextService {
       interpolation: {
         escapeValue: false,
       },
+      returnObjects: true,
     });
   }
 
   public get = <Ns extends Namespace = DefaultNamespace, KPrefix = undefined>(
     ...tArgs: Parameters<TFunction<Ns, KPrefix>>
   ) => {
-    let values = [];
-    for (let i = 1; i < tArgs.length; i++) {
-      values.push(tArgs[i]);
-    }
     const key = tArgs[0];
     const options = (typeof tArgs[1] === "object" ? tArgs[1] : {}) as Record<
       string,
@@ -39,12 +36,16 @@ export class TextService implements ITextService {
 
     const value = i18next.t(key, {
       ...options,
-      returnObjects: true,
     });
 
     if (!value) {
-      throw new TextServiceError(`Translation for ${tArgs[0]} not found`);
+      if (process.env["NODE_ENV"] === "production") {
+        console.error(`Translation for ${key} not found`);
+        return key;
+      }
+      throw new TextServiceError(`Translation for ${key} not found`);
     }
+
     if (Array.isArray(value)) {
       return value[Math.floor(Math.random() * value.length)];
     } else {
