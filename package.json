@@ -4,7 +4,7 @@
   "main": "bot.js",
   "scripts": {
     "build": "tsc && tsc-alias",
-    "start": "node ./dist/app.js",
+    "start": "node ./dist/src/app.js",
     "dev": "tsx watch ./src/app.ts",
     "test": "vitest",
     "coverage": "vitest run --coverage"
