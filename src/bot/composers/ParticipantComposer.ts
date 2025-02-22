@@ -38,8 +38,13 @@ export class ParticipantComposer extends Composer<IBotContext> {
 
     await ctx.reply(
       this.text.get("musicGame.listPlayers", {
-        players: users,
+        playersCount: submissionUsers.length,
+        playersList: users,
       }),
+      {
+        parse_mode: "Markdown",
+        disable_notification: true,
+      },
     );
   }
 }

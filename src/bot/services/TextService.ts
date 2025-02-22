@@ -31,10 +31,15 @@ export class TextService implements ITextService {
     for (let i = 1; i < tArgs.length; i++) {
       values.push(tArgs[i]);
     }
-    const value = i18next.t(tArgs[0], {
+    const key = tArgs[0];
+    const options = (typeof tArgs[1] === "object" ? tArgs[1] : {}) as Record<
+      string,
+      unknown
+    >;
+
+    const value = i18next.t(key, {
+      ...options,
       returnObjects: true,
-      postProcess: "sprintf",
-      sprintf: values,
     });
 
     if (!value) {

@@ -21,7 +21,7 @@
   },
   "musicGame": {
     "listPlayers": [
-      "Total players: {{players}}"
+      "Total players: {{playerCount}}\n\n{{playersList}}"
     ],
     "noTracks": [
       "No tracks were submitted. Looks like everyone suddenly became shy. How unusual!",
