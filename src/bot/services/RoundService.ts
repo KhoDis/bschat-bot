@@ -126,11 +126,22 @@ export class RoundService {
     const context = this.validateRound(game).andThen((context) =>
       this.validateHintShown(context.game, context.round),
     );
-    // .andThen((context) => this.validateNoHint(context.game, context.round));
 
     await context.match(
       async ({ game, round }) => {
         await this.gameRepository.updateRoundHint(round.id, true);
+        if (
+          ctx.chat &&
+          round.submission.mediaHintChatId &&
+          round.submission.mediaHintMessageId
+        ) {
+          await ctx.telegram.copyMessage(
+            ctx.chat.id,
+            round.submission.mediaHintChatId,
+            round.submission.mediaHintMessageId,
+          );
+          return;
+        }
         await ctx.reply(
           getRandomResponse(
             this.botResponses.hints.hintLayout(round.submission.hint as string),

@@ -20,11 +20,12 @@ export class MusicSubmissionRepository {
 
   async updateMediaHint(
     submissionId: number,
+    hintChatId: number,
     hintMessageId: number,
   ): Promise<void> {
     await prisma.musicSubmission.update({
       where: { id: submissionId },
-      data: { mediaHintMessageId: BigInt(hintMessageId) },
+      data: { mediaHintMessageId: hintMessageId, mediaHintChatId: hintChatId },
     });
   }
 

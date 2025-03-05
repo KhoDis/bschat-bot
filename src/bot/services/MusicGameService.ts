@@ -17,10 +17,12 @@ export class MusicGameService {
 
   async addMediaHint(
     submissionId: number,
+    hintChatId: number,
     hintMessageId: number,
   ): Promise<void> {
     await this.musicSubmissionRepository.updateMediaHint(
       submissionId,
+      hintChatId,
       hintMessageId,
     );
   }

@@ -76,6 +76,7 @@ export class PrivateComposer extends Composer<IBotContext> {
 
     await this.musicGuessService.addMediaHint(
       submission.id,
+      ctx.message.chat.id,
       ctx.message.message_id,
     );
 
