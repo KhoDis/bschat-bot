@@ -3,7 +3,7 @@ import { MusicSubmission, User } from "@/types";
 
 export interface IUserRepository {
   upsertUser(userData: {
-    id: bigint;
+    id: number;
     username?: string | null;
     firstName: string;
   }): Promise<User>;
@@ -19,7 +19,7 @@ export interface IUserRepository {
 
 export class UserRepository {
   async upsertUser(userData: {
-    id: bigint;
+    id: number;
     username?: string | null;
     firstName: string;
   }): Promise<User> {

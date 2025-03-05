@@ -16,12 +16,13 @@ model User {
 }
 
 model MusicSubmission {
-  id     Int         @id @default(autoincrement())
-  fileId String
-  hint   String? // Optional hint for the song
-  user   User        @relation(fields: [userId], references: [id])
-  userId BigInt
-  rounds GameRound[]
+  id                 Int         @id @default(autoincrement())
+  fileId             String
+  hint               String? // Optional hint for the song
+  mediaHintMessageId BigInt? // Message ID of the hint
+  user               User        @relation(fields: [userId], references: [id])
+  userId             BigInt
+  rounds             GameRound[]
 
   @@unique([userId])
 }

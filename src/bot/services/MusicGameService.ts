@@ -15,6 +15,16 @@ export class MusicGameService {
     await this.musicSubmissionRepository.updateHint(submissionId, hint);
   }
 
+  async addMediaHint(
+    submissionId: number,
+    hintMessageId: number,
+  ): Promise<void> {
+    await this.musicSubmissionRepository.updateMediaHint(
+      submissionId,
+      hintMessageId,
+    );
+  }
+
   async clearGame(ctx: Context) {
     const game = await this.gameRepository.getCurrentGame();
     if (!game) {

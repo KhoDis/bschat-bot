@@ -18,6 +18,16 @@ export class MusicSubmissionRepository {
     });
   }
 
+  async updateMediaHint(
+    submissionId: number,
+    hintMessageId: number,
+  ): Promise<void> {
+    await prisma.musicSubmission.update({
+      where: { id: submissionId },
+      data: { mediaHintMessageId: BigInt(hintMessageId) },
+    });
+  }
+
   async findByUserId(userId: number): Promise<MusicSubmission | null> {
     return prisma.musicSubmission.findFirst({
       where: { userId: BigInt(userId) },

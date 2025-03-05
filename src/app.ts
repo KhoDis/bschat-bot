@@ -93,7 +93,7 @@ const guessService = new GuessService(
 const textService = new TextService();
 
 const bot = new Bot(
-  new PrivateComposer(userService, musicGameService, botTemplates),
+  new PrivateComposer(userService, musicGameService, textService),
   new MusicGameComposer(
     userService,
     roundService,

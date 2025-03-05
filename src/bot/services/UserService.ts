@@ -3,7 +3,7 @@ import { MusicSubmission, User } from "@/types";
 
 export interface IUserService {
   saveOrUpdateUser(userData: {
-    id: bigint;
+    id: number;
     username?: string | null;
     firstName: string;
   }): Promise<User>;
@@ -19,7 +19,7 @@ export class UserService implements IUserService {
   constructor(private userRepository: IUserRepository) {}
 
   async saveOrUpdateUser(userData: {
-    id: bigint;
+    id: number;
     username?: string | null;
     firstName: string;
   }) {
