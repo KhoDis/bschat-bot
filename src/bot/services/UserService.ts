@@ -1,8 +1,8 @@
-import { IUserRepository } from "@/bot/repositories/UserRepository";
+import { UserRepository } from "@/bot/repositories/UserRepository";
 import { MusicSubmission, User } from "@/types";
 
 export class UserService {
-  constructor(private userRepository: IUserRepository) {}
+  constructor(private userRepository: UserRepository) {}
 
   async saveOrUpdateUser(userData: {
     id: number;
@@ -46,6 +46,6 @@ export class UserService {
   }
 
   private getFormattedUser(user: User) {
-    return `${user.name} ${user.tag ? `(${user.tag})` : ""}`;
+    return `${user.name}${user.tag ? ` (${user.tag})` : ""}`;
   }
 }

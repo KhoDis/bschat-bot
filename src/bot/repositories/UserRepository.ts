@@ -1,22 +1,6 @@
 import prisma from "@/prisma/client";
 import { MusicSubmission, User } from "@/types";
 
-export interface IUserRepository {
-  upsertUser(userData: {
-    id: number;
-    username?: string | null;
-    firstName: string;
-  }): Promise<User>;
-  findUserById(userId: number): Promise<User | null>;
-  findUsersByIds(userIds: number[]): Promise<User[]>;
-  findUsersWithSubmissions(): Promise<User[]>;
-  findSubmissionByUserId(userId: number): Promise<MusicSubmission | null>;
-  upsertSubmission(submission: {
-    userId: number;
-    fileId: string;
-  }): Promise<MusicSubmission>;
-}
-
 export class UserRepository {
   async upsertUser(userData: {
     id: number;
