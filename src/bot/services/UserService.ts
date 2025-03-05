@@ -1,21 +1,7 @@
 import { IUserRepository } from "@/bot/repositories/UserRepository";
 import { MusicSubmission, User } from "@/types";
 
-export interface IUserService {
-  saveOrUpdateUser(userData: {
-    id: number;
-    username?: string | null;
-    firstName: string;
-  }): Promise<User>;
-  getSubmissionUsers(): Promise<User[]>;
-  getSubmissionByUserId(userId: number): Promise<MusicSubmission | null>;
-  saveOrUpdateSubmission(submission: {
-    userId: number;
-    fileId: string;
-  }): Promise<MusicSubmission>;
-}
-
-export class UserService implements IUserService {
+export class UserService {
   constructor(private userRepository: IUserRepository) {}
 
   async saveOrUpdateUser(userData: {
@@ -38,9 +24,20 @@ export class UserService implements IUserService {
     return await this.userRepository.upsertSubmission(submission);
   }
 
-  // TODO: consider Telegram ping limit in one message
-  formatPingNames(participants: User[]): string {
-    return participants.map((p) => this.formatParticipantName(p)).join("\n");
+  // NOTE: https://limits.tginfo.me/en
+  // Mentions number in a single message is limited up to 50,
+  // only first 5 from list will receive notification
+  formatPingNames(participants: User[]): string[] {
+    const formattedNames: string[] = [];
+
+    while (participants.length > 0) {
+      const batch = participants.splice(0, 5);
+      formattedNames.push(
+        batch.map((p) => this.formatParticipantName(p)).join("\n"),
+      );
+    }
+
+    return formattedNames;
   }
 
   private formatParticipantName(user: User): string {

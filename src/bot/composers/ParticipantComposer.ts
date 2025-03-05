@@ -23,7 +23,9 @@ export class ParticipantComposer extends Composer<IBotContext> {
       return;
     }
 
-    await ctx.replyWithMarkdown(this.userService.formatPingNames(users));
+    this.userService.formatPingNames(users).forEach((batch) => {
+      ctx.replyWithMarkdown(batch);
+    });
   }
 
   private async handleCheckMusic(ctx: IBotContext): Promise<void> {

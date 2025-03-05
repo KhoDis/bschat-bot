@@ -72,7 +72,11 @@ export class MusicGameComposer extends Composer<IBotContext> {
     );
 
     const users = await this.userService.getSubmissionUsers();
-    await ctx.replyWithMarkdown(this.userService.formatPingNames(users));
+    this.userService.formatPingNames(users).forEach((batch) => {
+      ctx.reply(batch, {
+        parse_mode: "Markdown",
+      });
+    });
   }
 
   private async handleClearGame(ctx: IBotContext): Promise<void> {
