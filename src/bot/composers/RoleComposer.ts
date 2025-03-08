@@ -265,7 +265,7 @@ export class RoleComposer extends Composer<IBotContext> {
     const chatId = ctx.chat?.id;
 
     if (!userId || !chatId) {
-      await ctx.reply("This command must be used in a chat.");
+      await ctx.reply(this.text.get("roles.chatOnly"));
       return;
     }
 
@@ -278,7 +278,7 @@ export class RoleComposer extends Composer<IBotContext> {
     if (hasPermission) {
       await next();
     } else {
-      await ctx.reply("You do not have permission to manage roles.");
+      await ctx.reply(this.text.get("permissions.denied"));
     }
   }
 
@@ -320,19 +320,22 @@ export class RoleComposer extends Composer<IBotContext> {
       await this.roleService.assignRole(ctx.from.id, ctx.chat.id, "admin");
 
       // Reply to the user
-      await ctx.reply("Admin role has been reset.");
+      await ctx.reply(this.text.get("roles.admin.reset"));
     } else {
       // Reply to the user
-      await ctx.reply("You must be a main admin to reset the admin role.");
+      await ctx.reply(this.text.get("roles.admin.denied"));
     }
   }
 
+  /**
+   * Pings all users in a role
+   */
   async handlePingRole(ctx: CommandContext): Promise<void> {
     await this.checkPermissions(ctx, async () => {
       const [_, roleName] = ctx.message.text.split(" ");
 
       if (!roleName) {
-        await ctx.reply("Please specify a role name.");
+        await ctx.reply(this.text.get("roles.nameNotSpecified"));
         return;
       }
 
@@ -343,7 +346,8 @@ export class RoleComposer extends Composer<IBotContext> {
         );
 
         if (users.length === 0) {
-          await ctx.reply(`No users found for role "${roleName}".`);
+          await ctx.reply(this.text.get("roles.ping.noUsers", { roleName }));
+          return;
         }
 
         this.userService.formatPingNames(users).forEach((batch) => {
@@ -351,7 +355,9 @@ export class RoleComposer extends Composer<IBotContext> {
         });
       } catch (error) {
         if (error instanceof Error) {
-          await ctx.reply(`Failed to ping role: ${error.message}`);
+          await ctx.reply(
+            this.text.get("roles.ping.error", { error: error.message }),
+          );
           return;
         }
       }
@@ -365,7 +371,7 @@ export class RoleComposer extends Composer<IBotContext> {
     await this.checkPermissions(ctx, async () => {
       const [_, roleName] = ctx.message.text.split(" ");
       if (!roleName) {
-        await ctx.reply("Please specify a role name.");
+        await ctx.reply(this.text.get("roles.nameNotSpecified"));
         return;
       }
 
@@ -374,14 +380,16 @@ export class RoleComposer extends Composer<IBotContext> {
         const role = await this.roleService.getRole(roleName, ctx.chat.id);
 
         if (role) {
-          await ctx.reply(`Role "${roleName}" already exists in the chat.`);
+          await ctx.reply(this.text.get("roles.add.exists", { roleName }));
           return;
         }
         await this.roleService.createRole(roleName, ctx.chat.id);
-        await ctx.reply(`Role "${roleName}" added to the chat.`);
+        await ctx.reply(this.text.get("roles.add.success", { roleName }));
       } catch (error) {
         if (error instanceof Error) {
-          await ctx.reply(`Failed to add role: ${error.message}`);
+          await ctx.reply(
+            this.text.get("roles.add.error", { error: error.message }),
+          );
           return;
         }
       }
@@ -395,16 +403,18 @@ export class RoleComposer extends Composer<IBotContext> {
     await this.checkPermissions(ctx, async () => {
       const [_, roleName] = ctx.message.text.split(" ");
       if (!roleName) {
-        await ctx.reply("Please specify a role name.");
+        await ctx.reply(this.text.get("roles.nameNotSpecified"));
         return;
       }
 
       try {
         await this.roleService.removeRole(roleName, ctx.chat.id);
-        await ctx.reply(`Role "${roleName}" removed from the chat.`);
+        await ctx.reply(this.text.get("roles.remove.success", { roleName }));
       } catch (error) {
         if (error instanceof Error) {
-          await ctx.reply(`Failed to remove role: ${error.message}`);
+          await ctx.reply(
+            this.text.get("roles.remove.error", { error: error.message }),
+          );
           return;
         }
       }
@@ -421,20 +431,23 @@ export class RoleComposer extends Composer<IBotContext> {
       const roleName = ctx.message?.text?.split(" ")[1]; // e.g., /assign_role MODERATOR
 
       if (!chatId || !targetUser || !roleName) {
-        await ctx.reply(
-          "Usage: Reply to a user and use `/assign_role <role_name>`.",
-        );
+        await ctx.reply(this.text.get("roles.assign.usage"));
         return;
       }
 
       try {
         await this.roleService.assignRole(targetUser.id, chatId, roleName);
         await ctx.reply(
-          `Role "${roleName}" assigned to @${targetUser.username}.`,
+          this.text.get("roles.assign.success", {
+            roleName,
+            username: targetUser.username || targetUser.first_name,
+          }),
         );
       } catch (error) {
         if (error instanceof Error) {
-          await ctx.reply(`Failed to assign role: ${error.message}`);
+          await ctx.reply(
+            this.text.get("roles.assign.error", { error: error.message }),
+          );
           return;
         }
       }
@@ -451,20 +464,23 @@ export class RoleComposer extends Composer<IBotContext> {
       const roleName = ctx.message?.text?.split(" ")[1]; // e.g., /revoke_role MODERATOR
 
       if (!chatId || !targetUser || !roleName) {
-        await ctx.reply(
-          "Usage: Reply to a user and use `/revoke_role <role_name>`.",
-        );
+        await ctx.reply(this.text.get("roles.revoke.usage"));
         return;
       }
 
       try {
         await this.roleService.revokeRole(targetUser.id, chatId, roleName);
         await ctx.reply(
-          `Role "${roleName}" revoked from @${targetUser.username}.`,
+          this.text.get("roles.revoke.success", {
+            roleName,
+            username: targetUser.username || targetUser.first_name,
+          }),
         );
       } catch (error) {
         if (error instanceof Error) {
-          await ctx.reply(`Failed to revoke role: ${error.message}`);
+          await ctx.reply(
+            this.text.get("roles.revoke.error", { error: error.message }),
+          );
           return;
         }
       }
@@ -480,7 +496,7 @@ export class RoleComposer extends Composer<IBotContext> {
       const targetUser = ctx.message?.reply_to_message?.from;
 
       if (!chatId || !targetUser) {
-        await ctx.reply("Usage: Reply to a user and use `/list_roles`.");
+        await ctx.reply(this.text.get("roles.userRoles.usage"));
         return;
       }
 
@@ -491,15 +507,26 @@ export class RoleComposer extends Composer<IBotContext> {
         );
 
         if (roles.length === 0) {
-          await ctx.reply(`@${targetUser.username} has no roles in this chat.`);
+          await ctx.reply(
+            this.text.get("roles.userRoles.none", {
+              username: targetUser.username || targetUser.first_name,
+            }),
+          );
           return;
         }
 
         const roleList = roles.map((role) => `- ${role.name}`).join("\n");
-        await ctx.reply(`Roles for @${targetUser.username}:\n${roleList}`);
+        await ctx.reply(
+          this.text.get("roles.userRoles.success", {
+            username: targetUser.username || targetUser.first_name,
+            roleList,
+          }),
+        );
       } catch (error) {
         if (error instanceof Error) {
-          await ctx.reply(`Failed to list roles: ${error.message}`);
+          await ctx.reply(
+            this.text.get("roles.userRoles.error", { error: error.message }),
+          );
           return;
         }
       }
@@ -515,7 +542,7 @@ export class RoleComposer extends Composer<IBotContext> {
       const targetUser = ctx.message?.reply_to_message?.from;
 
       if (!chatId || !targetUser) {
-        await ctx.reply("Usage: Reply to a user and use `/list_permissions`.");
+        await ctx.reply(this.text.get("roles.userPermissions.usage"));
         return;
       }
 
@@ -527,18 +554,27 @@ export class RoleComposer extends Composer<IBotContext> {
 
         if (permissions.length === 0) {
           await ctx.reply(
-            `@${targetUser.username} has no permissions in this chat.`,
+            this.text.get("roles.userPermissions.none", {
+              username: targetUser.username || targetUser.first_name,
+            }),
           );
           return;
         }
 
         const permissionList = permissions.join(", ");
         await ctx.reply(
-          `Permissions for @${targetUser.username}:\n${permissionList}`,
+          this.text.get("roles.userPermissions.success", {
+            username: targetUser.username || targetUser.first_name,
+            permissions: permissionList,
+          }),
         );
       } catch (error) {
         if (error instanceof Error) {
-          await ctx.reply(`Failed to list permissions: ${error.message}`);
+          await ctx.reply(
+            this.text.get("roles.userPermissions.error", {
+              error: error.message,
+            }),
+          );
           return;
         }
       }
