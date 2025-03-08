@@ -1,6 +1,6 @@
 import { Guess, Prisma, User } from "@prisma/client";
 import prisma from "../../prisma/client";
-import { MusicSubmission } from "@/types";
+import { MusicSubmission } from "@prisma/client";
 
 const gameWithData = Prisma.validator<Prisma.GameInclude>()({
   rounds: {

@@ -8,7 +8,7 @@ import { BotTemplates, getRandomResponse } from "@/config/botTemplates";
 import { IBotContext } from "@/context/context.interface";
 import { Result } from "@/utils/Result";
 import { InlineKeyboardButton } from "telegraf/typings/core/types/typegram";
-import { Game, GameRound, User } from "@/types";
+import { Game, GameRound, User } from "@prisma/client";
 
 export class RoundService {
   constructor(

@@ -1,6 +1,6 @@
 import { GameRepository } from "../repositories/GameRepository";
 import { BotTemplates, getRandomResponse } from "@/config/botTemplates";
-import { User } from "@/types";
+import { User } from "@prisma/client";
 
 export class LeaderboardService {
   constructor(

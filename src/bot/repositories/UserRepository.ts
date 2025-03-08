@@ -1,5 +1,5 @@
 import prisma from "@/prisma/client";
-import { MusicSubmission, User } from "@/types";
+import { MusicSubmission, User } from "@prisma/client";
 
 export class UserRepository {
   async upsertUser(userData: {

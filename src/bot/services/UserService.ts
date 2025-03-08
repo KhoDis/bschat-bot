@@ -1,5 +1,5 @@
 import { UserRepository } from "@/bot/repositories/UserRepository";
-import { MusicSubmission, User } from "@/types";
+import { MusicSubmission, User } from "@prisma/client";
 
 export class UserService {
   constructor(private userRepository: UserRepository) {}
