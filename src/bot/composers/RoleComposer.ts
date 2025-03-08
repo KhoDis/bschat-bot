@@ -36,7 +36,6 @@ export class RoleComposer extends Composer<IBotContext> {
 
     this.command("reset_admin", this.handleResetAdmin.bind(this));
 
-    // New commands for role permission management
     this.command(
       "list_role_permissions",
       this.handleListRolePermissions.bind(this),
@@ -140,9 +139,9 @@ export class RoleComposer extends Composer<IBotContext> {
     await this.checkPermissions(ctx, async () => {
       try {
         const permissions = Object.keys(PERMISSIONS);
-        const permissionList = permissions.join(", ");
+        const permissionList = permissions.join("\n");
         await ctx.reply(
-          this.text.get("roles.availablePermissions", {
+          this.text.get("roles.availablePermissions.success", {
             permissions: permissionList,
           }),
         );

@@ -121,14 +121,14 @@
     "chatOnly": "You can only use this command in chat.",
     "noRoles": "No roles have been created in this chat.",
     "list": {
-      "success": "Roles in this chat:\\n{{roleList}}",
+      "success": "Roles in this chat:\n{{roleList}}",
       "error": "Failed to list roles: {{error}}"
     },
     "nameNotSpecified": "Please specify a role name.",
     "roleNotFound": "Role '{{roleName}}' not found in this chat.",
     "noPermissions": "Role '{{roleName}}' has no permissions.",
     "permissions": {
-      "success": "Permissions for role '{{roleName}}':\\n{{permissions}}",
+      "success": "Permissions for role '{{roleName}}':\n{{permissions}}",
       "error": "Failed to list permissions for role '{{roleName}}': {{error}}"
     },
     "admin": {
@@ -162,17 +162,17 @@
     "userRoles": {
       "usage": "Usage: Reply to a user and use `/list_roles`.",
       "none": "@{{username}} has no roles in this chat.",
-      "success": "Roles for @{{username}}:\\n{{roleList}}",
+      "success": "Roles for @{{username}}:\n{{roleList}}",
       "error": "Failed to list roles: {{error}}"
     },
     "userPermissions": {
       "usage": "Usage: Reply to a user and use `/list_permissions`.",
       "none": "@{{username}} has no permissions in this chat.",
-      "success": "Permissions for @{{username}}:\\n{{permissions}}",
+      "success": "Permissions for @{{username}}:\n{{permissions}}",
       "error": "Failed to list permissions: {{error}}"
     },
     "availablePermissions": {
-      "success": "Available permissions:\\n{{permissions}}",
+      "success": "Available permissions:\n{{permissions}}",
       "error": "Failed to list available permissions: {{error}}"
     },
     "grant": {

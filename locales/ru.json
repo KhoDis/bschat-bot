@@ -137,14 +137,14 @@
     "chatOnly": "Эту команду можно использовать только в чате.",
     "noRoles": "В этом чате не создано ни одной роли.",
     "list": {
-      "success": "Роли в этом чате:\\n{{roleList}}",
+      "success": "Роли в этом чате:\n{{roleList}}",
       "error": "Не удалось получить список ролей: {{error}}"
     },
     "nameNotSpecified": "Пожалуйста, укажите название роли.",
     "roleNotFound": "Роль '{{roleName}}' не найдена в этом чате.",
     "noPermissions": "У роли '{{roleName}}' нет разрешений.",
     "permissions": {
-      "success": "Разрешения для роли '{{roleName}}':\\n{{permissions}}",
+      "success": "Разрешения для роли '{{roleName}}':\n{{permissions}}",
       "error": "Не удалось получить разрешения для роли '{{roleName}}': {{error}}"
     },
     "admin": {
@@ -178,17 +178,17 @@
     "userRoles": {
       "usage": "Использование: Ответьте на сообщение пользователя и используйте `/list_roles`.",
       "none": "У @{{username}} нет ролей в этом чате.",
-      "success": "Роли пользователя @{{username}}:\\n{{roleList}}",
+      "success": "Роли пользователя @{{username}}:\n{{roleList}}",
       "error": "Не удалось получить список ролей: {{error}}"
     },
     "userPermissions": {
       "usage": "Использование: Ответьте на сообщение пользователя и используйте `/list_permissions`.",
       "none": "У @{{username}} нет разрешений в этом чате.",
-      "success": "Разрешения пользователя @{{username}}:\\n{{permissions}}",
+      "success": "Разрешения пользователя @{{username}}:\n{{permissions}}",
       "error": "Не удалось получить список разрешений: {{error}}"
     },
     "availablePermissions": {
-      "success": "Доступные разрешения:\\n{{permissions}}",
+      "success": "Доступные разрешения:\n{{permissions}}",
       "error": "Не удалось получить список доступных разрешений: {{error}}"
     },
     "grant": {
