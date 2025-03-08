@@ -113,7 +113,7 @@ const bot = new Bot(
   new ParticipantComposer(userService, textService),
   new GlobalComposer(leaderboardService, botTemplates),
   new JokerComposer(userService, botTemplates, textService),
-  new RoleComposer(roleService, permissionService, userService),
+  new RoleComposer(roleService, permissionService, userService, textService),
   new ConfigService(),
 );
 
