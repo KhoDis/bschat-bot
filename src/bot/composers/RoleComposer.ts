@@ -8,6 +8,7 @@ import {
   PERMISSIONS,
   PermissionService,
 } from "@/bot/services/PermissionService";
+import { TextService } from "@/bot/services/TextService";
 
 type CommandContext = NarrowedContext<
   IBotContext,
@@ -19,6 +20,7 @@ export class RoleComposer extends Composer<IBotContext> {
     private roleService: RoleService,
     private permissionService: PermissionService,
     private userService: UserService,
+    private text: TextService,
   ) {
     super();
 
@@ -56,7 +58,7 @@ export class RoleComposer extends Composer<IBotContext> {
       const chatId = ctx.chat?.id;
 
       if (!chatId) {
-        await ctx.reply("This command must be used in a chat.");
+        await ctx.reply(this.text.get("roles.chatOnly"));
         return;
       }
 
@@ -64,15 +66,17 @@ export class RoleComposer extends Composer<IBotContext> {
         const roles = await this.roleService.getChatRoles(BigInt(chatId));
 
         if (roles.length === 0) {
-          await ctx.reply("No roles have been created in this chat.");
+          await ctx.reply(this.text.get("roles.noRoles"));
           return;
         }
 
         const roleList = roles.map((role) => `- ${role.name}`).join("\n");
-        await ctx.reply(`Roles in this chat:\n${roleList}`);
+        await ctx.reply(this.text.get("roles.list.success", { roleList }));
       } catch (error) {
         if (error instanceof Error) {
-          await ctx.reply(`Failed to list roles: ${error.message}`);
+          await ctx.reply(
+            this.text.get("roles.list.error", { error: error.message }),
+          );
           return;
         }
       }
@@ -87,7 +91,7 @@ export class RoleComposer extends Composer<IBotContext> {
       const [_, roleName] = ctx.message.text.split(" ");
 
       if (!roleName) {
-        await ctx.reply("Please specify a role name.");
+        await ctx.reply(this.text.get("roles.nameNotSpecified"));
         return;
       }
 
@@ -95,7 +99,7 @@ export class RoleComposer extends Composer<IBotContext> {
         const role = await this.roleService.getRole(roleName, ctx.chat.id);
 
         if (!role) {
-          await ctx.reply(`Role "${roleName}" not found in this chat.`);
+          await ctx.reply(this.text.get("roles.roleNotFound", { roleName }));
           return;
         }
 
@@ -104,17 +108,25 @@ export class RoleComposer extends Composer<IBotContext> {
         );
 
         if (permissions.length === 0) {
-          await ctx.reply(`Role "${roleName}" has no permissions.`);
+          await ctx.reply(this.text.get("roles.noPermissions"));
           return;
         }
 
         const permissionList = permissions.join(", ");
         await ctx.reply(
-          `Permissions for role "${roleName}":\n${permissionList}`,
+          this.text.get("roles.permissions.success", {
+            roleName,
+            permissions: permissionList,
+          }),
         );
       } catch (error) {
         if (error instanceof Error) {
-          await ctx.reply(`Failed to list role permissions: ${error.message}`);
+          await ctx.reply(
+            this.text.get("roles.permissions.error", {
+              roleName,
+              error: error.message,
+            }),
+          );
           return;
         }
       }
@@ -129,11 +141,17 @@ export class RoleComposer extends Composer<IBotContext> {
       try {
         const permissions = Object.keys(PERMISSIONS);
         const permissionList = permissions.join(", ");
-        await ctx.reply(`Available permissions:\n${permissionList}`);
+        await ctx.reply(
+          this.text.get("roles.availablePermissions", {
+            permissions: permissionList,
+          }),
+        );
       } catch (error) {
         if (error instanceof Error) {
           await ctx.reply(
-            `Failed to list available permissions: ${error.message}`,
+            this.text.get("roles.availablePermissions.error", {
+              error: error.message,
+            }),
           );
           return;
         }
@@ -149,9 +167,7 @@ export class RoleComposer extends Composer<IBotContext> {
       const parts = ctx.message.text.split(" ");
 
       if (parts.length !== 3) {
-        await ctx.reply(
-          "Usage: /grant_permission <role_name> <permission_name>",
-        );
+        await ctx.reply(this.text.get("roles.grant.usage"));
         return;
       }
 
@@ -161,7 +177,9 @@ export class RoleComposer extends Composer<IBotContext> {
       try {
         // Validate permission name
         if (!Object.keys(PERMISSIONS).includes(permissionName)) {
-          await ctx.reply(`Invalid permission name: ${permissionName}`);
+          await ctx.reply(
+            this.text.get("roles.grant.invalidPermission", { permissionName }),
+          );
           return;
         }
 
@@ -171,17 +189,19 @@ export class RoleComposer extends Composer<IBotContext> {
         );
 
         if (!role) {
-          await ctx.reply(`Role "${roleName}" not found in this chat.`);
+          await ctx.reply(this.text.get("roles.roleNotFound", { roleName }));
           return;
         }
 
         await this.permissionService.grantPermission(role.id, permissionName);
         await ctx.reply(
-          `Permission "${permissionName}" granted to role "${roleName}"`,
+          this.text.get("roles.grant.success", { roleName, permissionName }),
         );
       } catch (error) {
         if (error instanceof Error) {
-          await ctx.reply(`Failed to grant permission: ${error.message}`);
+          await ctx.reply(
+            this.text.get("roles.grant.error", { error: error.message }),
+          );
           return;
         }
       }
@@ -196,9 +216,7 @@ export class RoleComposer extends Composer<IBotContext> {
       const parts = ctx.message.text.split(" ");
 
       if (parts.length !== 3) {
-        await ctx.reply(
-          "Usage: /revoke_permission <role_name> <permission_name>",
-        );
+        await ctx.reply(this.text.get("roles.revoke.usage"));
         return;
       }
 
@@ -208,7 +226,9 @@ export class RoleComposer extends Composer<IBotContext> {
       try {
         // Validate permission name
         if (!Object.keys(PERMISSIONS).includes(permissionName)) {
-          await ctx.reply(`Invalid permission name: ${permissionName}`);
+          await ctx.reply(
+            this.text.get("roles.revoke.invalidPermission", { permissionName }),
+          );
           return;
         }
 
@@ -218,17 +238,19 @@ export class RoleComposer extends Composer<IBotContext> {
         );
 
         if (!role) {
-          await ctx.reply(`Role "${roleName}" not found in this chat.`);
+          await ctx.reply(this.text.get("roles.roleNotFound", { roleName }));
           return;
         }
 
         await this.permissionService.revokePermission(role.id, permissionName);
         await ctx.reply(
-          `Permission "${permissionName}" revoked from role "${roleName}"`,
+          this.text.get("roles.revoke.success", { roleName, permissionName }),
         );
       } catch (error) {
         if (error instanceof Error) {
-          await ctx.reply(`Failed to revoke permission: ${error.message}`);
+          await ctx.reply(
+            this.text.get("roles.revoke.error", { error: error.message }),
+          );
           return;
         }
       }

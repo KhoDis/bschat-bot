@@ -116,5 +116,73 @@
     "/fuck_{{username}} — that's you, right? I’m proud of your self-criticism!",
     "Whoa! Someone woke up on the wrong side of the bed today? Or is that your usual state, {{username}}?",
     "Let’s talk about why {{username}} is so aggressive. Childhood trauma? Unrequited love?"
-  ]
+  ],
+  "roles": {
+    "chatOnly": "You can only use this command in chat.",
+    "noRoles": "No roles have been created in this chat.",
+    "list": {
+      "success": "Roles in this chat:\\n{{roleList}}",
+      "error": "Failed to list roles: {{error}}"
+    },
+    "nameNotSpecified": "Please specify a role name.",
+    "roleNotFound": "Role '{{roleName}}' not found in this chat.",
+    "noPermissions": "Role '{{roleName}}' has no permissions.",
+    "permissions": {
+      "success": "Permissions for role '{{roleName}}':\\n{{permissions}}",
+      "error": "Failed to list permissions for role '{{roleName}}': {{error}}"
+    },
+    "admin": {
+      "reset": "Admin role has been reset.",
+      "denied": "You must be a main admin to reset the admin role."
+    },
+    "ping": {
+      "noUsers": "No users found for role '{{roleName}}'.",
+      "error": "Failed to ping role: {{error}}"
+    },
+    "add": {
+      "exists": "Role '{{roleName}}' already exists in the chat.",
+      "success": "Role '{{roleName}}' added to the chat.",
+      "error": "Failed to add role: {{error}}"
+    },
+    "remove": {
+      "success": "Role '{{roleName}}' removed from the chat.",
+      "error": "Failed to remove role: {{error}}"
+    },
+    "assign": {
+      "usage": "Usage: Reply to a user and use `/assign_role <role_name>`.",
+      "success": "Role '{{roleName}}' assigned to @{{username}}.",
+      "error": "Failed to assign role: {{error}}"
+    },
+    "revoke": {
+      "usage": "Usage: Reply to a user and use `/revoke_role <role_name>`.",
+      "success": "Role '{{roleName}}' revoked from @{{username}}.",
+      "error": "Failed to revoke role: {{error}}",
+      "invalidPermission": "Invalid permission name: {{permissionName}}"
+    },
+    "userRoles": {
+      "usage": "Usage: Reply to a user and use `/list_roles`.",
+      "none": "@{{username}} has no roles in this chat.",
+      "success": "Roles for @{{username}}:\\n{{roleList}}",
+      "error": "Failed to list roles: {{error}}"
+    },
+    "userPermissions": {
+      "usage": "Usage: Reply to a user and use `/list_permissions`.",
+      "none": "@{{username}} has no permissions in this chat.",
+      "success": "Permissions for @{{username}}:\\n{{permissions}}",
+      "error": "Failed to list permissions: {{error}}"
+    },
+    "availablePermissions": {
+      "success": "Available permissions:\\n{{permissions}}",
+      "error": "Failed to list available permissions: {{error}}"
+    },
+    "grant": {
+      "usage": "Usage: /grant_permission <role_name> <permission_name>",
+      "invalidPermission": "Invalid permission name: {{permissionName}}",
+      "success": "Permission '{{permissionName}}' granted to role '{{roleName}}'",
+      "error": "Failed to grant permission: {{error}}"
+    }
+  },
+  "permissions": {
+    "denied": "You do not have permission to manage roles."
+  }
 }
