@@ -1,13 +1,8 @@
-import {
-  MusicSubmission as PrismaMusicSubmission,
-  User as PrismaUser,
-  Guess as PrismaGuess,
-  Game as PrismaGame,
-  GameRound as PrismaGameRound,
-} from "@prisma/client";
+import { NarrowedContext } from "telegraf";
+import { IBotContext } from "@/context/context.interface";
+import { Message, Update } from "telegraf/types";
 
-export type User = PrismaUser;
-export type MusicSubmission = PrismaMusicSubmission;
-export type Guess = PrismaGuess;
-export type Game = PrismaGame;
-export type GameRound = PrismaGameRound;
+export type CommandContext = NarrowedContext<
+  IBotContext,
+  Update.MessageUpdate<Message.TextMessage>
+>;

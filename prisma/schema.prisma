@@ -13,12 +13,34 @@ model User {
   name            String // Telegram username
   musicSubmission MusicSubmission? // TODO: rename to music, make 1 to 1 relation instead
   guesses         Guess[]
+  roles           UserRole[]
+}
+
+model Role {
+  id          Int        @id @default(autoincrement())
+  name        String
+  permissions Int        @default(0)
+  chatId      BigInt // Added chat ID for chat-specific roles
+  userRoles   UserRole[]
+
+  @@unique([name, chatId])
+}
+
+model UserRole {
+  userId BigInt
+  roleId Int
+
+  user User @relation(fields: [userId], references: [id])
+  role Role @relation(fields: [roleId], references: [id])
+
+  @@id([userId, roleId])
 }
 
 model MusicSubmission {
   id                 Int         @id @default(autoincrement())
   fileId             String
   hint               String? // Optional hint for the song
+  // TODO: use BitInt instead of Int
   mediaHintChatId    Int? // Telegram chat ID which the hint was sent
   mediaHintMessageId Int? // Message ID of the hint
   user               User        @relation(fields: [userId], references: [id])

@@ -36,7 +36,7 @@ export class ParticipantComposer extends Composer<IBotContext> {
       return;
     }
 
-    const users = this.userService.formatPingNames(submissionUsers);
+    const users = this.userService.formatPingNames(submissionUsers).join("\n");
 
     await ctx.reply(
       this.text.get("musicGame.listPlayers", {

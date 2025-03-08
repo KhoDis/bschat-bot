@@ -18,6 +18,9 @@ import { UserRepository } from "@/bot/repositories/UserRepository";
 import { MusicGameComposer } from "@/bot/composers/MusicGameComposer";
 import { ParticipantComposer } from "@/bot/composers/ParticipantComposer";
 import { TextService } from "@/bot/services/TextService";
+import { RoleService } from "@/bot/services/RoleService";
+import { RoleComposer } from "@/bot/composers/RoleComposer";
+import { PermissionService } from "@/bot/services/PermissionService";
 
 class Bot {
   bot: Telegraf<IBotContext>;
@@ -28,6 +31,7 @@ class Bot {
     participantComposer: ParticipantComposer,
     globalComposer: GlobalComposer,
     jokerComposer: JokerComposer,
+    roleComposer: RoleComposer,
     configService: IConfigService,
   ) {
     this.bot = new Telegraf<IBotContext>(configService.get("BOT_TOKEN"));
@@ -39,11 +43,13 @@ class Bot {
     const participantMiddleware = participantComposer.middleware();
     const globalMiddleware = globalComposer.middleware();
     const jokerMiddleware = jokerComposer.middleware();
+    const roleMiddleware = roleComposer.middleware();
 
     // Combine non-private middlewares into a single middleware
     const nonPrivateMiddleware = Composer.compose([
       musicGameMiddleware,
       participantMiddleware,
+      roleMiddleware,
     ]);
 
     this.bot.use((ctx, next) => {
@@ -91,6 +97,8 @@ const guessService = new GuessService(
   botTemplates,
 );
 const textService = new TextService();
+const permissionService = new PermissionService();
+const roleService = new RoleService(permissionService);
 
 const bot = new Bot(
   new PrivateComposer(userService, musicGameService, textService),
@@ -105,6 +113,7 @@ const bot = new Bot(
   new ParticipantComposer(userService, textService),
   new GlobalComposer(leaderboardService, botTemplates),
   new JokerComposer(userService, botTemplates, textService),
+  new RoleComposer(roleService, permissionService, userService),
   new ConfigService(),
 );
 
