@@ -3,7 +3,11 @@ import { IBotContext } from "@/context/context.interface";
 import { RoleService } from "@/bot/services/RoleService";
 import { Message, Update } from "telegraf/types";
 import { UserService } from "@/bot/services/UserService";
-import { PermissionService } from "@/bot/services/PermissionService";
+import {
+  Permission,
+  PERMISSIONS,
+  PermissionService,
+} from "@/bot/services/PermissionService";
 
 type CommandContext = NarrowedContext<
   IBotContext,
@@ -29,6 +33,206 @@ export class RoleComposer extends Composer<IBotContext> {
     this.command("ping_role", this.handlePingRole.bind(this));
 
     this.command("reset_admin", this.handleResetAdmin.bind(this));
+
+    // New commands for role permission management
+    this.command(
+      "list_role_permissions",
+      this.handleListRolePermissions.bind(this),
+    );
+    this.command("grant_permission", this.handleGrantPermission.bind(this));
+    this.command("revoke_permission", this.handleRevokePermission.bind(this));
+    this.command("list_all_roles", this.handleListAllRoles.bind(this));
+    this.command(
+      "list_available_permissions",
+      this.handleListAvailablePermissions.bind(this),
+    );
+  }
+
+  /**
+   * Lists all roles in the current chat
+   */
+  private async handleListAllRoles(ctx: CommandContext) {
+    await this.checkPermissions(ctx, async () => {
+      const chatId = ctx.chat?.id;
+
+      if (!chatId) {
+        await ctx.reply("This command must be used in a chat.");
+        return;
+      }
+
+      try {
+        const roles = await this.roleService.getChatRoles(BigInt(chatId));
+
+        if (roles.length === 0) {
+          await ctx.reply("No roles have been created in this chat.");
+          return;
+        }
+
+        const roleList = roles.map((role) => `- ${role.name}`).join("\n");
+        await ctx.reply(`Roles in this chat:\n${roleList}`);
+      } catch (error) {
+        if (error instanceof Error) {
+          await ctx.reply(`Failed to list roles: ${error.message}`);
+          return;
+        }
+      }
+    });
+  }
+
+  /**
+   * Lists all permissions for a specific role
+   */
+  private async handleListRolePermissions(ctx: CommandContext) {
+    await this.checkPermissions(ctx, async () => {
+      const [_, roleName] = ctx.message.text.split(" ");
+
+      if (!roleName) {
+        await ctx.reply("Please specify a role name.");
+        return;
+      }
+
+      try {
+        const role = await this.roleService.getRole(roleName, ctx.chat.id);
+
+        if (!role) {
+          await ctx.reply(`Role "${roleName}" not found in this chat.`);
+          return;
+        }
+
+        const permissions = await this.permissionService.listPermissions(
+          role.id,
+        );
+
+        if (permissions.length === 0) {
+          await ctx.reply(`Role "${roleName}" has no permissions.`);
+          return;
+        }
+
+        const permissionList = permissions.join(", ");
+        await ctx.reply(
+          `Permissions for role "${roleName}":\n${permissionList}`,
+        );
+      } catch (error) {
+        if (error instanceof Error) {
+          await ctx.reply(`Failed to list role permissions: ${error.message}`);
+          return;
+        }
+      }
+    });
+  }
+
+  /**
+   * Lists all available permissions in the system
+   */
+  private async handleListAvailablePermissions(ctx: CommandContext) {
+    await this.checkPermissions(ctx, async () => {
+      try {
+        const permissions = Object.keys(PERMISSIONS);
+        const permissionList = permissions.join(", ");
+        await ctx.reply(`Available permissions:\n${permissionList}`);
+      } catch (error) {
+        if (error instanceof Error) {
+          await ctx.reply(
+            `Failed to list available permissions: ${error.message}`,
+          );
+          return;
+        }
+      }
+    });
+  }
+
+  /**
+   * Grants a permission to a role
+   */
+  private async handleGrantPermission(ctx: CommandContext) {
+    await this.checkPermissions(ctx, async () => {
+      const parts = ctx.message.text.split(" ");
+
+      if (parts.length !== 3) {
+        await ctx.reply(
+          "Usage: /grant_permission <role_name> <permission_name>",
+        );
+        return;
+      }
+
+      const roleName = parts[1];
+      const permissionName = parts[2] as Permission;
+
+      try {
+        // Validate permission name
+        if (!Object.keys(PERMISSIONS).includes(permissionName)) {
+          await ctx.reply(`Invalid permission name: ${permissionName}`);
+          return;
+        }
+
+        const role = await this.roleService.getRole(
+          roleName || "",
+          ctx.chat.id,
+        );
+
+        if (!role) {
+          await ctx.reply(`Role "${roleName}" not found in this chat.`);
+          return;
+        }
+
+        await this.permissionService.grantPermission(role.id, permissionName);
+        await ctx.reply(
+          `Permission "${permissionName}" granted to role "${roleName}"`,
+        );
+      } catch (error) {
+        if (error instanceof Error) {
+          await ctx.reply(`Failed to grant permission: ${error.message}`);
+          return;
+        }
+      }
+    });
+  }
+
+  /**
+   * Revokes a permission from a role
+   */
+  private async handleRevokePermission(ctx: CommandContext) {
+    await this.checkPermissions(ctx, async () => {
+      const parts = ctx.message.text.split(" ");
+
+      if (parts.length !== 3) {
+        await ctx.reply(
+          "Usage: /revoke_permission <role_name> <permission_name>",
+        );
+        return;
+      }
+
+      const roleName = parts[1];
+      const permissionName = parts[2] as Permission;
+
+      try {
+        // Validate permission name
+        if (!Object.keys(PERMISSIONS).includes(permissionName)) {
+          await ctx.reply(`Invalid permission name: ${permissionName}`);
+          return;
+        }
+
+        const role = await this.roleService.getRole(
+          roleName || "",
+          ctx.chat.id,
+        );
+
+        if (!role) {
+          await ctx.reply(`Role "${roleName}" not found in this chat.`);
+          return;
+        }
+
+        await this.permissionService.revokePermission(role.id, permissionName);
+        await ctx.reply(
+          `Permission "${permissionName}" revoked from role "${roleName}"`,
+        );
+      } catch (error) {
+        if (error instanceof Error) {
+          await ctx.reply(`Failed to revoke permission: ${error.message}`);
+          return;
+        }
+      }
+    });
   }
 
   /**
@@ -144,6 +348,13 @@ export class RoleComposer extends Composer<IBotContext> {
       }
 
       try {
+        // Check if role already exists
+        const role = await this.roleService.getRole(roleName, ctx.chat.id);
+
+        if (role) {
+          await ctx.reply(`Role "${roleName}" already exists in the chat.`);
+          return;
+        }
         await this.roleService.createRole(roleName, ctx.chat.id);
         await ctx.reply(`Role "${roleName}" added to the chat.`);
       } catch (error) {

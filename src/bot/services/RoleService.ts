@@ -189,4 +189,17 @@ export class RoleService {
 
     return users.map((userRole) => userRole.user); // Extract the User objects
   }
+
+  /**
+   * Gets all roles for a specific chat
+   * @param chatId The ID of the chat
+   * @returns Array of roles in the chat
+   */
+  async getChatRoles(chatId: bigint) {
+    return prisma.role.findMany({
+      where: {
+        chatId: chatId,
+      },
+    });
+  }
 }
