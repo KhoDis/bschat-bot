@@ -4,6 +4,7 @@ export const PERMISSIONS = {
   ADMIN: 1 << 0, // 0001 = 1
   MANAGE_MUSIC_GAME: 1 << 1, // 0010 = 2
   MANAGE_ROLES: 1 << 2, // 0100 = 4
+  MANAGE_CRAFTY: 1 << 3, // 1000 = 8
 } as const;
 
 export type Permission = keyof typeof PERMISSIONS;

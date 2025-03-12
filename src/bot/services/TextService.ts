@@ -1,5 +1,5 @@
 import i18next, { DefaultNamespace, Namespace, TFunction } from "i18next";
-import I18NexFsBackend from "i18next-fs-backend";
+import I18NextFsBackend from "i18next-fs-backend";
 import path from "node:path";
 
 export interface ITextService {
@@ -12,7 +12,7 @@ export class TextServiceError extends Error {}
 
 export class TextService implements ITextService {
   constructor() {
-    i18next.use(I18NexFsBackend).init({
+    i18next.use(I18NextFsBackend).init({
       lng: "ru",
       fallbackLng: "ru",
       backend: {

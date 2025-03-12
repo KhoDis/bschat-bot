@@ -199,6 +199,34 @@
     }
   },
   "permissions": {
-    "denied": "У вас нет разрешения на управление ролями."
+    "denied": "У вас нет разрешения на выполнение этой комнады."
+  },
+  "crafty": {
+    "start": {
+      "usage": "Использование: /start_server <serverId>",
+      "success": "Сервер {{serverId}} успешно запущен!"
+    },
+    "stop": {
+      "usage": "Использование: /stop_server <serverId>",
+      "success": "Сервер {{serverId}} успешно остановлен!"
+    },
+    "status": {
+      "usage": "Использование: /server_status <serverId>",
+      "success": "Статус сервера {{serverId}}:\n\n- Статус: {{status}}\n- Игроки: {{players}}\n- Версия: {{version}}"
+    },
+    "list": {
+      "success": "Текущие серверы:\n\n{{serverList}}"
+    },
+    "schema": {
+      "usage": "Использование: /get_schema <schemaName>",
+      "success": "Схема для {{schemaName}}:\n\n{{schema}}"
+    },
+    "schemas": {
+      "success": "Доступные схемы:\n\n{{schemas}}"
+    },
+    "apiError": "Ошибка API:\n\n- Статус: {{status}}\n- Данные: {{data}}",
+    "genericError": "Произошла ошибка: {{error}}",
+    "unknownError": "Произошла неизвестная ошибка.",
+    "chatOnly": "Эта команда доступна только в чате."
   }
 }

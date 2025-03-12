@@ -21,6 +21,8 @@ import { TextService } from "@/bot/services/TextService";
 import { RoleService } from "@/bot/services/RoleService";
 import { RoleComposer } from "@/bot/composers/RoleComposer";
 import { PermissionService } from "@/bot/services/PermissionService";
+import CraftyService from "@/bot/services/CraftyService";
+import { CraftyComposer } from "@/bot/composers/CraftyComposer";
 
 class Bot {
   bot: Telegraf<IBotContext>;
@@ -32,6 +34,7 @@ class Bot {
     globalComposer: GlobalComposer,
     jokerComposer: JokerComposer,
     roleComposer: RoleComposer,
+    craftyComposer: CraftyComposer,
     configService: IConfigService,
   ) {
     this.bot = new Telegraf<IBotContext>(configService.get("BOT_TOKEN"));
@@ -44,12 +47,14 @@ class Bot {
     const globalMiddleware = globalComposer.middleware();
     const jokerMiddleware = jokerComposer.middleware();
     const roleMiddleware = roleComposer.middleware();
+    const craftyMiddleware = craftyComposer.middleware();
 
     // Combine non-private middlewares into a single middleware
     const nonPrivateMiddleware = Composer.compose([
       musicGameMiddleware,
       participantMiddleware,
       roleMiddleware,
+      craftyMiddleware,
     ]);
 
     this.bot.use((ctx, next) => {
@@ -99,6 +104,11 @@ const guessService = new GuessService(
 const textService = new TextService();
 const permissionService = new PermissionService();
 const roleService = new RoleService(permissionService);
+const configService = new ConfigService();
+const craftyService = new CraftyService(
+  configService.get("CRAFTY_BASE_URL"),
+  configService.get("CRAFTY_API_KEY"),
+);
 
 const bot = new Bot(
   new PrivateComposer(userService, musicGameService, textService),
@@ -114,7 +124,8 @@ const bot = new Bot(
   new GlobalComposer(leaderboardService, botTemplates),
   new JokerComposer(userService, botTemplates, textService),
   new RoleComposer(roleService, permissionService, userService, textService),
-  new ConfigService(),
+  new CraftyComposer(craftyService, roleService, textService),
+  configService,
 );
 
 bot.init();

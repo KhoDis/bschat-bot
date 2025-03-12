@@ -183,6 +183,34 @@
     }
   },
   "permissions": {
-    "denied": "You do not have permission to manage roles."
+    "denied": "You do not have permission to use this command."
+  },
+  "crafty": {
+    "start": {
+      "usage": "Usage: /start_server <serverId>",
+      "success": "Server {{serverId}} has been started successfully!"
+    },
+    "stop": {
+      "usage": "Usage: /stop_server <serverId>",
+      "success": "Server {{serverId}} has been stopped successfully!"
+    },
+    "status": {
+      "usage": "Usage: /server_status <serverId>",
+      "success": "Server {{serverId}} status:\n\n- Status: {{status}}\n- Players: {{players}}\n- Version: {{version}}"
+    },
+    "list": {
+      "success": "Current servers:\n\n{{serverList}}"
+    },
+    "schema": {
+      "usage": "Usage: /get_schema <schemaName>",
+      "success": "Schema for {{schemaName}}:\n\n{{schema}}"
+    },
+    "schemas": {
+      "success": "Available schemas:\n\n{{schemas}}"
+    },
+    "apiError": "API Error:\n\n- Status: {{status}}\n- Data: {{data}}",
+    "genericError": "An error occurred: {{error}}",
+    "unknownError": "An unknown error occurred.",
+    "chatOnly": "This command can only be used in a chat."
   }
 }
