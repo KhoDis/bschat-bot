@@ -7,6 +7,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      DOCKER_CLI_TIMEOUT: 600
 
     steps:
       - name: "Checkout repository"
@@ -44,7 +46,8 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           push: true
-          no-cache: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
           tags: |
             ghcr.io/khodis/prod-bschat-bot:latest
 
