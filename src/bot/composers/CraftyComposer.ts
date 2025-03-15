@@ -98,7 +98,7 @@ export class CraftyComposer extends Composer<IBotContext> {
           `IP: ${server.server_ip}:${server.server_port}`,
           `ID: ${server.server_id}`,
           `Статус: ${status.running ? "🟢 Online" : "🔴 Offline"}`,
-          `Игроки: ${status.players}`,
+          `Игроков: ${status.online}/${status.max}`,
           `Версия: ${status.version}`,
         ].join("\n");
       }),
