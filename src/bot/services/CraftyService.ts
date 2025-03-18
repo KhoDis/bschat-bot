@@ -77,7 +77,7 @@ class CraftyService {
 
   async stopServer(serverId: string): Promise<boolean> {
     const response = await this.makePostRequest<GetRequestEmpty>(
-      `/servers/${serverId}/stop`,
+      `/servers/${serverId}/action/stop_server`,
     );
 
     return response.status === "ok";

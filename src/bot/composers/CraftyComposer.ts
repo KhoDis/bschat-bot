@@ -31,11 +31,11 @@ export class CraftyComposer extends Composer<IBotContext> {
     this.command("get_schemas", this.handleGetSchemas.bind(this));
     this.command("get_schema", this.handleGetSchema.bind(this));
 
-    this.action(/^crafty:(.+?):(.+?)$/, this.handleServerAction.bind(this));
+    this.action(/^crafty:(.+?):(.+)$/, this.handleServerAction.bind(this));
   }
 
   private async handleServerAction(ctx: CallbackContext) {
-    const [action, serverId] = ctx.match;
+    const [_fullMatch, action, serverId] = ctx.match;
 
     if (!action) {
       await ctx.answerCbQuery("Не указан action");
@@ -50,16 +50,16 @@ export class CraftyComposer extends Composer<IBotContext> {
     await this.checkPermissions(ctx, async () => {
       try {
         if (action === "start_server") {
-          const started = await this.craftyService.startServer(serverId);
           await ctx.answerCbQuery(`Ожидайте...`);
+          const started = await this.craftyService.startServer(serverId);
           if (started) {
             await ctx.reply(`Сервер ${serverId} запущен!`);
           } else {
             await ctx.reply(`Ошибка при запуске сервера ${serverId}`);
           }
         } else if (action === "stop_server") {
-          const stopped = await this.craftyService.stopServer(serverId);
           await ctx.answerCbQuery(`Ожидайте...`);
+          const stopped = await this.craftyService.stopServer(serverId);
           if (stopped) {
             await ctx.reply(`Сервер ${serverId} остановлен!`);
           } else {
@@ -113,10 +113,6 @@ export class CraftyComposer extends Composer<IBotContext> {
           servers.map(async (server) => {
             const status = await this.craftyService.getServerStats(
               server.server_id.toString(),
-            );
-            console.log(
-              "Button",
-              `crafty:${status.running ? "stop_server" : "start_server"}:${server.server_id}`,
             );
             return [
               {
