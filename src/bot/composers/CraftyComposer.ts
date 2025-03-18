@@ -54,17 +54,19 @@ export class CraftyComposer extends Composer<IBotContext> {
       try {
         if (action === "start_server") {
           const started = await this.craftyService.startServer(serverId);
+          await ctx.answerCbQuery(`Ожидайте...`);
           if (started) {
-            await ctx.answerCbQuery(`Сервер ${serverId} запущен!`);
+            await ctx.reply(`Сервер ${serverId} запущен!`);
           } else {
-            await ctx.answerCbQuery(`Ошибка при запуске сервера ${serverId}`);
+            await ctx.reply(`Ошибка при запуске сервера ${serverId}`);
           }
         } else if (action === "stop_server") {
           const stopped = await this.craftyService.stopServer(serverId);
+          await ctx.answerCbQuery(`Ожидайте...`);
           if (stopped) {
-            await ctx.answerCbQuery(`Сервер ${serverId} остановлен!`);
+            await ctx.reply(`Сервер ${serverId} остановлен!`);
           } else {
-            await ctx.answerCbQuery(`Ошибка при остановке сервера ${serverId}`);
+            await ctx.reply(`Ошибка при остановке сервера ${serverId}`);
           }
         }
 
