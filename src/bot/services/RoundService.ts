@@ -9,10 +9,13 @@ import { IBotContext } from "@/context/context.interface";
 import { Result } from "@/utils/Result";
 import { InlineKeyboardButton } from "telegraf/typings/core/types/typegram";
 import { Game, GameRound, User } from "@prisma/client";
+import * as tg from "telegraf/src/core/types/typegram";
+import { TextService } from "@/bot/services/TextService";
 
 export class RoundService {
   constructor(
     private gameRepository: GameRepository,
+    private text: TextService,
     private readonly botResponses: BotTemplates,
   ) {}
 
@@ -121,6 +124,15 @@ export class RoundService {
     await this.processRound(ctx, onNoRound);
   }
 
+  private getThreadId<U extends tg.Update>(ctx: Context<U>) {
+    const msg = ctx.msg;
+    return msg?.isAccessible()
+      ? msg.is_topic_message
+        ? msg.message_thread_id
+        : undefined
+      : undefined;
+  }
+
   async showHint(ctx: IBotContext) {
     const game = await this.gameRepository.getCurrentGame();
     const context = this.validateRound(game).andThen((context) =>
@@ -135,10 +147,12 @@ export class RoundService {
           round.submission.mediaHintChatId &&
           round.submission.mediaHintMessageId
         ) {
+          const threadId = this.getThreadId(ctx);
           await ctx.telegram.copyMessage(
             ctx.chat.id,
-            round.submission.mediaHintChatId,
-            round.submission.mediaHintMessageId,
+            Number(round.submission.mediaHintChatId),
+            Number(round.submission.mediaHintMessageId),
+            threadId ? { message_thread_id: threadId } : {},
           );
           return;
         }

@@ -89,22 +89,27 @@ class Bot {
 const gameRepository = new GameRepository();
 const userRepository = new UserRepository();
 
+const textService = new TextService();
+const configService = new ConfigService();
+
 const userService = new UserService(userRepository);
 const musicGameService = new MusicGameService(
   gameRepository,
   new MusicSubmissionRepository(),
 );
-const roundService = new RoundService(gameRepository, botTemplates);
+const roundService = new RoundService(
+  gameRepository,
+  textService,
+  botTemplates,
+);
 const leaderboardService = new LeaderboardService(gameRepository, botTemplates);
 const guessService = new GuessService(
   gameRepository,
   new GuessValidationService(gameRepository, botTemplates),
   botTemplates,
 );
-const textService = new TextService();
 const permissionService = new PermissionService();
 const roleService = new RoleService(permissionService);
-const configService = new ConfigService();
 const craftyService = new CraftyService(
   configService.get("CRAFTY_BASE_URL"),
   configService.get("CRAFTY_API_KEY"),
