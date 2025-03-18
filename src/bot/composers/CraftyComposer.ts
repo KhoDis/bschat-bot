@@ -31,10 +31,7 @@ export class CraftyComposer extends Composer<IBotContext> {
     this.command("get_schemas", this.handleGetSchemas.bind(this));
     this.command("get_schema", this.handleGetSchema.bind(this));
 
-    this.action(
-      /^crafty:(start_server|stop_server):(\d+)$/,
-      this.handleServerAction.bind(this),
-    );
+    this.action(/^crafty:(.+?):(.+?)$/, this.handleServerAction.bind(this));
   }
 
   private async handleServerAction(ctx: CallbackContext) {
@@ -69,19 +66,6 @@ export class CraftyComposer extends Composer<IBotContext> {
             await ctx.reply(`Ошибка при остановке сервера ${serverId}`);
           }
         }
-
-        if (
-          ctx.callbackQuery.message &&
-          "reply_markup" in ctx.callbackQuery.message
-        )
-          await ctx.editMessageText(
-            this.text.get("crafty.list.success", {
-              serverList: await this.getServerListText(),
-            }),
-            {
-              reply_markup: ctx.callbackQuery.message?.reply_markup,
-            },
-          );
       } catch (error) {
         await this.handleCraftyError(ctx, error);
       }
@@ -130,10 +114,14 @@ export class CraftyComposer extends Composer<IBotContext> {
             const status = await this.craftyService.getServerStats(
               server.server_id.toString(),
             );
+            console.log(
+              "Button",
+              `crafty:${status.running ? "stop_server" : "start_server"}:${server.server_id}`,
+            );
             return [
               {
                 text: `${status.running ? "(выключить)" : "(включить)"} ${server.server_name}`,
-                callback_data: `${status.running ? "stop_server" : "start_server"}:${server.server_id}`,
+                callback_data: `crafty:${status.running ? "stop_server" : "start_server"}:${server.server_id}`,
               },
             ];
           }),
