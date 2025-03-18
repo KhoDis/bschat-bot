@@ -28,6 +28,9 @@ jobs:
           port: ${{ secrets.SERVER_PORT }}
           source: ".env"
           target: "/srv/deployments/prod-bschat-bot/"
+          timeout: 300s
+        retry: 3
+        retry_delay: 10s
 
       - name: "Set up QEMU"
         uses: docker/setup-qemu-action@v1
@@ -60,6 +63,9 @@ jobs:
           port: ${{ secrets.SERVER_PORT }}
           source: "docker-compose.yml"
           target: "/srv/deployments/prod-bschat-bot/"
+          timeout: 300s
+        retry: 3
+        retry_delay: 10s
 
       - name: "Deploy on server"
         uses: appleboy/ssh-action@master
