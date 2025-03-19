@@ -39,7 +39,6 @@ model UserRole {
 model MusicSubmission {
   id                 Int         @id @default(autoincrement())
   fileId             String
-  hint               String? // Optional hint for the song
   // TODO: use BitInt instead of Int
   mediaHintChatId    BigInt? // Telegram chat ID which the hint was sent
   mediaHintMessageId BigInt? // Message ID of the hint

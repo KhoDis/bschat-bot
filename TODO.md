@@ -7,7 +7,6 @@
 
 ## Medium Priority
 - [ ] Add exception interceptors to handle prisma errors that send message to contact bot admin.
-- [ ] Add DI to avoid passing services directly.
 - [ ] Split bot responses and locales into namespaces.
 
 ## Low Priority
@@ -20,3 +19,4 @@
 
 ## Completed
 - [x] Show how many players are online in the Minecraft server.
+- [x] Add DI to avoid passing services directly.

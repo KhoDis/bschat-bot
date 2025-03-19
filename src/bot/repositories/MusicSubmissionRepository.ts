@@ -13,13 +13,6 @@ export class MusicSubmissionRepository {
     });
   }
 
-  async updateHint(submissionId: number, hint: string): Promise<void> {
-    await prisma.musicSubmission.update({
-      where: { id: submissionId },
-      data: { hint },
-    });
-  }
-
   async updateMediaHint(
     submissionId: number,
     hintChatId: number,

@@ -15,10 +15,6 @@ export class MusicGameService {
     private musicSubmissionRepository: MusicSubmissionRepository,
   ) {}
 
-  async addHint(submissionId: number, hint: string): Promise<void> {
-    await this.musicSubmissionRepository.updateHint(submissionId, hint);
-  }
-
   async addMediaHint(
     submissionId: number,
     hintChatId: number,
