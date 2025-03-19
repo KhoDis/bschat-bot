@@ -32,7 +32,7 @@ export class RoundService {
           await onNoRound();
           return;
         }
-        const participants = await this.gameRepository.getParticipants();
+        const participants = await this.gameRepository.getParticipants(game.id);
         await this.playRound(ctx, participants, currentRound);
       },
       async () => {
@@ -114,8 +114,14 @@ export class RoundService {
     );
   }
 
-  async nextRound(ctx: Context, onNoRound: () => Promise<void>) {
-    const game = await this.gameRepository.getCurrentGame();
+  async nextRound(
+    ctx: Context,
+    onNoRound: () => Promise<void>,
+    gameId?: number,
+  ) {
+    const game = gameId
+      ? await this.gameRepository.getGameById(gameId)
+      : await this.gameRepository.getCurrentGame();
     if (!game) {
       await ctx.reply("getRandomResponse(this.botResponses.gameState.noGame)");
       return;

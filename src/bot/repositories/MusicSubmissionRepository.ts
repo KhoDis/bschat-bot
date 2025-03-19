@@ -13,6 +13,28 @@ export class MusicSubmissionRepository {
     });
   }
 
+  async findUnassignedTracks(): Promise<MusicSubmission[]> {
+    return prisma.musicSubmission.findMany({
+      where: {
+        gameId: null,
+      },
+      include: {
+        user: true,
+      },
+    });
+  }
+
+  async findTracksByGameId(gameId: number): Promise<MusicSubmission[]> {
+    return prisma.musicSubmission.findMany({
+      where: {
+        gameId: gameId,
+      },
+      include: {
+        user: true,
+      },
+    });
+  }
+
   async updateMediaHint(
     submissionId: number,
     hintChatId: number,
@@ -33,21 +55,30 @@ export class MusicSubmissionRepository {
     });
   }
 
-  async deleteAll() {
-    await prisma.musicSubmission.deleteMany();
+  async assignTracksToGame(
+    submissionIds: number[],
+    gameId: number,
+  ): Promise<void> {
+    await prisma.$transaction(
+      submissionIds.map((id) =>
+        prisma.musicSubmission.update({
+          where: { id },
+          data: { gameId },
+        }),
+      ),
+    );
   }
 
-  async create(data: {
-    fileId: string;
-    userId: number;
-  }): Promise<MusicSubmission> {
+  async createSubmission(
+    userId: bigint,
+    fileId: string,
+    gameId?: number,
+  ): Promise<MusicSubmission> {
     return prisma.musicSubmission.create({
       data: {
-        fileId: data.fileId,
-        userId: BigInt(data.userId),
-      },
-      include: {
-        user: true,
+        userId,
+        fileId,
+        gameId: gameId || null,
       },
     });
   }

@@ -1,21 +1,13 @@
 import { IBotContext } from "@/context/context.interface";
-import { Composer, NarrowedContext } from "telegraf";
+import { Composer } from "telegraf";
 import { UserService } from "../services/UserService";
 import { RoundService } from "../services/RoundService";
 import { GuessService } from "../services/GuessService";
 import { MusicGameService } from "../services/MusicGameService";
 import { LeaderboardService } from "../services/LeaderboardService";
-import { Update } from "telegraf/types";
 import { ADMIN_USERNAME } from "@/config/config";
 import { inject, injectable } from "inversify";
-import { TYPES } from "@/types";
-
-type CallbackQueryContext = NarrowedContext<
-  IBotContext,
-  Update.CallbackQueryUpdate
-> & {
-  match: RegExpExecArray;
-};
+import { CallbackQueryContext, CommandContext, TYPES } from "@/types";
 
 @injectable()
 export class MusicGameComposer extends Composer<IBotContext> {
@@ -48,7 +40,12 @@ export class MusicGameComposer extends Composer<IBotContext> {
     this.command("music_guess", this.handleMusicGuess.bind(this));
     this.command("next_round", this.handleNextRound.bind(this));
     this.command("show_hint", this.handleShowHint.bind(this));
-    this.command("clear_game", this.handleClearGame.bind(this));
+    this.command("finish_game", this.handleFinishGame.bind(this));
+    this.command("list_games", this.handleListGames.bind(this));
+
+    // New handlers for multiple games
+    this.command("start_collection", this.handleStartCollection.bind(this));
+    this.command("show_game", this.handleShowGame.bind(this));
 
     this.action(/^guess:(.+)$/, this.handleGuessAction.bind(this));
     this.action(/^service:(.+)$/, this.handleServiceAction.bind(this));
@@ -81,14 +78,88 @@ export class MusicGameComposer extends Composer<IBotContext> {
     });
   }
 
-  private async handleClearGame(ctx: IBotContext): Promise<void> {
+  private async handleListGames(ctx: IBotContext): Promise<void> {
     if (!(await this.handleAdminCheck(ctx))) return;
-    await this.musicGuessService.clearGame(ctx);
+    await this.musicGuessService.listGames(ctx);
   }
 
-  private async handleNextRound(ctx: IBotContext): Promise<void> {
+  // New method to show specific game details
+  private async handleShowGame(ctx: IBotContext): Promise<void> {
     if (!(await this.handleAdminCheck(ctx))) return;
-    await this.roundService.nextRound(ctx, () => this.handleGameEnd(ctx));
+
+    const message =
+      ctx.message && "text" in ctx.message ? ctx.message.text : "";
+    const parts = message.split(" ");
+
+    if (parts.length < 2) {
+      await ctx.reply("Пожалуйста, укажите ID игры: /show_game [id]");
+      return;
+    }
+
+    const gameId = parseInt(parts[1]!);
+    const game = await this.musicGuessService.getGame(gameId);
+
+    if (!game) {
+      await ctx.reply(`Игра с ID ${gameId} не найдена`);
+      return;
+    }
+
+    await ctx.reply(`Информация об игре:
+ID: ${game.id}
+Создана: ${game.createdAt.toLocaleDateString()}
+Статус: ${game.status}
+Текущий раунд: ${game.currentRound}`);
+  }
+
+  private async handleStartCollection(ctx: IBotContext): Promise<void> {
+    if (!(await this.handleAdminCheck(ctx))) return;
+
+    await ctx.reply(
+      "Начинаем сбор треков для новой игры! Загрузите свои треки.",
+    );
+
+    const users = await this.userService.getSubmissionUsers();
+    this.userService.formatPingNames(users).forEach((batch) => {
+      ctx.reply(batch, {
+        parse_mode: "Markdown",
+      });
+    });
+  }
+
+  // Changed to finish game instead of clearing it
+  private async handleFinishGame(ctx: CommandContext): Promise<void> {
+    if (!(await this.handleAdminCheck(ctx))) return;
+
+    // Extract gameId from command if provided
+    const parts = ctx.message.text.split(" ");
+    const gameId =
+      parts.length > 1
+        ? parts[1]
+          ? parseInt(parts[1])
+          : undefined
+        : undefined;
+
+    await this.musicGuessService.finishGame(ctx, gameId);
+  }
+
+  private async handleNextRound(ctx: CommandContext): Promise<void> {
+    if (!(await this.handleAdminCheck(ctx))) return;
+
+    // Extract gameId from command if provided
+    const message = ctx.message.text;
+    const parts = message.split(" ");
+    const gameId =
+      parts.length > 1
+        ? parts[1]
+          ? parseInt(parts[1])
+          : undefined
+        : undefined;
+
+    await this.roundService.nextRound(
+      ctx,
+      () => this.handleGameEnd(ctx),
+      gameId,
+    );
   }
 
   private async handleGameEnd(ctx: IBotContext): Promise<void> {

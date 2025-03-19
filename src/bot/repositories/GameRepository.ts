@@ -1,4 +1,4 @@
-import { Guess, Prisma, User } from "@prisma/client";
+import { Game, GameStatus, Guess, Prisma, User } from "@prisma/client";
 import prisma from "../../prisma/client";
 import { MusicSubmission } from "@prisma/client";
 import { injectable } from "inversify";
@@ -74,8 +74,13 @@ export class GameRepository {
 
   async getCurrentGame(): Promise<GameWithData | null> {
     return prisma.game.findFirst({
+      where: {
+        status: "ACTIVE",
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
       include: gameWithData,
-      orderBy: { createdAt: "desc" },
     });
   }
 
@@ -154,24 +159,41 @@ export class GameRepository {
     });
   }
 
-  async getParticipants(): Promise<User[]> {
+  async getParticipants(gameId: number): Promise<User[]> {
     return prisma.user.findMany({
       where: {
         musicSubmission: {
-          isNot: null,
+          some: {
+            gameId: gameId,
+          },
         },
       },
     });
   }
 
   async getUsersNotGuessed(roundId: number): Promise<User[]> {
+    const round = await prisma.gameRound.findUnique({
+      where: { id: roundId },
+      select: { gameId: true },
+    });
+
+    if (!round) {
+      throw new Error(`Round with ID ${roundId} not found`);
+    }
+
     return prisma.user.findMany({
       where: {
-        musicSubmission: { isNot: null },
-        NOT: {
-          guesses: {
-            some: {
-              roundId,
+        musicSubmission: {
+          some: {
+            gameId: round.gameId,
+          },
+        },
+        AND: {
+          NOT: {
+            guesses: {
+              some: {
+                roundId,
+              },
             },
           },
         },
@@ -187,6 +209,21 @@ export class GameRepository {
     await prisma.gameRound.update({
       where: { id: roundId },
       data: { infoMessageId: messageId, chatId },
+    });
+  }
+
+  async updateGameStatus(gameId: number, status: GameStatus): Promise<Game> {
+    return prisma.game.update({
+      where: { id: gameId },
+      data: { status },
+    });
+  }
+
+  async getAllGames(): Promise<Game[]> {
+    return prisma.game.findMany({
+      orderBy: {
+        createdAt: "desc",
+      },
     });
   }
 }

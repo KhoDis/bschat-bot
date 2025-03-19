@@ -8,10 +8,10 @@ datasource db {
 }
 
 model User {
-  id              BigInt           @id // Telegram ID
+  id              BigInt            @id // Telegram ID
   tag             String? // Telegram tag
   name            String // Telegram username
-  musicSubmission MusicSubmission? // TODO: rename to music, make 1 to 1 relation instead
+  musicSubmission MusicSubmission[]
   guesses         Guess[]
   roles           UserRole[]
 }
@@ -45,16 +45,24 @@ model MusicSubmission {
   user               User        @relation(fields: [userId], references: [id])
   userId             BigInt
   rounds             GameRound[]
+  gameId             Int? // New field to link submission to a specific game
+  game               Game?       @relation(fields: [gameId], references: [id]) // New relation
 
-  @@unique([userId])
+  @@unique([userId, gameId])
+}
+
+enum GameStatus {
+  ACTIVE
+  FINISHED
 }
 
 model Game {
-  id           Int         @id @default(autoincrement())
-  createdAt    DateTime    @default(now())
-  status       String      @default("ACTIVE") // ACTIVE, FINISHED
-  currentRound Int         @default(0)
-  rounds       GameRound[]
+  id              Int               @id @default(autoincrement())
+  createdAt       DateTime          @default(now())
+  status          GameStatus        @default(ACTIVE)
+  currentRound    Int               @default(0)
+  rounds          GameRound[]
+  MusicSubmission MusicSubmission[]
 }
 
 model GameRound {

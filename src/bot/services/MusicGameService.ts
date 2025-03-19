@@ -27,18 +27,21 @@ export class MusicGameService {
     );
   }
 
-  async clearGame(ctx: Context) {
-    const game = await this.gameRepository.getCurrentGame();
+  async finishGame(ctx: Context, gameId?: number) {
+    const game = gameId
+      ? await this.gameRepository.getGameById(gameId)
+      : await this.gameRepository.getCurrentGame();
+
     if (!game) {
       await ctx.reply(getRandomResponse(botTemplates.gameState.noGame));
       return;
     }
+
     try {
-      await this.gameRepository.deleteGame(game.id);
+      await this.gameRepository.updateGameStatus(game.id, "FINISHED");
     } catch (e) {
       await ctx.reply("Брух, что это: " + e);
     }
-    await this.musicSubmissionRepository.deleteAll();
     await ctx.reply(getRandomResponse(botTemplates.musicGame.resetGame));
   }
 
@@ -48,16 +51,54 @@ export class MusicGameService {
   }
 
   async startGame(ctx: Context) {
-    const tracks: MusicSubmission[] = shuffleArray(
-      await this.musicSubmissionRepository.findAll(),
-    );
-    if (!tracks.length) {
-      await ctx.reply(getRandomResponse(botTemplates.musicGame.noTracks));
+    // Check if there's already an active game
+    const activeGame = await this.gameRepository.getCurrentGame();
+    if (activeGame) {
+      await ctx.reply(
+        "Уже есть активная игра. Завершите её перед началом новой.",
+      );
       return;
     }
 
-    const game = await this.gameRepository.createGame(tracks);
+    const newTracks =
+      await this.musicSubmissionRepository.findUnassignedTracks();
+
+    if (!newTracks.length) {
+      await ctx.reply(getRandomResponse(botTemplates.musicGame.noTracks));
+    }
+
+    // Create a new game with the new tracks
+    const game = await this.gameRepository.createGame(newTracks);
+
+    // Assign the tracks to this game
+    await this.musicSubmissionRepository.assignTracksToGame(
+      newTracks.map((track) => track.id),
+      game.id,
+    );
     await ctx.reply(getRandomResponse(botTemplates.gameState.gameStarted));
     return game;
+  }
+
+  async listGames(ctx: Context) {
+    const games = await this.gameRepository.getAllGames();
+
+    if (!games.length) {
+      await ctx.reply("Нет сохранённых игр.");
+      return;
+    }
+
+    const gamesList = games
+      .map((game) => {
+        const status = game.status === "ACTIVE" ? "Активная" : "Завершена";
+        return `ID: ${game.id} | Создана: ${game.createdAt.toLocaleDateString()} | Статус: ${status}`;
+      })
+      .join("\n");
+
+    await ctx.reply(`Список игр:\n${gamesList}`);
+  }
+
+  // New method to get a specific game
+  async getGame(gameId: number): Promise<any> {
+    return await this.gameRepository.getGameById(gameId);
   }
 }
