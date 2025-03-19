@@ -1,6 +1,7 @@
 import { Guess, Prisma, User } from "@prisma/client";
 import prisma from "../../prisma/client";
 import { MusicSubmission } from "@prisma/client";
+import { injectable } from "inversify";
 
 const gameWithData = Prisma.validator<Prisma.GameInclude>()({
   rounds: {
@@ -40,6 +41,7 @@ export type RoundWithGuesses = Prisma.GameRoundGetPayload<{
   include: typeof roundWithGuesses;
 }>;
 
+@injectable()
 export class GameRepository {
   async getGameById(id: number): Promise<GameWithData | null> {
     return prisma.game.findUnique({

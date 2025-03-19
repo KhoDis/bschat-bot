@@ -2,12 +2,15 @@ import { Composer, Context } from "telegraf";
 import { IBotContext } from "@/context/context.interface";
 import { UserService } from "@/bot/services/UserService";
 import { TextService } from "@/bot/services/TextService";
+import { inject, injectable } from "inversify";
+import { TYPES } from "@/types";
 
-// TODO: add @Group decorator
+// TODO: add @Group decorator (class-scoped or function-scoped)
+@injectable()
 export class ParticipantComposer extends Composer<IBotContext> {
   constructor(
-    private userService: UserService,
-    private text: TextService,
+    @inject(TYPES.UserService) private userService: UserService,
+    @inject(TYPES.TextService) private text: TextService,
   ) {
     super();
 

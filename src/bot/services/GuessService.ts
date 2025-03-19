@@ -1,13 +1,15 @@
 import { Context } from "telegraf";
 import { GameRepository } from "../repositories/GameRepository";
-import { BotTemplates, getRandomResponse } from "@/config/botTemplates";
 import { GuessValidationService } from "./GuessValidationService";
+import { inject, injectable } from "inversify";
+import { TYPES } from "@/types";
 
+@injectable()
 export class GuessService {
   constructor(
-    private gameRepository: GameRepository,
+    @inject(TYPES.GameRepository) private gameRepository: GameRepository,
+    @inject(TYPES.GuessValidationService)
     private validationService: GuessValidationService,
-    private readonly botResponses: BotTemplates,
   ) {}
 
   async processGuess(
@@ -48,8 +50,8 @@ export class GuessService {
 
         await ctx.answerCbQuery(
           isCorrect
-            ? getRandomResponse(this.botResponses.guessing.correctGuess(points))
-            : getRandomResponse(this.botResponses.guessing.wrongGuess),
+            ? "getRandomResponse(this.botResponses.guessing.correctGuess(points))"
+            : "getRandomResponse(this.botResponses.guessing.wrongGuess)",
         );
 
         if (onSuccess) {

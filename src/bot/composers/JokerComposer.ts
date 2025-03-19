@@ -2,14 +2,16 @@ import { IBotContext } from "@/context/context.interface";
 import { Composer, NarrowedContext } from "telegraf";
 import { Message, Update } from "telegraf/types";
 import { UserService } from "../services/UserService";
-import { BotTemplates, getRandomResponse } from "@/config/botTemplates";
-import { ITextService } from "@/bot/services/TextService";
+import { TextService } from "@/bot/services/TextService";
+import { inject, injectable } from "inversify";
+import { TYPES } from "@/types";
 
 type CommandContext = NarrowedContext<
   IBotContext,
   Update.MessageUpdate<Message.TextMessage>
 >;
 
+@injectable()
 export class JokerComposer extends Composer<IBotContext> {
   private readonly roasts = [
     "Твой интеллект можно уместить на флешке 256 Кб.",
@@ -47,9 +49,8 @@ export class JokerComposer extends Composer<IBotContext> {
   ];
 
   constructor(
-    private readonly userService: UserService,
-    private readonly botResponses: BotTemplates,
-    private readonly text: ITextService,
+    @inject(TYPES.UserService) private readonly userService: UserService,
+    @inject(TYPES.TextService) private readonly text: TextService,
   ) {
     super();
     this.setupHandlers();
@@ -106,7 +107,7 @@ export class JokerComposer extends Composer<IBotContext> {
 
   private async handleFuckMusic(ctx: CommandContext): Promise<void> {
     await ctx.reply(
-      getRandomResponse(this.botResponses.fuckMusic(ctx.from?.username || "")),
+      'getRandomResponse(this.botResponses.fuckMusic(ctx.from?.username || ""))',
     );
   }
 

@@ -1,11 +1,12 @@
 import { GameRepository } from "../repositories/GameRepository";
-import { BotTemplates, getRandomResponse } from "@/config/botTemplates";
 import { User } from "@prisma/client";
+import { inject, injectable } from "inversify";
+import { TYPES } from "@/types";
 
+@injectable()
 export class LeaderboardService {
   constructor(
-    private gameRepository: GameRepository,
-    private botResponses: BotTemplates,
+    @inject(TYPES.GameRepository) private gameRepository: GameRepository,
   ) {}
 
   async showLeaderboard(): Promise<string | null> {
@@ -44,9 +45,9 @@ export class LeaderboardService {
     const mostPoints = (await Promise.all(sortedLeaderboard)).join("\n");
 
     return [
-      getRandomResponse(this.botResponses.leaderboard.mostPoints),
+      "getRandomResponse(this.botResponses.leaderboard.mostPoints)",
       mostPoints,
-      getRandomResponse(this.botResponses.leaderboard.leastGuessed),
+      "getRandomResponse(this.botResponses.leaderboard.leastGuessed)",
       sortedTrackDifficulty.join("\n"),
     ].join("\n\n");
   }

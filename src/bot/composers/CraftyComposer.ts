@@ -5,6 +5,8 @@ import { Message, Update } from "telegraf/types";
 import { TextService } from "@/bot/services/TextService";
 import CraftyService from "@/bot/services/CraftyService";
 import { AxiosError } from "axios";
+import { TYPES } from "@/types";
+import { inject, injectable } from "inversify";
 
 type CommandContext = NarrowedContext<
   IBotContext,
@@ -18,11 +20,12 @@ type CallbackContext = NarrowedContext<
   match: RegExpExecArray;
 };
 
+@injectable()
 export class CraftyComposer extends Composer<IBotContext> {
   constructor(
-    private craftyService: CraftyService,
-    private roleService: RoleService,
-    private text: TextService,
+    @inject(TYPES.CraftyService) private craftyService: CraftyService,
+    @inject(TYPES.RoleService) private roleService: RoleService,
+    @inject(TYPES.TextService) private text: TextService,
   ) {
     super();
 

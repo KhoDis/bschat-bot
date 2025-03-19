@@ -1,6 +1,7 @@
 import i18next, { DefaultNamespace, Namespace, TFunction } from "i18next";
 import I18NextFsBackend from "i18next-fs-backend";
 import path from "node:path";
+import { injectable } from "inversify";
 
 export interface ITextService {
   get: <Ns extends Namespace = DefaultNamespace, KPrefix = undefined>(
@@ -10,6 +11,7 @@ export interface ITextService {
 
 export class TextServiceError extends Error {}
 
+@injectable()
 export class TextService implements ITextService {
   constructor() {
     i18next.use(I18NextFsBackend).init({

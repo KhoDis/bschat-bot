@@ -1,6 +1,8 @@
 import prisma from "../../prisma/client";
 import { MusicSubmission } from "@prisma/client";
+import { injectable } from "inversify";
 
+@injectable()
 export class MusicSubmissionRepository {
   async findById(id: number): Promise<MusicSubmission | null> {
     return prisma.musicSubmission.findUnique({

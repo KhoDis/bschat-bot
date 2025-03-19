@@ -1,8 +1,13 @@
 import { UserRepository } from "@/bot/repositories/UserRepository";
 import { MusicSubmission, User } from "@prisma/client";
+import { inject, injectable } from "inversify";
+import { TYPES } from "@/types";
 
+@injectable()
 export class UserService {
-  constructor(private userRepository: UserRepository) {}
+  constructor(
+    @inject(TYPES.UserRepository) private userRepository: UserRepository,
+  ) {}
 
   async saveOrUpdateUser(userData: {
     id: number;

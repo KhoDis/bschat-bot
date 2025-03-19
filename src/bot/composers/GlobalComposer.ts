@@ -1,13 +1,15 @@
 import { IBotContext } from "@/context/context.interface";
 import { Composer, NarrowedContext } from "telegraf";
-import { BotTemplates, getRandomResponse } from "@/config/botTemplates";
 import { LeaderboardService } from "../services/LeaderboardService";
 import { Update } from "telegraf/types";
+import { inject, injectable } from "inversify";
+import { TYPES } from "@/types";
 
+@injectable()
 export class GlobalComposer extends Composer<IBotContext> {
   constructor(
+    @inject(TYPES.LeaderboardService)
     private leaderboardService: LeaderboardService,
-    private botResponses: BotTemplates,
   ) {
     super();
 
@@ -23,7 +25,7 @@ export class GlobalComposer extends Composer<IBotContext> {
   private async handleShowLeaderboard(ctx: IBotContext): Promise<void> {
     const response = await this.leaderboardService.showLeaderboard();
     await ctx.reply(
-      response ?? getRandomResponse(this.botResponses.gameState.noGame),
+      response ?? "getRandomResponse(this.botResponses.gameState.noGame)",
     );
   }
 

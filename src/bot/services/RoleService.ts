@@ -5,9 +5,15 @@ import {
   PermissionService,
 } from "./PermissionService";
 import { Role, User } from "@prisma/client";
+import { inject, injectable } from "inversify";
+import { TYPES } from "@/types";
 
+@injectable()
 export class RoleService {
-  constructor(private permissionService: PermissionService) {}
+  constructor(
+    @inject(TYPES.PermissionService)
+    private permissionService: PermissionService,
+  ) {}
 
   /**
    * Checks if a user has a specific permission in a chat

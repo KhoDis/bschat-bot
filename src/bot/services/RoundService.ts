@@ -4,19 +4,21 @@ import {
   GameWithData,
   RoundWithGuesses,
 } from "../repositories/GameRepository";
-import { BotTemplates, getRandomResponse } from "@/config/botTemplates";
+import { getRandomResponse } from "@/config/botTemplates";
 import { IBotContext } from "@/context/context.interface";
 import { Result } from "@/utils/Result";
 import { InlineKeyboardButton } from "telegraf/typings/core/types/typegram";
 import { Game, GameRound, User } from "@prisma/client";
 import * as tg from "telegraf/src/core/types/typegram";
 import { TextService } from "@/bot/services/TextService";
+import { inject, injectable } from "inversify";
+import { TYPES } from "@/types";
 
+@injectable()
 export class RoundService {
   constructor(
-    private gameRepository: GameRepository,
-    private text: TextService,
-    private readonly botResponses: BotTemplates,
+    @inject(TYPES.GameRepository) private gameRepository: GameRepository,
+    @inject(TYPES.TextService) private text: TextService,
   ) {}
 
   async processRound(ctx: Context, onNoRound: () => Promise<void>) {
@@ -34,7 +36,7 @@ export class RoundService {
         await this.playRound(ctx, participants, currentRound);
       },
       async () => {
-        getRandomResponse(this.botResponses.gameState.noGame);
+        getRandomResponse(["this.botResponses.gameState.noGame"]);
       },
     );
   }
@@ -115,11 +117,11 @@ export class RoundService {
   async nextRound(ctx: Context, onNoRound: () => Promise<void>) {
     const game = await this.gameRepository.getCurrentGame();
     if (!game) {
-      await ctx.reply(getRandomResponse(this.botResponses.gameState.noGame));
+      await ctx.reply("getRandomResponse(this.botResponses.gameState.noGame)");
       return;
     }
 
-    await ctx.reply(getRandomResponse(this.botResponses.rounds.nextRound));
+    await ctx.reply("getRandomResponse(this.botResponses.rounds.nextRound)");
     await this.gameRepository.updateGameRound(game.id, game.currentRound + 1);
     await this.processRound(ctx, onNoRound);
   }
@@ -157,14 +159,12 @@ export class RoundService {
           return;
         }
         await ctx.reply(
-          getRandomResponse(
-            this.botResponses.hints.hintLayout(round.submission.hint as string),
-          ),
+          "getRandomResponse(this.botResponses.hints.hintLayout(round.submission.hint as string))",
         );
       },
       async () => {
         await ctx.reply(
-          getRandomResponse(this.botResponses.hints.hintAlreadyShown),
+          "getRandomResponse(this.botResponses.hints.hintAlreadyShown)",
         );
       },
     );
@@ -174,13 +174,15 @@ export class RoundService {
     game: GameWithData | null,
   ): Result<{ game: GameWithData; round: RoundWithGuesses }, string> {
     if (!game) {
-      return Result.err(getRandomResponse(this.botResponses.gameState.noGame));
+      return Result.err(
+        "getRandomResponse(this.botResponses.gameState.noGame)",
+      );
     }
     const roundId = game.currentRound;
     const round = game.rounds.find((r) => r.index === roundId);
     return round
       ? Result.ok({ game, round })
-      : Result.err(getRandomResponse(this.botResponses.rounds.noSuchRound));
+      : Result.err("getRandomResponse(this.botResponses.rounds.noSuchRound)");
   }
 
   private validateHintShown(
@@ -189,7 +191,7 @@ export class RoundService {
   ): Result<{ game: Game; round: RoundWithGuesses }, string> {
     if (round.hintShown) {
       return Result.err(
-        getRandomResponse(this.botResponses.hints.hintAlreadyShown),
+        "getRandomResponse(this.botResponses.hints.hintAlreadyShown)",
       );
     }
     return Result.ok({ game, round });

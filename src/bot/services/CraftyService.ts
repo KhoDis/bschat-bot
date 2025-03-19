@@ -1,4 +1,7 @@
 import axios, { AxiosError, AxiosInstance, AxiosResponse } from "axios";
+import { inject, injectable } from "inversify";
+import { ConfigService } from "@/config/config.service";
+import { TYPES } from "@/types";
 
 export type GetRequest<TBody> = {
   status: string;
@@ -55,10 +58,13 @@ export type ServerStat = {
   downloading: boolean;
 };
 
+@injectable()
 class CraftyService {
   private api: AxiosInstance;
 
-  constructor(baseUrl: string, apiKey: string) {
+  constructor(@inject(TYPES.ConfigService) private config: ConfigService) {
+    const baseUrl = this.config.get("CRAFTY_BASE_URL");
+    const apiKey = this.config.get("CRAFTY_API_KEY");
     // Initialize axios instance
     this.api = axios.create({
       baseURL: baseUrl,

@@ -5,8 +5,9 @@ import {
   RoundWithGuesses,
 } from "../repositories/GameRepository";
 import { Result } from "@/utils/Result";
-import { BotTemplates, getRandomResponse } from "@/config/botTemplates";
 import { GameRound, Guess } from "@prisma/client";
+import { inject, injectable } from "inversify";
+import { TYPES } from "@/types";
 
 interface GuessContext {
   game: GameWithData;
@@ -15,10 +16,10 @@ interface GuessContext {
   existingGuess: Guess | null;
 }
 
+@injectable()
 export class GuessValidationService {
   constructor(
-    private gameRepository: GameRepository,
-    private readonly botResponses: BotTemplates,
+    @inject(TYPES.GameRepository) private gameRepository: GameRepository,
   ) {}
 
   async validateGuess(
@@ -41,7 +42,7 @@ export class GuessValidationService {
       await this.gameRepository.getCurrentGame();
     return game
       ? Result.ok(game)
-      : Result.err(getRandomResponse(this.botResponses.gameState.noGame));
+      : Result.err("getRandomResponse(this.botResponses.gameState.noGame)");
   }
 
   private validateRound(
@@ -51,7 +52,7 @@ export class GuessValidationService {
     const round = game.rounds.find((r) => r.id === roundId);
     return round
       ? Result.ok({ game, round } as { game: GameWithData; round: GameRound })
-      : Result.err(getRandomResponse(this.botResponses.rounds.noSuchRound));
+      : Result.err("getRandomResponse(this.botResponses.rounds.noSuchRound)");
   }
 
   private validateUser(
@@ -66,7 +67,7 @@ export class GuessValidationService {
           GuessContext,
           "existingGuess"
         > & { guessingUserId: number })
-      : Result.err(getRandomResponse(this.botResponses.user.notFound));
+      : Result.err("getRandomResponse(this.botResponses.user.notFound)");
   }
 
   private async validateExistingGuess(
@@ -78,7 +79,9 @@ export class GuessValidationService {
       userId,
     );
     return existingGuess
-      ? Result.err(getRandomResponse(this.botResponses.guessing.alreadyGuessed))
+      ? Result.err(
+          "getRandomResponse(this.botResponses.guessing.alreadyGuessed)",
+        )
       : Result.ok({ ...context, existingGuess: null });
   }
 }

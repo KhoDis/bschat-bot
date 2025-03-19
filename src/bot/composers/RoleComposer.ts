@@ -9,18 +9,22 @@ import {
   PermissionService,
 } from "@/bot/services/PermissionService";
 import { TextService } from "@/bot/services/TextService";
+import { TYPES } from "@/types";
+import { inject, injectable } from "inversify";
 
 type CommandContext = NarrowedContext<
   IBotContext,
   Update.MessageUpdate<Message.TextMessage>
 >;
 
+@injectable()
 export class RoleComposer extends Composer<IBotContext> {
   constructor(
-    private roleService: RoleService,
+    @inject(TYPES.RoleService) private roleService: RoleService,
+    @inject(TYPES.PermissionService)
     private permissionService: PermissionService,
-    private userService: UserService,
-    private text: TextService,
+    @inject(TYPES.UserService) private userService: UserService,
+    @inject(TYPES.TextService) private text: TextService,
   ) {
     super();
 

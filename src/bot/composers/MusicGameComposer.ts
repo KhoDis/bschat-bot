@@ -1,13 +1,14 @@
 import { IBotContext } from "@/context/context.interface";
 import { Composer, NarrowedContext } from "telegraf";
 import { UserService } from "../services/UserService";
-import { BotTemplates, getRandomResponse } from "@/config/botTemplates";
 import { RoundService } from "../services/RoundService";
 import { GuessService } from "../services/GuessService";
 import { MusicGameService } from "../services/MusicGameService";
 import { LeaderboardService } from "../services/LeaderboardService";
 import { Update } from "telegraf/types";
 import { ADMIN_USERNAME } from "@/config/config";
+import { inject, injectable } from "inversify";
+import { TYPES } from "@/types";
 
 type CallbackQueryContext = NarrowedContext<
   IBotContext,
@@ -16,14 +17,15 @@ type CallbackQueryContext = NarrowedContext<
   match: RegExpExecArray;
 };
 
+@injectable()
 export class MusicGameComposer extends Composer<IBotContext> {
   constructor(
-    private userService: UserService,
-    private roundService: RoundService,
-    private musicGuessService: MusicGameService,
-    private guessService: GuessService,
+    @inject(TYPES.UserService) private userService: UserService,
+    @inject(TYPES.RoundService) private roundService: RoundService,
+    @inject(TYPES.MusicGameService) private musicGuessService: MusicGameService,
+    @inject(TYPES.GuessService) private guessService: GuessService,
+    @inject(TYPES.LeaderboardService)
     private leaderboardService: LeaderboardService,
-    private botResponses: BotTemplates,
   ) {
     super();
 
@@ -36,7 +38,7 @@ export class MusicGameComposer extends Composer<IBotContext> {
 
   private async handleAdminCheck(ctx: IBotContext): Promise<boolean> {
     if (!this.isAdmin(ctx.from?.username || "")) {
-      await ctx.reply(getRandomResponse(this.botResponses.user.notAdmin));
+      await ctx.reply("this.botResponses.user.notAdmin");
       return false;
     }
     return true;
@@ -90,7 +92,7 @@ export class MusicGameComposer extends Composer<IBotContext> {
   }
 
   private async handleGameEnd(ctx: IBotContext): Promise<void> {
-    await ctx.reply(getRandomResponse(this.botResponses.rounds.noMoreRounds));
+    await ctx.reply("getRandomResponse(this.botResponses.rounds.noMoreRounds)");
     await this.leaderboardService.showLeaderboard();
   }
 

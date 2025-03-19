@@ -5,6 +5,8 @@ import { Message, Update } from "telegraf/types";
 import { UserService } from "../services/UserService";
 import { MusicGameService } from "../services/MusicGameService";
 import { TextService } from "@/bot/services/TextService";
+import { inject, injectable } from "inversify";
+import { TYPES } from "@/types";
 
 type MessageContext<T extends Message = Message> = NarrowedContext<
   IBotContext,
@@ -29,11 +31,13 @@ type AnyMediaMessageContext = MessageContext<
   | Message.VoiceMessage
 >;
 
+@injectable()
 export class PrivateComposer extends Composer<IBotContext> {
   constructor(
-    private readonly userService: UserService,
+    @inject(TYPES.UserService) private readonly userService: UserService,
+    @inject(TYPES.MusicGameService)
     private readonly musicGuessService: MusicGameService,
-    private readonly text: TextService,
+    @inject(TYPES.TextService) private readonly text: TextService,
   ) {
     super();
 

@@ -1,4 +1,5 @@
 import prisma from "@/prisma/client";
+import { injectable } from "inversify";
 
 export const PERMISSIONS = {
   ADMIN: 1 << 0, // 0001 = 1
@@ -9,6 +10,7 @@ export const PERMISSIONS = {
 
 export type Permission = keyof typeof PERMISSIONS;
 
+@injectable()
 export class PermissionService {
   constructor() {}
 

@@ -1,6 +1,8 @@
 import prisma from "@/prisma/client";
 import { MusicSubmission, User } from "@prisma/client";
+import { injectable } from "inversify";
 
+@injectable()
 export class UserRepository {
   async upsertUser(userData: {
     id: number;

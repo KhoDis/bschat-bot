@@ -4,10 +4,14 @@ import { GameRepository } from "../repositories/GameRepository";
 import { MusicSubmissionRepository } from "../repositories/MusicSubmissionRepository";
 import { botTemplates, getRandomResponse } from "@/config/botTemplates";
 import { MusicSubmission } from "@prisma/client";
+import { inject, injectable } from "inversify";
+import { TYPES } from "@/types";
 
+@injectable()
 export class MusicGameService {
   constructor(
-    private gameRepository: GameRepository,
+    @inject(TYPES.GameRepository) private gameRepository: GameRepository,
+    @inject(TYPES.MusicSubmissionRepository)
     private musicSubmissionRepository: MusicSubmissionRepository,
   ) {}
 
