@@ -29,7 +29,7 @@
       "Without tracks, the game won’t work. Unless you want to play in silence..."
     ],
     "resetGame": [
-      "The game has been reset."
+      "The game has been finished.."
     ]
   },
   "rounds": {
@@ -52,6 +52,30 @@
       "Next round! Get ready for more disappointments!",
       "Oh, you're still here? Alright, let’s continue the torture...",
       "New round! New opportunities to embarrass yourself!"
+    ],
+    "roundInfo": {
+      "thinking": [
+        "Still pondering",
+        "Struggling with the answer",
+        "Engaged in deep thought",
+        "Pretending to think"
+      ],
+      "correct": [
+        "Lucky guessers",
+        "Experts (or just lucky?)",
+        "Somehow guessed it"
+      ],
+      "wrong": [
+        "Missed the mark",
+        "Didn't guess it (how unexpected!)",
+        "Tried, but alas"
+      ]
+    },
+    "playRound": [
+      "Guessing! Or at least pretending to...",
+      "Time to show off your musical ~illiteracy~ erudition!",
+      "Well, ready for new musical discoveries?",
+      "Attention! Something... interesting is about to happen."
     ]
   },
   "user": {
@@ -95,8 +119,8 @@
       "Seriously? Asking for a hint again? Does memory not serve you?"
     ],
     "hintLayout": [
-      "🎵 Hint (for those who’ve completely given up):\n\n{{hint}}",
-      "🎵 Can't do it without a hint?\n\n{{hint}}"
+      "🎵 Hint (for those who’ve completely given up).",
+      "🎵 Can't do it without a hint?"
     ]
   },
   "leaderboard": {

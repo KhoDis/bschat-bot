@@ -8,6 +8,7 @@ import { Result } from "@/utils/Result";
 import { GameRound, Guess } from "@prisma/client";
 import { inject, injectable } from "inversify";
 import { TYPES } from "@/types";
+import { TextService } from "@/bot/services/TextService";
 
 interface GuessContext {
   game: GameWithData;
@@ -20,6 +21,7 @@ interface GuessContext {
 export class GuessValidationService {
   constructor(
     @inject(TYPES.GameRepository) private gameRepository: GameRepository,
+    @inject(TYPES.TextService) private text: TextService,
   ) {}
 
   async validateGuess(
@@ -42,7 +44,7 @@ export class GuessValidationService {
       await this.gameRepository.getCurrentGame();
     return game
       ? Result.ok(game)
-      : Result.err("getRandomResponse(this.botResponses.gameState.noGame)");
+      : Result.err(this.text.get("gameState.noGame"));
   }
 
   private validateRound(
@@ -52,7 +54,7 @@ export class GuessValidationService {
     const round = game.rounds.find((r) => r.id === roundId);
     return round
       ? Result.ok({ game, round } as { game: GameWithData; round: GameRound })
-      : Result.err("getRandomResponse(this.botResponses.rounds.noSuchRound)");
+      : Result.err(this.text.get("rounds.noSuchRound"));
   }
 
   private validateUser(
@@ -67,7 +69,7 @@ export class GuessValidationService {
           GuessContext,
           "existingGuess"
         > & { guessingUserId: number })
-      : Result.err("getRandomResponse(this.botResponses.user.notFound)");
+      : Result.err(this.text.get("user.notFound"));
   }
 
   private async validateExistingGuess(
@@ -79,9 +81,7 @@ export class GuessValidationService {
       userId,
     );
     return existingGuess
-      ? Result.err(
-          "getRandomResponse(this.botResponses.guessing.alreadyGuessed)",
-        )
+      ? Result.err(this.text.get("guessing.alreadyGuessed"))
       : Result.ok({ ...context, existingGuess: null });
   }
 }

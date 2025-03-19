@@ -4,12 +4,14 @@ import { LeaderboardService } from "../services/LeaderboardService";
 import { Update } from "telegraf/types";
 import { inject, injectable } from "inversify";
 import { TYPES } from "@/types";
+import { TextService } from "@/bot/services/TextService";
 
 @injectable()
 export class GlobalComposer extends Composer<IBotContext> {
   constructor(
     @inject(TYPES.LeaderboardService)
     private leaderboardService: LeaderboardService,
+    @inject(TYPES.TextService) private text: TextService,
   ) {
     super();
 
@@ -24,9 +26,7 @@ export class GlobalComposer extends Composer<IBotContext> {
 
   private async handleShowLeaderboard(ctx: IBotContext): Promise<void> {
     const response = await this.leaderboardService.showLeaderboard();
-    await ctx.reply(
-      response ?? "getRandomResponse(this.botResponses.gameState.noGame)",
-    );
+    await ctx.reply(response ?? this.text.get("gameState.noGame"));
   }
 
   private async handleChatId(

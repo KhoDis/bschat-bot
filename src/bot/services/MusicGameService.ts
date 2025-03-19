@@ -1,11 +1,9 @@
 import { Context } from "telegraf";
-import { shuffleArray } from "@/utils/arrayUtils";
 import { GameRepository } from "../repositories/GameRepository";
 import { MusicSubmissionRepository } from "../repositories/MusicSubmissionRepository";
-import { botTemplates, getRandomResponse } from "@/config/botTemplates";
-import { MusicSubmission } from "@prisma/client";
 import { inject, injectable } from "inversify";
 import { TYPES } from "@/types";
+import { TextService } from "@/bot/services/TextService";
 
 @injectable()
 export class MusicGameService {
@@ -13,6 +11,7 @@ export class MusicGameService {
     @inject(TYPES.GameRepository) private gameRepository: GameRepository,
     @inject(TYPES.MusicSubmissionRepository)
     private musicSubmissionRepository: MusicSubmissionRepository,
+    @inject(TYPES.TextService) private text: TextService,
   ) {}
 
   async addMediaHint(
@@ -33,7 +32,7 @@ export class MusicGameService {
       : await this.gameRepository.getCurrentGame();
 
     if (!game) {
-      await ctx.reply(getRandomResponse(botTemplates.gameState.noGame));
+      await ctx.reply(this.text.get("gameState.noGame"));
       return;
     }
 
@@ -42,7 +41,7 @@ export class MusicGameService {
     } catch (e) {
       await ctx.reply("Брух, что это: " + e);
     }
-    await ctx.reply(getRandomResponse(botTemplates.musicGame.resetGame));
+    await ctx.reply(this.text.get("musicGame.resetGame"));
   }
 
   async isGameStarted(): Promise<boolean> {
@@ -64,7 +63,7 @@ export class MusicGameService {
       await this.musicSubmissionRepository.findUnassignedTracks();
 
     if (!newTracks.length) {
-      await ctx.reply(getRandomResponse(botTemplates.musicGame.noTracks));
+      await ctx.reply(this.text.get("musicGame.noTracks"));
     }
 
     // Create a new game with the new tracks
@@ -75,7 +74,7 @@ export class MusicGameService {
       newTracks.map((track) => track.id),
       game.id,
     );
-    await ctx.reply(getRandomResponse(botTemplates.gameState.gameStarted));
+    await ctx.reply(this.text.get("gameState.gameStarted"));
     return game;
   }
 

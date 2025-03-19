@@ -2,11 +2,13 @@ import { GameRepository } from "../repositories/GameRepository";
 import { User } from "@prisma/client";
 import { inject, injectable } from "inversify";
 import { TYPES } from "@/types";
+import { TextService } from "@/bot/services/TextService";
 
 @injectable()
 export class LeaderboardService {
   constructor(
     @inject(TYPES.GameRepository) private gameRepository: GameRepository,
+    @inject(TYPES.TextService) private text: TextService,
   ) {}
 
   async showLeaderboard(): Promise<string | null> {
@@ -45,9 +47,9 @@ export class LeaderboardService {
     const mostPoints = (await Promise.all(sortedLeaderboard)).join("\n");
 
     return [
-      "getRandomResponse(this.botResponses.leaderboard.mostPoints)",
+      this.text.get("leaderboard.mostPoints"),
       mostPoints,
-      "getRandomResponse(this.botResponses.leaderboard.leastGuessed)",
+      this.text.get("leaderboard.leastGuessed"),
       sortedTrackDifficulty.join("\n"),
     ].join("\n\n");
   }

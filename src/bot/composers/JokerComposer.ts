@@ -106,9 +106,7 @@ export class JokerComposer extends Composer<IBotContext> {
   }
 
   private async handleFuckMusic(ctx: CommandContext): Promise<void> {
-    await ctx.reply(
-      'getRandomResponse(this.botResponses.fuckMusic(ctx.from?.username || ""))',
-    );
+    await ctx.reply(this.text.get("fuckMusic"));
   }
 
   private async handleDie(ctx: CommandContext): Promise<void> {

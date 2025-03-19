@@ -4,7 +4,6 @@ import {
   GameWithData,
   RoundWithGuesses,
 } from "../repositories/GameRepository";
-import { getRandomResponse } from "@/config/botTemplates";
 import { IBotContext } from "@/context/context.interface";
 import { Result } from "@/utils/Result";
 import { InlineKeyboardButton } from "telegraf/typings/core/types/typegram";
@@ -36,7 +35,7 @@ export class RoundService {
         await this.playRound(ctx, participants, currentRound);
       },
       async () => {
-        getRandomResponse(["this.botResponses.gameState.noGame"]);
+        this.text.get("gameState.noGame");
       },
     );
   }
@@ -52,15 +51,8 @@ export class RoundService {
       callback_data: `guess:${currentRound.id}_${user.id}`,
     }));
 
-    const captions = [
-      "Угадываем! Или хотя бы делаем вид...",
-      "Время показать свою музыкальную ~безграмотность~ эрудицию!",
-      "Ну что, готовы к новым музыкальным открытиям?",
-      "Внимание! Сейчас будет что-то... интересное.",
-    ];
-
     await ctx.replyWithAudio(currentRound.submission.fileId, {
-      caption: getRandomResponse(captions),
+      caption: this.text.get("rounds.playRound"),
       reply_markup: { inline_keyboard: this.chunkButtons(buttons, 3) },
     });
 
@@ -123,11 +115,11 @@ export class RoundService {
       ? await this.gameRepository.getGameById(gameId)
       : await this.gameRepository.getCurrentGame();
     if (!game) {
-      await ctx.reply("getRandomResponse(this.botResponses.gameState.noGame)");
+      await ctx.reply(this.text.get("gameState.noGame"));
       return;
     }
 
-    await ctx.reply("getRandomResponse(this.botResponses.rounds.nextRound)");
+    await ctx.reply(this.text.get("rounds.nextRound"));
     await this.gameRepository.updateGameRound(game.id, game.currentRound + 1);
     await this.processRound(ctx, onNoRound);
   }
@@ -164,14 +156,10 @@ export class RoundService {
           );
           return;
         }
-        await ctx.reply(
-          "getRandomResponse(this.botResponses.hints.hintLayout(round.submission.hint as string))",
-        );
+        await ctx.reply(this.text.get("hints.hintLayout"));
       },
       async () => {
-        await ctx.reply(
-          "getRandomResponse(this.botResponses.hints.hintAlreadyShown)",
-        );
+        await ctx.reply(this.text.get("hints.hintAlreadyShown"));
       },
     );
   }
@@ -180,15 +168,13 @@ export class RoundService {
     game: GameWithData | null,
   ): Result<{ game: GameWithData; round: RoundWithGuesses }, string> {
     if (!game) {
-      return Result.err(
-        "getRandomResponse(this.botResponses.gameState.noGame)",
-      );
+      return Result.err(this.text.get("gameState.noGame"));
     }
     const roundId = game.currentRound;
     const round = game.rounds.find((r) => r.index === roundId);
     return round
       ? Result.ok({ game, round })
-      : Result.err("getRandomResponse(this.botResponses.rounds.noSuchRound)");
+      : Result.err(this.text.get("rounds.noSuchRound"));
   }
 
   private validateHintShown(
@@ -196,9 +182,7 @@ export class RoundService {
     round: RoundWithGuesses,
   ): Result<{ game: Game; round: RoundWithGuesses }, string> {
     if (round.hintShown) {
-      return Result.err(
-        "getRandomResponse(this.botResponses.hints.hintAlreadyShown)",
-      );
+      return Result.err(this.text.get("hints.hintAlreadyShown"));
     }
     return Result.ok({ game, round });
   }
@@ -207,32 +191,14 @@ export class RoundService {
     const notYetGuessed = await this.gameRepository.getUsersNotGuessed(
       round.id,
     );
-    const thinkingPhrases = [
-      "Всё ещё в раздумьях",
-      "Мучаются с ответом",
-      "Погружены в глубокие размышления",
-      "Изображают мыслительный процесс",
-    ];
-
-    const correctPhrases = [
-      "Счастливчики угадавшие",
-      "Знатоки (или везунчики?)",
-      "Каким-то чудом угадали",
-    ];
-
-    const wrongPhrases = [
-      "Промахнулись мимо кассы",
-      "Не угадали (как неожиданно!)",
-      "Попытались, но увы",
-    ];
 
     return `
         🎯 Раунд ${round.index + 1} - продолжаем веселиться!
         ${round.hintShown ? "💡 Подсказка была показана (для особо одарённых)" : ""}
         
-        ${getRandomResponse(thinkingPhrases)}: ${notYetGuessed.map((u) => u.name).join(", ")}
+        ${this.text.get("roundInfo.thinking")}: ${notYetGuessed.map((u) => u.name).join(", ")}
         
-        ${getRandomResponse(correctPhrases)}: ${
+        ${this.text.get("roundInfo.correct")}: ${
           round.guesses
             .filter((g) => g.isCorrect)
             .map(
@@ -242,7 +208,7 @@ export class RoundService {
             .join(", ") || "Пока никто! Неужели так сложно?"
         }
         
-        ${getRandomResponse(wrongPhrases)}: ${
+        ${this.text.get("roundInfo.wrong")}: ${
           round.guesses
             .filter((g) => !g.isCorrect)
             .map((g) => g.user.name)

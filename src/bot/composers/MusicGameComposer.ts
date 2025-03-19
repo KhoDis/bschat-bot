@@ -8,6 +8,7 @@ import { LeaderboardService } from "../services/LeaderboardService";
 import { ADMIN_USERNAME } from "@/config/config";
 import { inject, injectable } from "inversify";
 import { CallbackQueryContext, CommandContext, TYPES } from "@/types";
+import { TextService } from "@/bot/services/TextService";
 
 @injectable()
 export class MusicGameComposer extends Composer<IBotContext> {
@@ -18,6 +19,7 @@ export class MusicGameComposer extends Composer<IBotContext> {
     @inject(TYPES.GuessService) private guessService: GuessService,
     @inject(TYPES.LeaderboardService)
     private leaderboardService: LeaderboardService,
+    @inject(TYPES.TextService) private text: TextService,
   ) {
     super();
 
@@ -163,7 +165,7 @@ ID: ${game.id}
   }
 
   private async handleGameEnd(ctx: IBotContext): Promise<void> {
-    await ctx.reply("getRandomResponse(this.botResponses.rounds.noMoreRounds)");
+    await ctx.reply(this.text.get("rounds.noMoreRounds"));
     await this.leaderboardService.showLeaderboard();
   }
 

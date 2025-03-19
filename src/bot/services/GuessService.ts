@@ -3,6 +3,7 @@ import { GameRepository } from "../repositories/GameRepository";
 import { GuessValidationService } from "./GuessValidationService";
 import { inject, injectable } from "inversify";
 import { TYPES } from "@/types";
+import { TextService } from "@/bot/services/TextService";
 
 @injectable()
 export class GuessService {
@@ -10,6 +11,7 @@ export class GuessService {
     @inject(TYPES.GameRepository) private gameRepository: GameRepository,
     @inject(TYPES.GuessValidationService)
     private validationService: GuessValidationService,
+    @inject(TYPES.TextService) private text: TextService,
   ) {}
 
   async processGuess(
@@ -50,8 +52,8 @@ export class GuessService {
 
         await ctx.answerCbQuery(
           isCorrect
-            ? "getRandomResponse(this.botResponses.guessing.correctGuess(points))"
-            : "getRandomResponse(this.botResponses.guessing.wrongGuess)",
+            ? this.text.get("guessing.correctGuess", { points })
+            : this.text.get("guessing.wrongGuess"),
         );
 
         if (onSuccess) {
