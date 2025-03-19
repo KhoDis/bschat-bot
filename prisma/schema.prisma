@@ -48,7 +48,8 @@ model MusicSubmission {
   gameId             Int? // New field to link submission to a specific game
   game               Game?       @relation(fields: [gameId], references: [id]) // New relation
 
-  @@unique([userId, gameId])
+  // TODO: ADD HERE GAMEID, VERY IMPORTANT
+  @@unique([userId])
 }
 
 enum GameStatus {

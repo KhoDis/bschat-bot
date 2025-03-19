@@ -45,7 +45,22 @@ export class UserRepository {
   async findSubmissionByUserId(
     userId: number,
   ): Promise<MusicSubmission | null> {
-    return prisma.musicSubmission.findUnique({ where: { userId } });
+    // TODO: pass gameId to the arguments instead
+    const game = await prisma.game.findFirst({
+      where: {
+        status: "ACTIVE",
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+    if (!game) return null;
+    return prisma.musicSubmission.findUnique({
+      where: {
+        userId: userId,
+        gameId: game.id,
+      },
+    });
   }
 
   async upsertSubmission(submission: {
@@ -53,7 +68,9 @@ export class UserRepository {
     fileId: string;
   }): Promise<MusicSubmission> {
     return prisma.musicSubmission.upsert({
-      where: { userId: submission.userId },
+      where: {
+        userId: submission.userId,
+      },
       create: submission,
       update: submission,
     });
