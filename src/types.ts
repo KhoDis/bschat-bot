@@ -1,13 +1,12 @@
 import { NarrowedContext } from "telegraf";
 import { IBotContext } from "@/context/context.interface";
 import { Message, Update } from "telegraf/types";
+import { CallbackQuery } from "@telegraf/types";
 
 export type CallbackQueryContext = NarrowedContext<
   IBotContext,
-  Update.CallbackQueryUpdate
-> & {
-  match: RegExpExecArray;
-};
+  Update.CallbackQueryUpdate<CallbackQuery.DataQuery>
+>;
 
 export type CommandContext = NarrowedContext<
   IBotContext,
@@ -16,21 +15,18 @@ export type CommandContext = NarrowedContext<
 
 export const TYPES = {
   GameRepository: Symbol.for("GameRepository"),
-  MusicSubmissionRepository: Symbol.for("MusicSubmissionRepository"),
-  UserRepository: Symbol.for("UserRepository"),
 
   ConfigService: Symbol.for("ConfigService"),
 
   CraftyService: Symbol.for("CraftyService"),
   GuessService: Symbol.for("GuessService"),
-  GuessValidationService: Symbol.for("GuessValidationService"),
   LeaderboardService: Symbol.for("LeaderboardService"),
   MusicGameService: Symbol.for("MusicGameService"),
   PermissionService: Symbol.for("PermissionService"),
   RoleService: Symbol.for("RoleService"),
   RoundService: Symbol.for("RoundService"),
   TextService: Symbol.for("TextService"),
-  UserService: Symbol.for("UserService"),
+  MemberService: Symbol.for("MemberService"),
 
   CraftyComposer: Symbol.for("CraftyComposer"),
   GlobalComposer: Symbol.for("GlobalComposer"),

@@ -11,7 +11,7 @@ import { Game, GameRound, User } from "@prisma/client";
 import * as tg from "telegraf/src/core/types/typegram";
 import { TextService } from "@/bot/services/TextService";
 import { inject, injectable } from "inversify";
-import { TYPES } from "@/types";
+import { CommandContext, TYPES } from "@/types";
 
 @injectable()
 export class RoundService {
@@ -20,13 +20,17 @@ export class RoundService {
     @inject(TYPES.TextService) private text: TextService,
   ) {}
 
-  async processRound(ctx: Context, onNoRound: () => Promise<void>) {
-    const game = await this.gameRepository.getCurrentGame();
+  async processRound(
+    ctx: Context,
+    chatId: number,
+    onNoRound: () => Promise<void>,
+  ) {
+    const game = await this.gameRepository.getCurrentGame(chatId);
     const context = this.validateRound(game);
 
     await context.match(
       async ({ game, round }) => {
-        const currentRound = await this.gameRepository.getCurrentRound();
+        const currentRound = await this.gameRepository.getCurrentRound(chatId);
         if (!currentRound) {
           await onNoRound();
           return;
@@ -51,7 +55,7 @@ export class RoundService {
       callback_data: `guess:${currentRound.id}_${user.id}`,
     }));
 
-    await ctx.replyWithAudio(currentRound.submission.fileId, {
+    await ctx.replyWithAudio(currentRound.musicFileId, {
       caption: this.text.get("rounds.playRound"),
       reply_markup: { inline_keyboard: this.chunkButtons(buttons, 3) },
     });
@@ -69,12 +73,16 @@ export class RoundService {
 
     const info = await this.formatRoundInfo(round);
 
-    if (round.infoMessageId && round.chatId) {
-      console.log("I found message info", round.infoMessageId, round.chatId);
+    if (round.infoMessageId && round) {
+      console.log(
+        "I found message info",
+        round.infoMessageId,
+        round.game.chatId,
+      );
       try {
         await ctx.telegram.editMessageText(
-          round.chatId.toString(),
-          round.infoMessageId,
+          round.game.chatId.toString(),
+          Number(round.infoMessageId),
           undefined,
           info,
           { parse_mode: "HTML" },
@@ -96,7 +104,6 @@ export class RoundService {
     await this.gameRepository.updateRoundMessageInfo(
       round.id,
       message.message_id,
-      message.chat.id,
     );
   }
 
@@ -107,13 +114,13 @@ export class RoundService {
   }
 
   async nextRound(
-    ctx: Context,
+    ctx: CommandContext,
     onNoRound: () => Promise<void>,
     gameId?: number,
   ) {
     const game = gameId
       ? await this.gameRepository.getGameById(gameId)
-      : await this.gameRepository.getCurrentGame();
+      : await this.gameRepository.getCurrentGame(ctx.chat.id);
     if (!game) {
       await ctx.reply(this.text.get("gameState.noGame"));
       return;
@@ -121,7 +128,7 @@ export class RoundService {
 
     await ctx.reply(this.text.get("rounds.nextRound"));
     await this.gameRepository.updateGameRound(game.id, game.currentRound + 1);
-    await this.processRound(ctx, onNoRound);
+    await this.processRound(ctx, ctx.chat.id, onNoRound);
   }
 
   private getThreadId<U extends tg.Update>(ctx: Context<U>) {
@@ -133,25 +140,21 @@ export class RoundService {
       : undefined;
   }
 
-  async showHint(ctx: IBotContext) {
-    const game = await this.gameRepository.getCurrentGame();
+  async showHint(ctx: IBotContext, chatId: number) {
+    const game = await this.gameRepository.getCurrentGame(chatId);
     const context = this.validateRound(game).andThen((context) =>
       this.validateHintShown(context.game, context.round),
     );
 
     await context.match(
       async ({ game, round }) => {
-        await this.gameRepository.updateRoundHint(round.id, true);
-        if (
-          ctx.chat &&
-          round.submission.mediaHintChatId &&
-          round.submission.mediaHintMessageId
-        ) {
+        await this.gameRepository.showHint(round.id);
+        if (ctx.chat && round.hintChatId && round.hintMessageId) {
           const threadId = this.getThreadId(ctx);
           await ctx.telegram.copyMessage(
             ctx.chat.id,
-            Number(round.submission.mediaHintChatId),
-            Number(round.submission.mediaHintMessageId),
+            Number(round.hintChatId),
+            Number(round.hintMessageId),
             threadId ? { message_thread_id: threadId } : {},
           );
           return;
@@ -171,7 +174,7 @@ export class RoundService {
       return Result.err(this.text.get("gameState.noGame"));
     }
     const roundId = game.currentRound;
-    const round = game.rounds.find((r) => r.index === roundId);
+    const round = game.rounds.find((r) => r.roundIndex === roundId);
     return round
       ? Result.ok({ game, round })
       : Result.err(this.text.get("rounds.noSuchRound"));
@@ -181,7 +184,7 @@ export class RoundService {
     game: Game,
     round: RoundWithGuesses,
   ): Result<{ game: Game; round: RoundWithGuesses }, string> {
-    if (round.hintShown) {
+    if (round.hintShownAt) {
       return Result.err(this.text.get("hints.hintAlreadyShown"));
     }
     return Result.ok({ game, round });
@@ -193,14 +196,14 @@ export class RoundService {
     );
 
     return `
-        🎯 Раунд ${round.index + 1} - продолжаем веселиться!
-        ${round.hintShown ? "💡 Подсказка была показана (для особо одарённых)" : ""}
+        🎯 Раунд ${round.roundIndex + 1} - продолжаем веселиться!
+        ${round.hintShownAt ? "💡 Подсказка была показана (для особо одарённых)" : ""}
         
         ${this.text.get("roundInfo.thinking")}: ${notYetGuessed.map((u) => u.name).join(", ")}
         
         ${this.text.get("roundInfo.correct")}: ${
           round.guesses
-            .filter((g) => g.isCorrect)
+            .filter((g) => g.guessedId === round.userId)
             .map(
               (g) =>
                 `${g.user.name} (${g.points} ${this.getPointsWord(g.points)})`,
@@ -210,7 +213,7 @@ export class RoundService {
         
         ${this.text.get("roundInfo.wrong")}: ${
           round.guesses
-            .filter((g) => !g.isCorrect)
+            .filter((g) => g.guessedId !== round.userId)
             .map((g) => g.user.name)
             .join(", ") || "Пока никто не ошибся. Но это ненадолго!"
         }

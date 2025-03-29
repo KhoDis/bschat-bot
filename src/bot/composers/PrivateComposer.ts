@@ -2,11 +2,12 @@ import { message } from "telegraf/filters";
 import { IBotContext } from "@/context/context.interface";
 import { Composer, NarrowedContext } from "telegraf";
 import { Message, Update } from "telegraf/types";
-import { UserService } from "../services/UserService";
+import { MemberService } from "../services/MemberService";
 import { MusicGameService } from "../services/MusicGameService";
 import { TextService } from "@/bot/services/TextService";
 import { inject, injectable } from "inversify";
-import { TYPES } from "@/types";
+import { CallbackQueryContext, CommandContext, TYPES } from "@/types";
+import { callbackData } from "@/utils/filters";
 
 type MessageContext<T extends Message = Message> = NarrowedContext<
   IBotContext,
@@ -34,7 +35,7 @@ type AnyMediaMessageContext = MessageContext<
 @injectable()
 export class PrivateComposer extends Composer<IBotContext> {
   constructor(
-    @inject(TYPES.UserService) private readonly userService: UserService,
+    @inject(TYPES.MemberService) private readonly memberService: MemberService,
     @inject(TYPES.MusicGameService)
     private readonly musicGuessService: MusicGameService,
     @inject(TYPES.TextService) private readonly text: TextService,
@@ -45,6 +46,11 @@ export class PrivateComposer extends Composer<IBotContext> {
   }
 
   private setupHandlers(): void {
+    this.command("start", this.handleStartCommand.bind(this)); // Chat selection command
+    this.on(
+      callbackData(/^chat_select_(\d+)$/),
+      this.handleChatSelectAction.bind(this),
+    ); // Handle chat selection via inline buttons
     this.on(message("audio"), this.handleAudioMessage.bind(this));
     this.on(
       [
@@ -68,18 +74,72 @@ export class PrivateComposer extends Composer<IBotContext> {
     );
   }
 
-  private async handleHintMessage(ctx: AnyMediaMessageContext): Promise<void> {
-    const submission = await this.userService.getSubmissionByUserId(
-      ctx.from.id,
-    );
+  // Handle /start command to allow users to select a chat
+  private async handleStartCommand(ctx: CommandContext): Promise<void> {
+    const chats = await this.memberService.getChatsByUserId(ctx.from.id); // Fetch the chats the user is part of
 
+    if (chats.length === 0) {
+      await ctx.reply(this.text.get("chat.noChats"));
+      return;
+    }
+
+    // Create inline keyboard buttons for chat selection
+    const buttons = chats.map((chat) => ({
+      text: chat.title || `Chat ${Number(chat.id)}`,
+      callback_data: `chat_select_${Number(chat.id)}`,
+    }));
+
+    await ctx.reply(this.text.get("chat.chooseChat"), {
+      reply_markup: {
+        inline_keyboard: buttons.map((button) => [button]), // Display each chat as a separate button
+      },
+    });
+  }
+
+  // Handle chat selection and store it in the session
+  private async handleChatSelectAction(
+    ctx: CallbackQueryContext,
+  ): Promise<void> {
+    const action = ctx.callbackQuery.data.split("_")[2];
+    if (!action) {
+      await ctx.reply(this.text.get("chat.invalidSelection"));
+      return;
+    }
+    const chatId = parseInt(action, 10);
+
+    // Check if the chat is valid for the user
+    const chats = await this.memberService.getChatsByUserId(ctx.from.id);
+    const selectedChat = chats.find((chat) => Number(chat.id) === chatId);
+
+    if (!selectedChat) {
+      await ctx.reply(this.text.get("chat.invalidSelection"));
+      return;
+    }
+
+    // Store selected chat in the session
+    ctx.session.selectedChatId = chatId;
+    await ctx.reply(this.text.get("chat.chatSelected", { chatId }));
+  }
+
+  private async handleHintMessage(ctx: AnyMediaMessageContext): Promise<void> {
+    const chatId = ctx.session.selectedChatId;
+    if (!chatId) {
+      await ctx.reply(this.text.get("preparation.noChatSelected"));
+      return;
+    }
+
+    const submission = await this.memberService.getSubmission(
+      ctx.from.id,
+      chatId,
+    );
     if (!submission) {
       await ctx.reply(this.text.get("preparation.trackNotFound"));
       return;
     }
 
-    await this.musicGuessService.addMediaHint(
-      submission.id,
+    await this.memberService.addMusicHint(
+      ctx.from.id,
+      chatId,
       ctx.message.chat.id,
       ctx.message.message_id,
     );
@@ -87,21 +147,27 @@ export class PrivateComposer extends Composer<IBotContext> {
     await ctx.reply(this.text.get("preparation.hintSent"));
   }
 
+  // Handle audio submission
   private async handleAudioMessage(ctx: AudioMessageContext): Promise<void> {
-    await this.saveUser(ctx);
-    await this.processAudioSubmission(ctx);
-  }
+    const chatId = ctx.session.selectedChatId; // Get selected chat from the session
+    if (!chatId) {
+      await ctx.reply(this.text.get("chat.noChatSelected"));
+      return;
+    }
 
-  private async saveUser(ctx: AudioMessageContext): Promise<void> {
-    await this.userService.saveOrUpdateUser({
-      id: ctx.from.id,
-      username: ctx.from.username || null,
-      firstName: ctx.from.first_name,
-    });
+    const userId = ctx.from.id;
+    const exists = await this.memberService.existsMember(userId, chatId);
+    if (!exists) {
+      await ctx.reply(this.text.get("chat.notAMember", { userId, chatId }));
+      return;
+    }
+
+    await this.processAudioSubmission(ctx, chatId);
   }
 
   private async processAudioSubmission(
     ctx: AudioMessageContext,
+    chatId: number,
   ): Promise<void> {
     const userId = ctx.from.id;
     const fileId = ctx.message.audio.file_id;
@@ -113,8 +179,9 @@ export class PrivateComposer extends Composer<IBotContext> {
       return;
     }
 
-    await this.userService.saveOrUpdateSubmission({
+    await this.memberService.saveSubmission({
       userId,
+      chatId,
       fileId,
     });
 

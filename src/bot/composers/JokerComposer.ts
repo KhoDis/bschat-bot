@@ -1,7 +1,7 @@
 import { IBotContext } from "@/context/context.interface";
 import { Composer, NarrowedContext } from "telegraf";
 import { Message, Update } from "telegraf/types";
-import { UserService } from "../services/UserService";
+import { MemberService } from "../services/MemberService";
 import { TextService } from "@/bot/services/TextService";
 import { inject, injectable } from "inversify";
 import { TYPES } from "@/types";
@@ -49,7 +49,7 @@ export class JokerComposer extends Composer<IBotContext> {
   ];
 
   constructor(
-    @inject(TYPES.UserService) private readonly userService: UserService,
+    @inject(TYPES.MemberService) private readonly userService: MemberService,
     @inject(TYPES.TextService) private readonly text: TextService,
   ) {
     super();

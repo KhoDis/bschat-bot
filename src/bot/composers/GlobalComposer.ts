@@ -3,7 +3,7 @@ import { Composer, NarrowedContext } from "telegraf";
 import { LeaderboardService } from "../services/LeaderboardService";
 import { Update } from "telegraf/types";
 import { inject, injectable } from "inversify";
-import { TYPES } from "@/types";
+import { CommandContext, TYPES } from "@/types";
 import { TextService } from "@/bot/services/TextService";
 
 @injectable()
@@ -24,8 +24,8 @@ export class GlobalComposer extends Composer<IBotContext> {
     this.command("chatid", this.handleChatId.bind(this));
   }
 
-  private async handleShowLeaderboard(ctx: IBotContext): Promise<void> {
-    const response = await this.leaderboardService.showLeaderboard();
+  private async handleShowLeaderboard(ctx: CommandContext): Promise<void> {
+    const response = await this.leaderboardService.showLeaderboard(ctx.chat.id);
     await ctx.reply(response ?? this.text.get("gameState.noGame"));
   }
 

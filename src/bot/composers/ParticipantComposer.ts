@@ -1,45 +1,77 @@
 import { Composer, Context } from "telegraf";
 import { IBotContext } from "@/context/context.interface";
-import { UserService } from "@/bot/services/UserService";
+import { MemberService } from "@/bot/services/MemberService";
 import { TextService } from "@/bot/services/TextService";
 import { inject, injectable } from "inversify";
-import { TYPES } from "@/types";
+import { CommandContext, TYPES } from "@/types";
 
 // TODO: add @Group decorator (class-scoped or function-scoped)
 @injectable()
 export class ParticipantComposer extends Composer<IBotContext> {
   constructor(
-    @inject(TYPES.UserService) private userService: UserService,
+    @inject(TYPES.MemberService) private memberService: MemberService,
     @inject(TYPES.TextService) private text: TextService,
   ) {
     super();
 
     this.command("ping_participants", this.handlePingParticipants.bind(this));
     this.command("check_music", this.handleCheckMusic.bind(this));
+    this.command("joinbs", this.handleJoin.bind(this));
   }
 
-  async handlePingParticipants(ctx: Context): Promise<void> {
-    const users = await this.userService.getSubmissionUsers();
+  private async handleJoin(ctx: CommandContext): Promise<void> {
+    const chatId = ctx.chat.id;
+    const userId = ctx.from.id;
 
-    if (!users.length) {
-      await ctx.reply("Никого нет, как я игру то начну :(");
+    if (ctx.chat.type === "private") {
+      await ctx.reply("member.groupOnly");
       return;
     }
 
-    this.userService.formatPingNames(users).forEach((batch) => {
+    // Sync user and chat
+    await this.memberService.upsertUser({
+      id: userId,
+      username: ctx.from.username || null,
+      firstName: ctx.from.first_name,
+    });
+    await this.memberService.upsertChat({
+      id: chatId,
+      title: ctx.chat.title,
+    });
+    if (await this.memberService.existsMember(userId, chatId)) {
+      await ctx.reply("member.alreadyJoined");
+      return;
+    }
+    await this.memberService.addMember(userId, chatId);
+    await ctx.reply("member.joined");
+  }
+
+  async handlePingParticipants(ctx: CommandContext): Promise<void> {
+    const users = await this.memberService.getSubmissionUsers(ctx.chat.id);
+
+    if (!users.length) {
+      await ctx.reply("musicGame.noPlayers");
+      return;
+    }
+
+    this.memberService.formatPingNames(users).forEach((batch) => {
       ctx.replyWithMarkdown(batch);
     });
   }
 
-  private async handleCheckMusic(ctx: IBotContext): Promise<void> {
-    const submissionUsers = await this.userService.getSubmissionUsers();
+  private async handleCheckMusic(ctx: CommandContext): Promise<void> {
+    const submissionUsers = await this.memberService.getSubmissionUsers(
+      ctx.from.id,
+    );
 
     if (!submissionUsers.length) {
-      await ctx.reply("Никого нет, как я игру то начну :(");
+      await ctx.reply("musicGame.noPlayers");
       return;
     }
 
-    const users = this.userService.formatPingNames(submissionUsers).join("\n");
+    const users = this.memberService
+      .formatPingNames(submissionUsers)
+      .join("\n");
 
     await ctx.reply(
       this.text.get("musicGame.listPlayers", {

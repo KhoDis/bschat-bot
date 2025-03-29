@@ -1,6 +1,6 @@
 import { Container } from "inversify";
 import { TYPES } from "./types";
-import { UserService } from "@/bot/services/UserService";
+import { MemberService } from "@/bot/services/MemberService";
 import { MusicGameService } from "@/bot/services/MusicGameService";
 import { GuessService } from "@/bot/services/GuessService";
 import { LeaderboardService } from "@/bot/services/LeaderboardService";
@@ -9,9 +9,6 @@ import { TextService } from "@/bot/services/TextService";
 import { ConfigService } from "./config/config.service";
 import { RoundService } from "@/bot/services/RoundService";
 import { MusicGameComposer } from "@/bot/composers/MusicGameComposer";
-import { MusicSubmissionRepository } from "@/bot/repositories/MusicSubmissionRepository";
-import { UserRepository } from "@/bot/repositories/UserRepository";
-import { GuessValidationService } from "@/bot/services/GuessValidationService";
 import { RoleService } from "@/bot/services/RoleService";
 import { PermissionService } from "@/bot/services/PermissionService";
 import CraftyService from "@/bot/services/CraftyService";
@@ -26,19 +23,12 @@ const container = new Container();
 
 // Bind repositories
 container.bind<GameRepository>(TYPES.GameRepository).to(GameRepository);
-container
-  .bind<MusicSubmissionRepository>(TYPES.MusicSubmissionRepository)
-  .to(MusicSubmissionRepository);
-container.bind<UserRepository>(TYPES.UserRepository).to(UserRepository);
 
 // Bind services
 container.bind<ConfigService>(TYPES.ConfigService).to(ConfigService);
 
 container.bind<CraftyService>(TYPES.CraftyService).to(CraftyService);
 container.bind<GuessService>(TYPES.GuessService).to(GuessService);
-container
-  .bind<GuessValidationService>(TYPES.GuessValidationService)
-  .to(GuessValidationService);
 container
   .bind<LeaderboardService>(TYPES.LeaderboardService)
   .to(LeaderboardService);
@@ -49,7 +39,7 @@ container
 container.bind<RoleService>(TYPES.RoleService).to(RoleService);
 container.bind<RoundService>(TYPES.RoundService).to(RoundService);
 container.bind<TextService>(TYPES.TextService).to(TextService);
-container.bind<UserService>(TYPES.UserService).to(UserService);
+container.bind<MemberService>(TYPES.MemberService).to(MemberService);
 
 // Bind composers
 container

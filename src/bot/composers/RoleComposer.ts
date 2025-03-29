@@ -2,7 +2,7 @@ import { Composer, NarrowedContext } from "telegraf";
 import { IBotContext } from "@/context/context.interface";
 import { RoleService } from "@/bot/services/RoleService";
 import { Message, Update } from "telegraf/types";
-import { UserService } from "@/bot/services/UserService";
+import { MemberService } from "@/bot/services/MemberService";
 import {
   Permission,
   PERMISSIONS,
@@ -23,7 +23,7 @@ export class RoleComposer extends Composer<IBotContext> {
     @inject(TYPES.RoleService) private roleService: RoleService,
     @inject(TYPES.PermissionService)
     private permissionService: PermissionService,
-    @inject(TYPES.UserService) private userService: UserService,
+    @inject(TYPES.MemberService) private userService: MemberService,
     @inject(TYPES.TextService) private text: TextService,
   ) {
     super();

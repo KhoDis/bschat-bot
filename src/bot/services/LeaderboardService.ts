@@ -11,8 +11,8 @@ export class LeaderboardService {
     @inject(TYPES.TextService) private text: TextService,
   ) {}
 
-  async showLeaderboard(): Promise<string | null> {
-    const game = await this.gameRepository.getCurrentGame();
+  async showLeaderboard(chatId: number): Promise<string | null> {
+    const game = await this.gameRepository.getCurrentGame(chatId);
     if (!game) {
       return null;
     }
@@ -21,10 +21,7 @@ export class LeaderboardService {
 
     const getUserByIdMap = new Map<number, User>();
     for (const round of game.rounds) {
-      getUserByIdMap.set(
-        Number(round.submission.userId),
-        round.submission.user,
-      );
+      getUserByIdMap.set(Number(round.userId), round.user);
     }
 
     const sortedLeaderboard = [...userStats.entries()]
@@ -76,7 +73,7 @@ export class LeaderboardService {
           incorrect: 0,
           totalPoints: 0,
         };
-        if (guess.isCorrect) {
+        if (round.userId === guess.guessedId) {
           stats.correct++;
           stats.totalPoints += guess.points;
         } else {
@@ -96,11 +93,13 @@ export class LeaderboardService {
 
     // Logic for calculating track difficulty
     return game.rounds.map((round) => {
-      const correctGuesses = round.guesses.filter((g) => g.isCorrect).length;
+      const correctGuesses = round.guesses.filter(
+        (g) => g.guessedId === round.userId,
+      ).length;
       return {
-        player: round.submission.user.name || "Unknown",
+        player: round.user.name || "Unknown",
         correctGuesses,
-        index: round.index,
+        index: round.roundIndex,
       };
     });
   }

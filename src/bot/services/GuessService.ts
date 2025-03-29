@@ -1,6 +1,5 @@
 import { Context } from "telegraf";
 import { GameRepository } from "../repositories/GameRepository";
-import { GuessValidationService } from "./GuessValidationService";
 import { inject, injectable } from "inversify";
 import { TYPES } from "@/types";
 import { TextService } from "@/bot/services/TextService";
@@ -9,61 +8,76 @@ import { TextService } from "@/bot/services/TextService";
 export class GuessService {
   constructor(
     @inject(TYPES.GameRepository) private gameRepository: GameRepository,
-    @inject(TYPES.GuessValidationService)
-    private validationService: GuessValidationService,
     @inject(TYPES.TextService) private text: TextService,
   ) {}
 
   async processGuess(
     ctx: Context,
     roundId: number,
+    chatId: number,
     guessedUserId: number,
     onSuccess?: () => Promise<void>,
   ) {
-    const round = await this.gameRepository.findRoundById(roundId);
-    const validationResult = await this.validationService.validateGuess(
-      ctx,
-      roundId,
-      guessedUserId,
+    // Validate game exists
+    const game = await this.gameRepository.getCurrentGame(chatId);
+    if (!game) {
+      await ctx.answerCbQuery(this.text.get("gameState.noGame"));
+      return;
+    }
+
+    // Validate round exists
+    const round = game.rounds.find((r) => r.id === roundId);
+    if (!round) {
+      await ctx.answerCbQuery(this.text.get("rounds.noSuchRound"));
+      return;
+    }
+
+    // Validate user exists
+    const guessingUserId = ctx.from?.id;
+    if (!guessingUserId) {
+      await ctx.answerCbQuery(this.text.get("user.notFound"));
+      return;
+    }
+
+    // Validate no existing guess
+    const existingGuess = await this.gameRepository.findGuess(
+      round.id,
+      guessingUserId,
+    );
+    if (existingGuess) {
+      await ctx.answerCbQuery(this.text.get("guessing.alreadyGuessed"));
+      return;
+    }
+
+    // Process the guess
+    const isLateGuess = round.roundIndex < game.currentRound;
+    const isCorrect = Number(round.userId) === guessedUserId;
+    const isSelfGuess = guessingUserId === guessedUserId;
+    const points = this.calculatePoints(
+      isCorrect,
+      isLateGuess,
+      !!round.hintShownAt,
+      isSelfGuess,
     );
 
-    return validationResult.match(
-      async (context) => {
-        const { game, round, guessingUserId } = context;
-        const isLateGuess = round.index < game.currentRound;
-        const isCorrect = Number(round.submission.userId) === guessedUserId;
-        // If it's a person guessing themselves, they get no points
-        const points = this.calculatePoints(
-          isCorrect,
-          isLateGuess,
-          round.hintShown,
-          guessingUserId === guessedUserId,
-          isCorrect,
-        );
+    await this.gameRepository.createGuess({
+      roundId: round.id,
+      userId: guessingUserId,
+      guessedId: guessedUserId,
+      isCorrect,
+      points,
+      isLateGuess,
+    });
 
-        await this.gameRepository.createGuess({
-          roundId: round.id,
-          userId: guessingUserId,
-          guessedId: guessedUserId,
-          isCorrect,
-          points,
-          isLateGuess,
-        });
-
-        await ctx.answerCbQuery(
-          isCorrect
-            ? this.text.get("guessing.correctGuess", { points })
-            : this.text.get("guessing.wrongGuess"),
-        );
-
-        if (onSuccess) {
-          await onSuccess();
-        }
-      },
-      async (error) => {
-        await ctx.answerCbQuery(error);
-      },
+    await ctx.answerCbQuery(
+      isCorrect
+        ? this.text.get("guessing.correctGuess", { points })
+        : this.text.get("guessing.wrongGuess"),
     );
+
+    if (onSuccess) {
+      await onSuccess();
+    }
   }
 
   private calculatePoints(
@@ -71,7 +85,6 @@ export class GuessService {
     isLateGuess: boolean,
     hintShown: boolean,
     isSelfGuess: boolean,
-    isCorrectGuess: boolean,
   ): number {
     if (isSelfGuess) return 0;
     if (!isCorrect) return -2;

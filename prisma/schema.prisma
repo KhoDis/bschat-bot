@@ -8,18 +8,52 @@ datasource db {
 }
 
 model User {
-  id              BigInt            @id // Telegram ID
-  tag             String? // Telegram tag
-  name            String // Telegram username
-  musicSubmission MusicSubmission[]
-  guesses         Guess[]
-  roles           UserRole[]
+  id   BigInt  @id // Telegram ID
+  tag  String? // Telegram tag
+  name String // Telegram username
+
+  // Relations
+  guesses    Guess[]
+  roles      UserRole[]
+  gameRounds GameRound[]
+  // Tells in which chats the user is in
+  members    Member[]
+}
+
+// Note: wait until prisma supports composite types
+// type MessageLocation {
+//   chatId    BigInt
+//   messageId BigInt
+// }
+
+model MusicSubmission {
+  fileId        String
+  hintChatId    BigInt?
+  hintMessageId BigInt?
+
+  // Relations
+  member       Member @relation(fields: [memberUserId, memberChatId], references: [userId, chatId])
+  memberUserId BigInt
+  memberChatId BigInt
+
+  @@id([memberUserId, memberChatId])
+}
+
+model Member {
+  user   User   @relation(fields: [userId], references: [id])
+  userId BigInt
+  chat   Chat   @relation(fields: [chatId], references: [id])
+  chatId BigInt
+
+  musicSubmission MusicSubmission?
+
+  @@id([userId, chatId])
 }
 
 model Role {
   id          Int        @id @default(autoincrement())
   name        String
-  permissions Int        @default(0)
+  permissions Int        @default(0) // Bitfield
   chatId      BigInt // Added chat ID for chat-specific roles
   userRoles   UserRole[]
 
@@ -36,63 +70,70 @@ model UserRole {
   @@id([userId, roleId])
 }
 
-model MusicSubmission {
-  id                 Int         @id @default(autoincrement())
-  fileId             String
-  // TODO: use BitInt instead of Int
-  mediaHintChatId    BigInt? // Telegram chat ID which the hint was sent
-  mediaHintMessageId BigInt? // Message ID of the hint
-  user               User        @relation(fields: [userId], references: [id])
-  userId             BigInt
-  rounds             GameRound[]
-  gameId             Int? // New field to link submission to a specific game
-  game               Game?       @relation(fields: [gameId], references: [id]) // New relation
-
-  // TODO: ADD HERE GAMEID, VERY IMPORTANT
-  @@unique([userId])
-}
-
-enum GameStatus {
-  ACTIVE
-  FINISHED
+model Chat {
+  id           BigInt   @id // Telegram chat ID
+  title        String
+  games        Game[]   @relation("ChatToGames") // One-to-many relationship with Game
+  activeGame   Game?    @relation("ChatToActiveGame", fields: [activeGameId], references: [id])
+  activeGameId Int?     @unique
+  members      Member[]
 }
 
 model Game {
-  id              Int               @id @default(autoincrement())
-  createdAt       DateTime          @default(now())
-  status          GameStatus        @default(ACTIVE)
-  currentRound    Int               @default(0)
-  rounds          GameRound[]
-  MusicSubmission MusicSubmission[]
+  id           Int         @id @default(autoincrement())
+  createdAt    DateTime    @default(now())
+  currentRound Int         @default(0)
+  rounds       GameRound[]
+  chatId       BigInt
+  chat         Chat        @relation("ChatToGames", fields: [chatId], references: [id]) // One-to-many relation with Chat
+  // Active game. If null, means the game is finished and no longer active
+  activeInChat Chat?       @relation("ChatToActiveGame") // Opposite field for the activeGame relation
 }
 
 model GameRound {
-  id            Int             @id @default(autoincrement())
-  index         Int
-  game          Game            @relation(fields: [gameId], references: [id])
-  gameId        Int
-  submission    MusicSubmission @relation(fields: [submissionId], references: [id])
-  submissionId  Int
-  hintShown     Boolean         @default(false) // Track if hint was revealed
-  hintShownAt   DateTime? // When the hint was revealed
-  guesses       Guess[]
-  infoMessageId Int? // Message ID of the info message
-  chatId        BigInt? // Telegram chat ID which the info message was sent
+  // Technical
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
 
-  @@unique([gameId, index])
+  // Game
+  roundIndex    Int
+  infoMessageId BigInt? // Message ID of the info message
+  startedAt     DateTime? // When the round started
+  hintShownAt   DateTime? // When the hint was revealed
+  endedAt       DateTime? // When the round ended
+
+  // Copied from MusicSubmission
+  hintChatId    BigInt? // Telegram chat ID which the hint was sent
+  hintMessageId BigInt? // Message ID of the hint
+  musicFileId   String
+
+  // Round can only have one user (the one who submitted the music)
+  user    User    @relation(fields: [userId], references: [id])
+  userId  BigInt
+  // Round is a part of one game
+  game    Game    @relation(fields: [gameId], references: [id])
+  gameId  Int
+  // Round has many guesses (possible answers)
+  guesses Guess[]
+
+  @@unique([gameId, roundIndex])
 }
 
 model Guess {
-  id          Int       @id @default(autoincrement())
-  round       GameRound @relation(fields: [roundId], references: [id])
-  roundId     Int
-  user        User      @relation(fields: [userId], references: [id])
-  userId      BigInt
-  guessedId   BigInt // The ID of the user they guessed
-  isCorrect   Boolean
-  points      Int // Store points earned for this guess
-  createdAt   DateTime  @default(now())
-  isLateGuess Boolean   @default(false) // If guessed after round ended
+  // Technical
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+
+  guessedId BigInt // The ID of the user they guessed (could be the same as round.userId (right) or not (wrong))
+  points    Int // Store points earned for this guess, TODO: check if can be removed (calculate on demand?)
+  // isCorrect   Boolean // Should be calculated by comparing guessedId with round.userId
+  // isLateGuess Boolean   @default(false) // Should be calculated by comparing createdAt with round.startedAt
+
+  // Relations
+  round   GameRound @relation(fields: [roundId], references: [id])
+  roundId Int
+  user    User      @relation(fields: [userId], references: [id])
+  userId  BigInt
 
   @@unique([roundId, userId])
 }

@@ -1,7 +1,7 @@
 import { Context, Scenes, session } from "telegraf";
 
 export interface BotSession extends Scenes.SceneSession {
-  waitingForHint: boolean;
+  selectedChatId?: number;
 }
 
 export interface IBotContext extends Context {

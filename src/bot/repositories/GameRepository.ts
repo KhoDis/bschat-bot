@@ -1,28 +1,6 @@
-import { Game, GameStatus, Guess, Prisma, User } from "@prisma/client";
+import { Guess, Prisma, User } from "@prisma/client";
 import prisma from "../../prisma/client";
-import { MusicSubmission } from "@prisma/client";
 import { injectable } from "inversify";
-
-const gameWithData = Prisma.validator<Prisma.GameInclude>()({
-  rounds: {
-    include: {
-      submission: {
-        include: {
-          user: true,
-        },
-      },
-      guesses: {
-        include: {
-          user: true,
-        },
-      },
-    },
-  },
-});
-
-export type GameWithData = Prisma.GameGetPayload<{
-  include: typeof gameWithData;
-}>;
 
 const roundWithGuesses = Prisma.validator<Prisma.GameRoundInclude>()({
   guesses: {
@@ -30,12 +8,20 @@ const roundWithGuesses = Prisma.validator<Prisma.GameRoundInclude>()({
       user: true,
     },
   },
-  submission: {
-    include: {
-      user: true,
-    },
-  },
+  user: true,
+  game: true,
 });
+
+const gameWithData = Prisma.validator<Prisma.GameInclude>()({
+  rounds: {
+    include: roundWithGuesses,
+  },
+  activeInChat: true,
+});
+
+export type GameWithData = Prisma.GameGetPayload<{
+  include: typeof gameWithData;
+}>;
 
 export type RoundWithGuesses = Prisma.GameRoundGetPayload<{
   include: typeof roundWithGuesses;
@@ -72,42 +58,83 @@ export class GameRepository {
     });
   }
 
-  async getCurrentGame(): Promise<GameWithData | null> {
+  async getCurrentGame(chatId: number): Promise<GameWithData | null> {
     return prisma.game.findFirst({
       where: {
-        status: "ACTIVE",
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-      include: gameWithData,
-    });
-  }
-
-  async getCurrentRound(): Promise<RoundWithGuesses | null> {
-    const game = await prisma.game.findFirst({
-      include: gameWithData,
-      orderBy: { createdAt: "desc" },
-    });
-
-    // NOTE: rounds are not sorted by id!!!!!!!!!
-    return (
-      game?.rounds.find((round) => round.index === game.currentRound) || null
-    );
-  }
-
-  async createGame(submissions: MusicSubmission[]): Promise<GameWithData> {
-    return prisma.game.create({
-      data: {
-        rounds: {
-          create: submissions.map((track, index) => ({
-            index,
-            submissionId: track.id,
-          })),
+        chatId,
+        chat: {
+          activeGameId: {
+            not: null,
+          },
         },
       },
       include: gameWithData,
     });
+  }
+
+  async finishGame(gameId: number): Promise<void> {
+    await prisma.game.update({
+      where: { id: gameId },
+      data: {
+        chat: {
+          update: {
+            activeGameId: null,
+          },
+        },
+      },
+    });
+  }
+
+  async getCurrentRound(chatId: number): Promise<RoundWithGuesses | null> {
+    return prisma.gameRound.findFirst({
+      where: { endedAt: null, game: { chatId } },
+      include: roundWithGuesses,
+    });
+  }
+
+  async transferSubmissions(chatId: number): Promise<GameWithData> {
+    const chat = await prisma.chat.findUnique({
+      where: { id: chatId },
+      include: {
+        members: {
+          include: {
+            user: true,
+            musicSubmission: true,
+          },
+        },
+      },
+    });
+    if (!chat) {
+      throw new Error("Chat not found");
+    }
+    const submissions = chat.members
+      .map((member) => member.musicSubmission)
+      .filter((submission) => submission !== null);
+    const game = await prisma.game.create({
+      data: {
+        rounds: {
+          create: submissions.map((track, index) => ({
+            roundIndex: index,
+            musicFileId: track.fileId,
+            hintChatId: track.hintChatId,
+            hintMessageId: track.hintMessageId,
+            userId: track.memberUserId,
+          })),
+        },
+        chatId,
+      },
+      include: gameWithData,
+    });
+
+    // Remove the member's music submission
+    await prisma.musicSubmission.deleteMany({
+      where: {
+        memberUserId: {
+          in: submissions.map((submission) => submission.memberUserId),
+        },
+      },
+    });
+    return game;
   }
 
   async updateGameRound(
@@ -121,10 +148,10 @@ export class GameRepository {
     });
   }
 
-  async updateRoundHint(roundId: number, hintShown: boolean): Promise<void> {
+  async showHint(roundId: number): Promise<void> {
     await prisma.gameRound.update({
       where: { id: roundId },
-      data: { hintShown },
+      data: { hintShownAt: new Date() },
     });
   }
 
@@ -141,9 +168,7 @@ export class GameRepository {
         roundId: data.roundId,
         userId: data.userId,
         guessedId: data.guessedId,
-        isCorrect: data.isCorrect,
         points: data.points,
-        isLateGuess: data.isLateGuess,
       },
     });
   }
@@ -162,7 +187,7 @@ export class GameRepository {
   async getParticipants(gameId: number): Promise<User[]> {
     return prisma.user.findMany({
       where: {
-        musicSubmission: {
+        gameRounds: {
           some: {
             gameId: gameId,
           },
@@ -183,7 +208,7 @@ export class GameRepository {
 
     return prisma.user.findMany({
       where: {
-        musicSubmission: {
+        gameRounds: {
           some: {
             gameId: round.gameId,
           },
@@ -201,29 +226,19 @@ export class GameRepository {
     });
   }
 
-  async updateRoundMessageInfo(
-    roundId: number,
-    messageId: number,
-    chatId: number,
-  ) {
+  async updateRoundMessageInfo(roundId: number, messageId: number) {
     await prisma.gameRound.update({
       where: { id: roundId },
-      data: { infoMessageId: messageId, chatId },
+      data: { infoMessageId: messageId },
     });
   }
 
-  async updateGameStatus(gameId: number, status: GameStatus): Promise<Game> {
-    return prisma.game.update({
-      where: { id: gameId },
-      data: { status },
-    });
-  }
-
-  async getAllGames(): Promise<Game[]> {
+  async getAllGames(): Promise<GameWithData[]> {
     return prisma.game.findMany({
       orderBy: {
         createdAt: "desc",
       },
+      include: gameWithData,
     });
   }
 }

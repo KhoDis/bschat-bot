@@ -1,181 +1,157 @@
 import { IBotContext } from "@/context/context.interface";
-import { Composer } from "telegraf";
-import { UserService } from "../services/UserService";
+import { Composer, Markup } from "telegraf";
+import { MemberService } from "../services/MemberService";
 import { RoundService } from "../services/RoundService";
 import { GuessService } from "../services/GuessService";
 import { MusicGameService } from "../services/MusicGameService";
 import { LeaderboardService } from "../services/LeaderboardService";
-import { ADMIN_USERNAME } from "@/config/config";
 import { inject, injectable } from "inversify";
 import { CallbackQueryContext, CommandContext, TYPES } from "@/types";
 import { TextService } from "@/bot/services/TextService";
+import { RoleService } from "@/bot/services/RoleService";
+import { callbackData } from "@/utils/filters";
 
 @injectable()
 export class MusicGameComposer extends Composer<IBotContext> {
   constructor(
-    @inject(TYPES.UserService) private userService: UserService,
+    @inject(TYPES.MemberService) private memberService: MemberService,
     @inject(TYPES.RoundService) private roundService: RoundService,
     @inject(TYPES.MusicGameService) private musicGuessService: MusicGameService,
     @inject(TYPES.GuessService) private guessService: GuessService,
     @inject(TYPES.LeaderboardService)
     private leaderboardService: LeaderboardService,
     @inject(TYPES.TextService) private text: TextService,
+    @inject(TYPES.RoleService) private roleService: RoleService,
   ) {
     super();
 
     this.setupHandlers();
   }
 
-  private isAdmin(username: string): boolean {
-    return username === ADMIN_USERNAME;
-  }
-
-  private async handleAdminCheck(ctx: IBotContext): Promise<boolean> {
-    if (!this.isAdmin(ctx.from?.username || "")) {
-      await ctx.reply("this.botResponses.user.notAdmin");
-      return false;
-    }
-    return true;
-  }
-
   private setupHandlers() {
-    this.command("music_guess", this.handleMusicGuess.bind(this));
+    this.command("music_guess", this.handleMusicGuessCommand.bind(this));
     this.command("next_round", this.handleNextRound.bind(this));
     this.command("show_hint", this.handleShowHint.bind(this));
-    this.command("finish_game", this.handleFinishGame.bind(this));
     this.command("list_games", this.handleListGames.bind(this));
 
     // New handlers for multiple games
-    this.command("start_collection", this.handleStartCollection.bind(this));
-    this.command("show_game", this.handleShowGame.bind(this));
+    this.command("active_game", this.handleActiveGameCommand.bind(this));
 
-    this.action(/^guess:(.+)$/, this.handleGuessAction.bind(this));
-    this.action(/^service:(.+)$/, this.handleServiceAction.bind(this));
+    this.on(callbackData(/^guess:(.+)$/), this.handleGuessAction.bind(this));
+    this.on(
+      callbackData(/^service:(.+)$/),
+      this.handleServiceAction.bind(this),
+    );
   }
 
-  private async handleMusicGuess(ctx: IBotContext): Promise<void> {
-    if (!(await this.handleAdminCheck(ctx))) return;
+  private async handleMusicGuessCommand(ctx: CommandContext): Promise<void> {
+    await this.checkPermissions(ctx, async () => {
+      const keyboard = Markup.keyboard([
+        Markup.button.callback("Начать мучения", "service:start_game"),
+      ]);
 
-    const keyboard = {
-      inline_keyboard: [
-        [
-          {
-            text: "Начать мучения",
-            callback_data: "service:start_game",
-          },
-        ],
-      ],
-    };
+      await ctx.reply(this.text.get("musicGuess.welcome"), {
+        reply_markup: keyboard.reply_markup,
+      });
 
-    await ctx.reply(
-      "Ладно, время для игры 'Угадай Музыку'! Приготовьтесь демонстрировать своё полное невежество в музыке!",
-      { reply_markup: keyboard },
-    );
-
-    const users = await this.userService.getSubmissionUsers();
-    this.userService.formatPingNames(users).forEach((batch) => {
-      ctx.reply(batch, {
-        parse_mode: "Markdown",
+      const users = await this.memberService.getSubmissionUsers(ctx.from.id);
+      this.memberService.formatPingNames(users).forEach((batch) => {
+        ctx.reply(batch, {
+          parse_mode: "Markdown",
+        });
       });
     });
   }
 
   private async handleListGames(ctx: IBotContext): Promise<void> {
-    if (!(await this.handleAdminCheck(ctx))) return;
-    await this.musicGuessService.listGames(ctx);
-  }
-
-  // New method to show specific game details
-  private async handleShowGame(ctx: IBotContext): Promise<void> {
-    if (!(await this.handleAdminCheck(ctx))) return;
-
-    const message =
-      ctx.message && "text" in ctx.message ? ctx.message.text : "";
-    const parts = message.split(" ");
-
-    if (parts.length < 2) {
-      await ctx.reply("Пожалуйста, укажите ID игры: /show_game [id]");
-      return;
-    }
-
-    const gameId = parseInt(parts[1]!);
-    const game = await this.musicGuessService.getGame(gameId);
-
-    if (!game) {
-      await ctx.reply(`Игра с ID ${gameId} не найдена`);
-      return;
-    }
-
-    await ctx.reply(`Информация об игре:
-ID: ${game.id}
-Создана: ${game.createdAt.toLocaleDateString()}
-Статус: ${game.status}
-Текущий раунд: ${game.currentRound}`);
-  }
-
-  private async handleStartCollection(ctx: IBotContext): Promise<void> {
-    if (!(await this.handleAdminCheck(ctx))) return;
-
-    await ctx.reply(
-      "Начинаем сбор треков для новой игры! Загрузите свои треки.",
-    );
-
-    const users = await this.userService.getSubmissionUsers();
-    this.userService.formatPingNames(users).forEach((batch) => {
-      ctx.reply(batch, {
-        parse_mode: "Markdown",
-      });
+    await this.checkPermissions(ctx, async () => {
+      await this.musicGuessService.listGames(ctx);
     });
   }
 
-  // Changed to finish game instead of clearing it
-  private async handleFinishGame(ctx: CommandContext): Promise<void> {
-    if (!(await this.handleAdminCheck(ctx))) return;
+  // New method to show specific game details
+  private async handleActiveGameCommand(ctx: IBotContext): Promise<void> {
+    await this.checkPermissions(ctx, async () => {
+      const message =
+        ctx.message && "text" in ctx.message ? ctx.message.text : "";
+      const parts = message.split(" ");
 
-    // Extract gameId from command if provided
-    const parts = ctx.message.text.split(" ");
-    const gameId =
-      parts.length > 1
-        ? parts[1]
-          ? parseInt(parts[1])
-          : undefined
-        : undefined;
+      if (parts.length < 2) {
+        await ctx.reply("Пожалуйста, укажите ID игры: /show_game [id]");
+        return;
+      }
 
-    await this.musicGuessService.finishGame(ctx, gameId);
+      const gameId = parseInt(parts[1]!);
+      const game = await this.musicGuessService.getCurrentGame(gameId);
+
+      if (!game) {
+        await ctx.reply(`Игра с ID ${gameId} не найдена`);
+        return;
+      }
+
+      await ctx.reply(`Информация об игре:
+ID: ${game.id}
+Создана: ${game.createdAt.toLocaleDateString()}
+Статус: ${game.activeInChat ? "Активная" : "Завершена"}
+Текущий раунд: ${game.currentRound}`);
+    });
   }
+
+  // // Changed to finish game instead of clearing it
+  // private async finishGame(ctx: IBotContext): Promise<void> {
+  //   await this.checkPermissions(ctx, async () => {
+  //     // Extract gameId from command if provided
+  //     const parts = ctx.message.text.split(" ");
+  //     const gameId =
+  //       parts.length > 1
+  //         ? parts[1]
+  //           ? parseInt(parts[1])
+  //           : undefined
+  //         : undefined;
+  //
+  //     await this.musicGuessService.finishGame(ctx, gameId);
+  //   });
+  // }
 
   private async handleNextRound(ctx: CommandContext): Promise<void> {
-    if (!(await this.handleAdminCheck(ctx))) return;
+    await this.checkPermissions(ctx, async () => {
+      if (!ctx.chat) return;
+      const chatId = ctx.chat.id;
+      // Extract gameId from command if provided
+      const message = ctx.message.text;
+      const parts = message.split(" ");
+      const gameId =
+        parts.length > 1
+          ? parts[1]
+            ? parseInt(parts[1])
+            : undefined
+          : undefined;
 
-    // Extract gameId from command if provided
-    const message = ctx.message.text;
-    const parts = message.split(" ");
-    const gameId =
-      parts.length > 1
-        ? parts[1]
-          ? parseInt(parts[1])
-          : undefined
-        : undefined;
-
-    await this.roundService.nextRound(
-      ctx,
-      () => this.handleGameEnd(ctx),
-      gameId,
-    );
+      await this.roundService.nextRound(
+        ctx,
+        () => this.handleGameEnd(ctx, chatId),
+        gameId,
+      );
+    });
   }
 
-  private async handleGameEnd(ctx: IBotContext): Promise<void> {
+  private async handleGameEnd(
+    ctx: CommandContext | CallbackQueryContext,
+    chatId: number,
+  ): Promise<void> {
     await ctx.reply(this.text.get("rounds.noMoreRounds"));
-    await this.leaderboardService.showLeaderboard();
+    await this.leaderboardService.showLeaderboard(chatId);
   }
 
-  private async handleShowHint(ctx: IBotContext): Promise<void> {
-    if (!(await this.handleAdminCheck(ctx))) return;
-    await this.roundService.showHint(ctx);
+  private async handleShowHint(ctx: CommandContext): Promise<void> {
+    await this.checkPermissions(ctx, async () => {
+      await this.roundService.showHint(ctx, ctx.chat.id);
+    });
   }
 
   private async handleGuessAction(ctx: CallbackQueryContext): Promise<void> {
-    const action = ctx.match[1];
+    if (!ctx.chat) return;
+    const action = ctx.callbackQuery.data.split(":")[1];
     if (!action) return;
 
     const [roundId, guessId] = action.split("_").map(Number);
@@ -189,6 +165,7 @@ ID: ${game.id}
       await this.guessService.processGuess(
         ctx,
         roundId,
+        ctx.chat.id,
         guessId,
         async () => await this.roundService.sendRoundInfo(ctx, roundId),
       );
@@ -199,26 +176,55 @@ ID: ${game.id}
   }
 
   private async handleServiceAction(ctx: CallbackQueryContext): Promise<void> {
-    const action = ctx.match[1];
+    const data = ctx.callbackQuery.data;
+    const action = data?.split(":")[1];
     if (action !== "start_game") return;
 
-    if (!(await this.handleAdminCheck(ctx))) return;
+    await this.checkPermissions(ctx, async () => {
+      try {
+        if (!ctx.chat) return;
+        const existingGame = await this.musicGuessService.isGameStarted(
+          ctx.chat.id,
+        );
 
-    try {
-      const existingGame = await this.musicGuessService.isGameStarted();
+        if (!existingGame) {
+          await ctx.reply("Я не нашёл уже существующей игры, начинаю новую");
+          await this.musicGuessService.startGame(ctx);
+        } else {
+          await ctx.reply("Я нашёл уже существующую игру, продолжаю её");
+        }
 
-      if (!existingGame) {
-        await ctx.reply("Я не нашёл уже существующей игры, начинаю новую");
-        await this.musicGuessService.startGame(ctx);
-      } else {
-        await ctx.reply("Я нашёл уже существующую игру, продолжаю её");
+        await this.roundService.processRound(ctx, ctx.chat.id, () =>
+          this.handleGameEnd(ctx, ctx.chat!.id),
+        );
+        await ctx.answerCbQuery();
+      } catch (error) {
+        console.error("Error handling service action:", error);
+        await ctx.reply("Произошла ошибка при запуске игры");
       }
+    });
+  }
 
-      await this.roundService.processRound(ctx, () => this.handleGameEnd(ctx));
-      await ctx.answerCbQuery();
-    } catch (error) {
-      console.error("Error handling service action:", error);
-      await ctx.reply("Произошла ошибка при запуске игры");
+  // TODO: make decorator out of this
+  private async checkPermissions(ctx: IBotContext, next: () => Promise<void>) {
+    const userId = ctx.from?.id;
+    const chatId = ctx.chat?.id;
+
+    if (!userId || !chatId) {
+      await ctx.reply(this.text.get("permissions.chatOnly"));
+      return;
+    }
+
+    const hasPermission = await this.roleService.hasPermission(
+      BigInt(userId),
+      BigInt(chatId),
+      "MANAGE_MUSIC_GAME",
+    );
+
+    if (hasPermission) {
+      await next();
+    } else {
+      await ctx.reply(this.text.get("permissions.denied"));
     }
   }
 }
