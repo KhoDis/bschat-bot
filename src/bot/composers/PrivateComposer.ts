@@ -3,7 +3,6 @@ import { IBotContext } from "@/context/context.interface";
 import { Composer, NarrowedContext } from "telegraf";
 import { Message, Update } from "telegraf/types";
 import { MemberService } from "../services/MemberService";
-import { MusicGameService } from "../services/MusicGameService";
 import { TextService } from "@/bot/services/TextService";
 import { inject, injectable } from "inversify";
 import { CallbackQueryContext, CommandContext, TYPES } from "@/types";
@@ -36,8 +35,6 @@ type AnyMediaMessageContext = MessageContext<
 export class PrivateComposer extends Composer<IBotContext> {
   constructor(
     @inject(TYPES.MemberService) private readonly memberService: MemberService,
-    @inject(TYPES.MusicGameService)
-    private readonly musicGuessService: MusicGameService,
     @inject(TYPES.TextService) private readonly text: TextService,
   ) {
     super();
@@ -48,7 +45,7 @@ export class PrivateComposer extends Composer<IBotContext> {
   private setupHandlers(): void {
     this.command("start", this.handleStartCommand.bind(this)); // Chat selection command
     this.on(
-      callbackData(/^chat_select_(\d+)$/),
+      callbackData(/^chat_select_(.+)$/),
       this.handleChatSelectAction.bind(this),
     ); // Handle chat selection via inline buttons
     this.on(message("audio"), this.handleAudioMessage.bind(this));

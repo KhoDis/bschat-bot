@@ -59,17 +59,19 @@ export class GameRepository {
   }
 
   async getCurrentGame(chatId: number): Promise<GameWithData | null> {
-    return prisma.game.findFirst({
-      where: {
-        chatId,
-        chat: {
-          activeGameId: {
-            not: null,
-          },
+    const chat = await prisma.chat.findUnique({
+      where: { id: chatId },
+      include: {
+        activeGame: {
+          include: gameWithData,
         },
       },
-      include: gameWithData,
     });
+
+    // Extract the active game from the chat
+    const activeGame = chat?.activeGame;
+
+    return activeGame || null;
   }
 
   async finishGame(gameId: number): Promise<void> {
@@ -124,6 +126,14 @@ export class GameRepository {
         chatId,
       },
       include: gameWithData,
+    });
+
+    // Add game as active game in the chat
+    await prisma.chat.update({
+      where: { id: chatId },
+      data: {
+        activeGameId: game.id,
+      },
     });
 
     // Remove the member's music submission

@@ -1,4 +1,4 @@
-import { Composer, Context } from "telegraf";
+import { Composer } from "telegraf";
 import { IBotContext } from "@/context/context.interface";
 import { MemberService } from "@/bot/services/MemberService";
 import { TextService } from "@/bot/services/TextService";
@@ -61,7 +61,7 @@ export class ParticipantComposer extends Composer<IBotContext> {
 
   private async handleCheckMusic(ctx: CommandContext): Promise<void> {
     const submissionUsers = await this.memberService.getSubmissionUsers(
-      ctx.from.id,
+      ctx.chat.id,
     );
 
     if (!submissionUsers.length) {

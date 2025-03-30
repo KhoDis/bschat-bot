@@ -21,7 +21,7 @@ export class GuessService {
     // Validate game exists
     const game = await this.gameRepository.getCurrentGame(chatId);
     if (!game) {
-      await ctx.answerCbQuery(this.text.get("gameState.noGame"));
+      await ctx.answerCbQuery(this.text.get("musicGame.noGame"));
       return;
     }
 

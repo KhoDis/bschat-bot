@@ -15,34 +15,6 @@ export class MusicGameService {
     return this.gameRepository.getCurrentGame(chatId);
   }
 
-  // async showHint(ctx: Context, chatId: number) {
-  //   const game = await this.gameRepository.getCurrentGame(chatId);
-  //   if (!game) {
-  //     await ctx.reply(this.text.get("gameState.noGame"));
-  //     return;
-  //   }
-  //   await this.gameRepository.showHint(game.currentRound);
-  //   await ctx.reply(this.text.get("hints.hintLayout"));
-  // }
-
-  // async finishGame(ctx: Context, gameId?: number) {
-  //   const game = gameId
-  //     ? await this.gameRepository.getGameById(gameId)
-  //     : await this.gameRepository.getCurrentGame(chatId);
-  //
-  //   if (!game) {
-  //     await ctx.reply(this.text.get("gameState.noGame"));
-  //     return;
-  //   }
-  //
-  //   try {
-  //     await this.gameRepository.updateGameStatus(game.id, "FINISHED");
-  //   } catch (e) {
-  //     await ctx.reply("Брух, что это: " + e);
-  //   }
-  //   await ctx.reply(this.text.get("musicGame.resetGame"));
-  // }
-
   async isGameStarted(chatId: number): Promise<boolean> {
     const game = await this.gameRepository.getCurrentGame(chatId);
     return !!game;
@@ -62,7 +34,7 @@ export class MusicGameService {
     // Create a new game with the new tracks
     const game = await this.gameRepository.transferSubmissions(ctx.chat.id);
 
-    await ctx.reply(this.text.get("gameState.gameStarted"));
+    await ctx.reply(this.text.get("musicGame.gameStarted"));
     return game;
   }
 

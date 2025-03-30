@@ -1,4 +1,4 @@
-import { Context, Scenes, session } from "telegraf";
+import { Context, Scenes } from "telegraf";
 
 export interface BotSession extends Scenes.SceneSession {
   selectedChatId?: number;

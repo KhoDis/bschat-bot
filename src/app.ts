@@ -19,7 +19,11 @@ class Bot {
     const configService = container.get<ConfigService>(TYPES.ConfigService);
 
     this.bot = new Telegraf<IBotContext>(configService.get("BOT_TOKEN"));
-    this.bot.use(session());
+    this.bot.use(
+      session({
+        defaultSession: () => ({}),
+      }),
+    );
 
     const privateMiddleware = container
       .get<PrivateComposer>(TYPES.PrivateComposer)
@@ -67,7 +71,7 @@ class Bot {
   }
 
   init() {
-    console.log("Starting bot...");
+    console.info("Starting bot...");
 
     this.bot.catch((err) => {
       console.error("Bot error:", err);
@@ -75,7 +79,7 @@ class Bot {
 
     this.bot
       .launch()
-      .then(() => console.log("Bot launched"))
+      .then(() => console.info("Bot launched"))
       .catch(console.error);
   }
 }

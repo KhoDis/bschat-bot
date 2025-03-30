@@ -46,7 +46,7 @@ export class MusicGameComposer extends Composer<IBotContext> {
 
   private async handleMusicGuessCommand(ctx: CommandContext): Promise<void> {
     await this.checkPermissions(ctx, async () => {
-      const keyboard = Markup.keyboard([
+      const keyboard = Markup.inlineKeyboard([
         Markup.button.callback("Начать мучения", "service:start_game"),
       ]);
 

@@ -7,18 +7,6 @@
     "Wow, you're still here? I was hoping you forgot about me.",
     "Oh, another person who thinks I'm their personal assistant. Well, let’s pretend I don't mind."
   ],
-  "gameState": {
-    "noGame": [
-      "Oops, no game! Maybe it exists in a parallel universe?",
-      "Game? What game? I'm just here for decoration...",
-      "404: Game not found. Try turning your imagination on and off."
-    ],
-    "gameStarted": [
-      "Oh, the great moment has arrived! The game has started! Prepare to showcase your musical ignorance!",
-      "Let the battle of titans begin! Or, wait... who are these mere mortals?",
-      "The game has started! Hope you're ready for a total destruction of your musical ambitions!"
-    ]
-  },
   "musicGame": {
     "listPlayers": [
       "Total players: {{playerCount}}\n\n{{playersList}}"
@@ -30,6 +18,16 @@
     ],
     "resetGame": [
       "The game has been finished.."
+    ],
+    "noGame": [
+      "Oops, no game! Maybe it exists in a parallel universe?",
+      "Game? What game? I'm just here for decoration...",
+      "404: Game not found. Try turning your imagination on and off."
+    ],
+    "gameStarted": [
+      "Oh, the great moment has arrived! The game has started! Prepare to showcase your musical ignorance!",
+      "Let the battle of titans begin! Or, wait... who are these mere mortals?",
+      "The game has started! Hope you're ready for a total destruction of your musical ambitions!"
     ]
   },
   "rounds": {
@@ -236,5 +234,12 @@
     "genericError": "An error occurred: {{error}}",
     "unknownError": "An unknown error occurred.",
     "chatOnly": "This command can only be used in a chat."
+  },
+  "chat": {
+    "noChatSelected": "You have not selected a chat. Send /start to select a chat.",
+    "notAMember": "You are not a member of chat {{chatId}}.",
+    "chooseChat": "Select a chat.",
+    "chatSelected": "Chat {{chatId}} selected.",
+    "invalidSelection": "Invalid chat selection."
   }
 }

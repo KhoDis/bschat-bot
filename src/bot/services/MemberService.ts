@@ -55,18 +55,20 @@ export class MemberService {
   }
 
   async getSubmissionUsers(chatId: number): Promise<User[]> {
-    return prisma.user.findMany({
+    const submissions = await prisma.musicSubmission.findMany({
       where: {
-        members: {
-          some: {
-            chatId: chatId,
-            NOT: {
-              musicSubmission: null,
-            },
+        memberChatId: chatId,
+      },
+      include: {
+        member: {
+          include: {
+            user: true,
           },
         },
       },
     });
+
+    return submissions.map((submission) => submission.member.user);
   }
 
   async addMusicHint(
@@ -102,14 +104,13 @@ export class MemberService {
   }
 
   async existsMember(userId: number, chatId: number): Promise<boolean> {
-    return (
-      prisma.member.findFirst({
-        where: {
-          userId: userId,
-          chatId: chatId,
-        },
-      }) !== null
-    );
+    const member = await prisma.member.findFirst({
+      where: {
+        userId: userId,
+        chatId: chatId,
+      },
+    });
+    return member !== null;
   }
 
   async getSubmission(
@@ -131,19 +132,21 @@ export class MemberService {
     chatId: number;
     fileId: string;
   }) {
-    return prisma.member.update({
+    // Upsert musicSubmission
+    await prisma.musicSubmission.upsert({
       where: {
-        userId_chatId: {
-          userId: submission.userId,
-          chatId: submission.chatId,
+        memberUserId_memberChatId: {
+          memberUserId: submission.userId,
+          memberChatId: submission.chatId,
         },
       },
-      data: {
-        musicSubmission: {
-          update: {
-            fileId: submission.fileId,
-          },
-        },
+      create: {
+        memberUserId: submission.userId,
+        memberChatId: submission.chatId,
+        fileId: submission.fileId,
+      },
+      update: {
+        fileId: submission.fileId,
       },
     });
   }

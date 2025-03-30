@@ -38,8 +38,8 @@ export class RoundService {
         const participants = await this.gameRepository.getParticipants(game.id);
         await this.playRound(ctx, participants, currentRound);
       },
-      async () => {
-        this.text.get("gameState.noGame");
+      async (e: string) => {
+        await ctx.reply(this.text.get("musicGame.noGame", { error: e }));
       },
     );
   }
@@ -60,7 +60,6 @@ export class RoundService {
       reply_markup: { inline_keyboard: this.chunkButtons(buttons, 3) },
     });
 
-    console.log("Current round id", currentRound.id);
     await this.sendRoundInfo(ctx, currentRound.id);
   }
 
@@ -74,11 +73,6 @@ export class RoundService {
     const info = await this.formatRoundInfo(round);
 
     if (round.infoMessageId && round) {
-      console.log(
-        "I found message info",
-        round.infoMessageId,
-        round.game.chatId,
-      );
       try {
         await ctx.telegram.editMessageText(
           round.game.chatId.toString(),
@@ -92,7 +86,6 @@ export class RoundService {
         await this.sendNewRoundInfo(ctx, round, info);
       }
     } else {
-      console.log("Could not find message info, sending new one");
       await this.sendNewRoundInfo(ctx, round, info);
     }
   }
@@ -122,7 +115,7 @@ export class RoundService {
       ? await this.gameRepository.getGameById(gameId)
       : await this.gameRepository.getCurrentGame(ctx.chat.id);
     if (!game) {
-      await ctx.reply(this.text.get("gameState.noGame"));
+      await ctx.reply(this.text.get("musicGame.noGame"));
       return;
     }
 
@@ -171,7 +164,7 @@ export class RoundService {
     game: GameWithData | null,
   ): Result<{ game: GameWithData; round: RoundWithGuesses }, string> {
     if (!game) {
-      return Result.err(this.text.get("gameState.noGame"));
+      return Result.err(this.text.get("musicGame.noGame"));
     }
     const roundId = game.currentRound;
     const round = game.rounds.find((r) => r.roundIndex === roundId);
@@ -199,9 +192,9 @@ export class RoundService {
         🎯 Раунд ${round.roundIndex + 1} - продолжаем веселиться!
         ${round.hintShownAt ? "💡 Подсказка была показана (для особо одарённых)" : ""}
         
-        ${this.text.get("roundInfo.thinking")}: ${notYetGuessed.map((u) => u.name).join(", ")}
+        ${this.text.get("rounds.roundInfo.thinking")}: ${notYetGuessed.map((u) => u.name).join(", ")}
         
-        ${this.text.get("roundInfo.correct")}: ${
+        ${this.text.get("rounds.roundInfo.correct")}: ${
           round.guesses
             .filter((g) => g.guessedId === round.userId)
             .map(
@@ -211,7 +204,7 @@ export class RoundService {
             .join(", ") || "Пока никто! Неужели так сложно?"
         }
         
-        ${this.text.get("roundInfo.wrong")}: ${
+        ${this.text.get("rounds.roundInfo.wrong")}: ${
           round.guesses
             .filter((g) => g.guessedId !== round.userId)
             .map((g) => g.user.name)
