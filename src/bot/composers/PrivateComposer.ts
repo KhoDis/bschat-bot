@@ -146,20 +146,23 @@ export class PrivateComposer extends Composer<IBotContext> {
 
   // Handle audio submission
   private async handleAudioMessage(ctx: AudioMessageContext): Promise<void> {
-    const chatId = ctx.session.selectedChatId; // Get selected chat from the session
-    if (!chatId) {
+    const groupChatId = ctx.session.selectedChatId; // Get selected chat from the session
+    if (!groupChatId) {
       await ctx.reply(this.text.get("chat.noChatSelected"));
       return;
     }
 
     const userId = ctx.from.id;
-    const exists = await this.memberService.existsMember(userId, chatId);
+    const exists = await this.memberService.existsMember(userId, groupChatId);
     if (!exists) {
-      await ctx.reply(this.text.get("chat.notAMember", { userId, chatId }));
+      await ctx.reply(
+        this.text.get("chat.notAMember", { userId, chatId: groupChatId }),
+      );
       return;
     }
 
-    await this.processAudioSubmission(ctx, chatId);
+    // Save submission as ctx.from.id, not as a group
+    await this.processAudioSubmission(ctx, ctx.from.id);
   }
 
   private async processAudioSubmission(
