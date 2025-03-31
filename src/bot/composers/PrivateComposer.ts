@@ -147,6 +147,7 @@ export class PrivateComposer extends Composer<IBotContext> {
   // Handle audio submission
   private async handleAudioMessage(ctx: AudioMessageContext): Promise<void> {
     const groupChatId = ctx.session.selectedChatId; // Get selected chat from the session
+    const uploadChatId = ctx.chat.id;
     if (!groupChatId) {
       await ctx.reply(this.text.get("chat.noChatSelected"));
       return;
@@ -161,13 +162,13 @@ export class PrivateComposer extends Composer<IBotContext> {
       return;
     }
 
-    // Save submission as ctx.from.id, not as a group
-    await this.processAudioSubmission(ctx, ctx.from.id);
+    await this.processAudioSubmission(ctx, groupChatId, uploadChatId);
   }
 
   private async processAudioSubmission(
     ctx: AudioMessageContext,
-    chatId: number,
+    groupChatId: number,
+    uploadChatId: number,
   ): Promise<void> {
     const userId = ctx.from.id;
     const fileId = ctx.message.audio.file_id;
@@ -177,11 +178,16 @@ export class PrivateComposer extends Composer<IBotContext> {
       return;
     }
 
-    await this.memberService.saveSubmission({
-      userId,
-      chatId,
-      fileId,
-    });
+    await this.memberService.saveSubmission(
+      {
+        userId,
+        chatId: groupChatId,
+        fileId,
+      },
+      {
+        uploadChatId,
+      },
+    );
 
     await ctx.reply(this.text.get("chat.trackSent"));
   }

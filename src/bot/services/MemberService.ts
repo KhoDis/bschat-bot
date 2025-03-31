@@ -85,8 +85,8 @@ export class MemberService {
         },
       },
       data: {
-        hintMessageId: hintMessageId,
-        hintChatId: hintChatId,
+        uploadHintMessageId: hintMessageId,
+        uploadChatId: hintChatId,
       },
     });
   }
@@ -127,11 +127,17 @@ export class MemberService {
     });
   }
 
-  async saveSubmission(submission: {
-    userId: number;
-    chatId: number;
-    fileId: string;
-  }) {
+  async saveSubmission(
+    submission: {
+      userId: number;
+      chatId: number;
+      fileId: string;
+    },
+    upload: {
+      uploadChatId: number;
+      uploadHintMessageId?: number;
+    },
+  ) {
     // Upsert musicSubmission
     await prisma.musicSubmission.upsert({
       where: {
@@ -144,6 +150,8 @@ export class MemberService {
         memberUserId: submission.userId,
         memberChatId: submission.chatId,
         fileId: submission.fileId,
+        uploadChatId: upload.uploadChatId,
+        uploadHintMessageId: upload.uploadHintMessageId || null,
       },
       update: {
         fileId: submission.fileId,
