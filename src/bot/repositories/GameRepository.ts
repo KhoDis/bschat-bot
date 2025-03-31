@@ -118,8 +118,8 @@ export class GameRepository {
           create: submissions.map((track, index) => ({
             roundIndex: index,
             musicFileId: track.fileId,
-            hintChatId: track.hintChatId,
-            hintMessageId: track.hintMessageId,
+            hintChatId: track.uploadChatId,
+            hintMessageId: track.uploadHintMessageId,
             userId: track.memberUserId,
           })),
         },
