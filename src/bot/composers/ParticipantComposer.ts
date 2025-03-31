@@ -22,6 +22,8 @@ export class ParticipantComposer extends Composer<IBotContext> {
   private async handleJoin(ctx: CommandContext): Promise<void> {
     const chatId = ctx.chat.id;
     let userId = ctx.from.id;
+    let username = ctx.from.username || null;
+    let firstName = ctx.from.first_name;
 
     if (ctx.chat.type === "private") {
       await ctx.reply("member.groupOnly");
@@ -31,13 +33,15 @@ export class ParticipantComposer extends Composer<IBotContext> {
     // Check reply of the context
     if (ctx.message.reply_to_message && ctx.message.reply_to_message.from) {
       userId = ctx.message.reply_to_message.from.id;
+      username = ctx.message.reply_to_message.from.username || null;
+      firstName = ctx.message.reply_to_message.from.first_name;
     }
 
     // Sync user and chat
     await this.memberService.upsertUser({
       id: userId,
-      username: ctx.from.username || null,
-      firstName: ctx.from.first_name,
+      username: username,
+      firstName: firstName,
     });
     await this.memberService.upsertChat({
       id: chatId,
