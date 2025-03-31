@@ -21,11 +21,16 @@ export class ParticipantComposer extends Composer<IBotContext> {
 
   private async handleJoin(ctx: CommandContext): Promise<void> {
     const chatId = ctx.chat.id;
-    const userId = ctx.from.id;
+    let userId = ctx.from.id;
 
     if (ctx.chat.type === "private") {
       await ctx.reply("member.groupOnly");
       return;
+    }
+
+    // Check reply of the context
+    if (ctx.message.reply_to_message && ctx.message.reply_to_message.from) {
+      userId = ctx.message.reply_to_message.from.id;
     }
 
     // Sync user and chat
@@ -39,11 +44,11 @@ export class ParticipantComposer extends Composer<IBotContext> {
       title: ctx.chat.title,
     });
     if (await this.memberService.existsMember(userId, chatId)) {
-      await ctx.reply("member.alreadyJoined");
+      await ctx.reply(this.text.get("member.alreadyJoined", { name: userId }));
       return;
     }
     await this.memberService.addMember(userId, chatId);
-    await ctx.reply("member.joined");
+    await ctx.reply(this.text.get("member.joined", { name: userId }));
   }
 
   async handlePingParticipants(ctx: CommandContext): Promise<void> {

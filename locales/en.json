@@ -240,6 +240,10 @@
     "notAMember": "You are not a member of chat {{chatId}}.",
     "chooseChat": "Select a chat.",
     "chatSelected": "Chat {{chatId}} selected.",
-    "invalidSelection": "Invalid chat selection."
+    "invalidSelection": "Invalid chat selection.",
+    "trackNotFound": "Track with ID {{trackId}} not found.",
+    "trackInvalid": "Invalid track with ID {{trackId}}.",
+    "hintSent": "Hint saved! I hope it's better than your previous attempts to be useful.",
+    "noChats": "You are not a member of any chats."
   }
 }

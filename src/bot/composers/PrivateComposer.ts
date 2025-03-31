@@ -121,7 +121,7 @@ export class PrivateComposer extends Composer<IBotContext> {
   private async handleHintMessage(ctx: AnyMediaMessageContext): Promise<void> {
     const chatId = ctx.session.selectedChatId;
     if (!chatId) {
-      await ctx.reply(this.text.get("preparation.noChatSelected"));
+      await ctx.reply(this.text.get("chat.noChatSelected"));
       return;
     }
 
@@ -130,7 +130,7 @@ export class PrivateComposer extends Composer<IBotContext> {
       chatId,
     );
     if (!submission) {
-      await ctx.reply(this.text.get("preparation.trackNotFound"));
+      await ctx.reply(this.text.get("chat.trackNotFound"));
       return;
     }
 
@@ -141,7 +141,7 @@ export class PrivateComposer extends Composer<IBotContext> {
       ctx.message.message_id,
     );
 
-    await ctx.reply(this.text.get("preparation.hintSent"));
+    await ctx.reply(this.text.get("chat.hintSent"));
   }
 
   // Handle audio submission
@@ -170,9 +170,7 @@ export class PrivateComposer extends Composer<IBotContext> {
     const fileId = ctx.message.audio.file_id;
 
     if (!this.isValidSubmission(userId, fileId)) {
-      await ctx.reply(
-        this.text.get("preparation.trackInvalid", { userId, fileId }),
-      );
+      await ctx.reply(this.text.get("chat.trackInvalid", { userId, fileId }));
       return;
     }
 
@@ -182,7 +180,7 @@ export class PrivateComposer extends Composer<IBotContext> {
       fileId,
     });
 
-    await ctx.reply(this.text.get("preparation.trackSent"));
+    await ctx.reply(this.text.get("chat.trackSent"));
   }
 
   private isValidSubmission(userId: number, fileId: string): boolean {
