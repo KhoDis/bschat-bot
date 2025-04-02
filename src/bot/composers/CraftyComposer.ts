@@ -114,13 +114,14 @@ export class CraftyComposer extends Composer<IBotContext> {
         // Создаем inline-кнопки
         const buttons = await Promise.all(
           servers.map(async (server) => {
-            const status = await this.craftyService.getServerStats(
-              server.server_id.toString(),
-            );
             return [
               {
-                text: `${status.running ? "(выключить)" : "(включить)"} ${server.server_name}`,
-                callback_data: `crafty:${status.running ? "stop_server" : "start_server"}:${server.server_id}`,
+                text: `${server.server_name} 🚀`,
+                callback_data: `crafty:start_server:${server.server_id}`,
+              },
+              {
+                text: `${server.server_name} ⛔`,
+                callback_data: `crafty:stop_server:${server.server_id}`,
               },
             ];
           }),
