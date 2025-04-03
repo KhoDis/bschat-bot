@@ -71,6 +71,7 @@ export class JokerComposer extends Composer<IBotContext> {
     this.command("self_destruct", this.handleSelfDestruct.bind(this));
     this.command("ping_behruz", this.handlePingBehruz.bind(this));
     this.command("greet", this.handleGreet.bind(this));
+    this.command("terebinder", this.handleTerebinder.bind(this));
   }
 
   private async handleGreet(ctx: CommandContext): Promise<void> {
@@ -156,5 +157,90 @@ export class JokerComposer extends Composer<IBotContext> {
     for (let i = 0; i < 3; i++) {
       await ctx.reply("@BEHruzM_17");
     }
+  }
+
+  private async handleTerebinder(ctx: CommandContext): Promise<void> {
+    await ctx.reply("🔮 Теребиндер пробуждается...");
+
+    // Create a typing effect for dramatic effect
+    const message = "⚡ Анализирую твою ауру... ⚡";
+    let currentText = "";
+
+    const sentMessage = await ctx.reply(currentText);
+
+    // Simulate typing effect by updating the message character by character
+    for (const char of message) {
+      currentText += char;
+      await ctx.telegram.editMessageText(
+        ctx.chat.id,
+        sentMessage.message_id,
+        undefined,
+        currentText,
+      );
+      await this.sleep(150); // Delay between characters
+    }
+
+    await this.sleep(1000);
+
+    // Generate a "random" but deterministic fortune based on the user's username
+    const username = ctx.from.username || ctx.from.first_name;
+    const usernameSeed = [...username].reduce(
+      (sum, char) => sum + char.charCodeAt(0),
+      0,
+    );
+
+    // Define fortune components
+    const timeFrames = [
+      "завтра",
+      "через неделю",
+      "в следующем месяце",
+      "когда Марс войдёт в созвездие Рака",
+    ];
+    const events = [
+      "упадёт на голову метеорит размером с чизбургер",
+      "встретишь свою идеальную вторую половинку, но не узнаешь её",
+      "найдёшь клад, но потратишь всё на носки",
+      "станешь мемом в интернете",
+      "превратишься в программиста на 24 часа",
+      "обретёшь суперспособность, но самую бесполезную",
+      "случайно изобретёшь новый танцевальный тренд",
+    ];
+    const advice = [
+      "не ешь синие продукты",
+      "держись подальше от людей в жёлтых кепках",
+      "не принимай важных решений по четвергам",
+      "пой в душе громче обычного",
+      "носи разные носки для привлечения удачи",
+      "начни коллекционировать крышки от бутылок",
+    ];
+
+    // Use the username seed to deterministically select components
+    const timeIndex = usernameSeed % timeFrames.length;
+    const eventIndex = Math.floor(usernameSeed / 3) % events.length;
+    const adviceIndex = Math.floor(usernameSeed / 7) % advice.length;
+
+    // Create fortune card with formatted text
+    await ctx.reply(
+      `🔮 *ПРЕДСКАЗАНИЕ ТЕРЕБИНДЕРА* 🔮\n\n` +
+        `👤 *${username}*\n\n` +
+        `⏰ ${timeFrames[timeIndex]} тебе ${events[eventIndex]}.\n\n` +
+        `💡 *Совет дня:* ${advice[adviceIndex]}.\n\n` +
+        `⚠️ Вероятность сбычи: ${(usernameSeed % 100) + 1}%`,
+      { parse_mode: "Markdown" },
+    );
+
+    // Calculate the user's "lucky numbers" based on their username
+    const luckyNumbers = [];
+    for (let i = 0; i < 3; i++) {
+      luckyNumbers.push(((usernameSeed * (i + 1)) % 42) + 1);
+    }
+
+    await this.sleep(2000);
+
+    // Send lucky numbers as a follow-up
+    await ctx.reply(
+      `🎲 Твои счастливые числа на сегодня: ${luckyNumbers.join(", ")}.\n` +
+        `📱 Если это номер телефона, то не звони по нему. Никогда.`,
+    );
   }
 }
