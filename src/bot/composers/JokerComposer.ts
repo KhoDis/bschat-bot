@@ -192,10 +192,17 @@ export class JokerComposer extends Composer<IBotContext> {
 
     // Generate a "random" but deterministic fortune based on the user's username
     const username = ctx.from.username || ctx.from.first_name;
+    const today = new Date();
+    const dailyIdentifier = `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`;
     const usernameSeed = [...username].reduce(
       (sum, char) => sum + char.charCodeAt(0),
       0,
     );
+    const dateSeed = [...dailyIdentifier].reduce(
+      (sum, char) => sum + char.charCodeAt(0),
+      0,
+    );
+    const combinedSeed = usernameSeed + dateSeed;
 
     // Define fortune components with more variety and modularity
     // Первая часть предсказания - временной период
@@ -343,7 +350,7 @@ export class JokerComposer extends Composer<IBotContext> {
 
     // Используем username для создания детерминированных, но уникальных предсказаний
     const getSeededIndex = (array: any[], offset: number = 0): number => {
-      return Math.abs((usernameSeed * (offset + 1)) % array.length);
+      return Math.abs((combinedSeed * (offset + 1)) % array.length);
     };
 
     // Собираем предсказание по частям
@@ -364,7 +371,7 @@ export class JokerComposer extends Composer<IBotContext> {
       randomFactContents[getSeededIndex(randomFactContents, 11)];
 
     // Вычисляем "точность" предсказания
-    const accuracy = (usernameSeed % 42) + 59; // От 59% до 100%
+    const accuracy = (combinedSeed % 42) + 59; // От 59% до 100%
 
     // Создаем удачные числа
     const luckyNumbers = [];
@@ -374,7 +381,7 @@ export class JokerComposer extends Composer<IBotContext> {
 
     // Создаем предсказание с использованием всех компонентов
     const fortuneText =
-      `🔮 *ПРЕДСКАЗАНИЕ ТЕРЕБИНДЕРА* 🔮\n\n` +
+      `🔮 *ПРЕДСКАЗАНИЕ ТЕРЕБИНДЕРА НА СЕГОДНЯ* 🔮\n\n` +
       `👤 *${username}*\n\n` +
       `🕰️ *${timeFramePrefix} ${timeFrameValue}* ${location} ты ${verb} ${object}. ${consequence}.\n\n` +
       `💡 *${advicePrefix}* ${adviceContent}.\n\n` +
@@ -400,5 +407,16 @@ export class JokerComposer extends Composer<IBotContext> {
 
     const conclusionIndex = getSeededIndex(conclusions, 12);
     await ctx.reply(conclusions[conclusionIndex % conclusions.length]!);
+
+    // Показать когда будет доступен следующий предсказание
+    const nextPredictionTime = new Date();
+    nextPredictionTime.setDate(nextPredictionTime.getDate() + 1);
+    nextPredictionTime.setHours(12, 0, 0, 0);
+    const timeUntilNextPrediction = nextPredictionTime.getTime() - Date.now();
+
+    await ctx.reply(
+      `🕰️ *Следующее предсказание будет доступно через* ${Math.floor(timeUntilNextPrediction / (1000 * 60))} минут.`,
+      { parse_mode: "Markdown" },
+    );
   }
 }
