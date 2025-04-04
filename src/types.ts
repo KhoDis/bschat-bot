@@ -35,6 +35,7 @@ export const TYPES = {
   ParticipantComposer: Symbol.for("ParticipantComposer"),
   PrivateComposer: Symbol.for("PrivateComposer"),
   RoleComposer: Symbol.for("RoleComposer"),
+  TextComposer: Symbol.for("TextComposer"),
 };
 
 export type Types = (typeof TYPES)[keyof typeof TYPES];

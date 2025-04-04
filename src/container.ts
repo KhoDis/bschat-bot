@@ -18,6 +18,7 @@ import { ParticipantComposer } from "@/bot/composers/ParticipantComposer";
 import { PrivateComposer } from "@/bot/composers/PrivateComposer";
 import { RoleComposer } from "@/bot/composers/RoleComposer";
 import { CraftyComposer } from "@/bot/composers/CraftyComposer";
+import { TextComposer } from "@/bot/composers/TextComposer";
 
 const container = new Container();
 
@@ -53,5 +54,6 @@ container
 container.bind<PrivateComposer>(TYPES.PrivateComposer).to(PrivateComposer);
 container.bind<RoleComposer>(TYPES.RoleComposer).to(RoleComposer);
 container.bind<CraftyComposer>(TYPES.CraftyComposer).to(CraftyComposer);
+container.bind<TextComposer>(TYPES.TextComposer).to(TextComposer);
 
 export { container };

@@ -1,15 +1,9 @@
 import { IBotContext } from "@/context/context.interface";
-import { Composer, NarrowedContext } from "telegraf";
-import { Message, Update } from "telegraf/types";
+import { Composer } from "telegraf";
 import { MemberService } from "../services/MemberService";
 import { TextService } from "@/bot/services/TextService";
 import { inject, injectable } from "inversify";
-import { TYPES } from "@/types";
-
-type CommandContext = NarrowedContext<
-  IBotContext,
-  Update.MessageUpdate<Message.TextMessage>
->;
+import { CommandContext, TYPES } from "@/types";
 
 @injectable()
 export class JokerComposer extends Composer<IBotContext> {
@@ -72,6 +66,7 @@ export class JokerComposer extends Composer<IBotContext> {
     this.command("ping_behruz", this.handlePingBehruz.bind(this));
     this.command("greet", this.handleGreet.bind(this));
     this.command("terebinder", this.handleTerebinder.bind(this));
+    this.command("8ball", this.handle8ball.bind(this));
   }
 
   private async handleGreet(ctx: CommandContext): Promise<void> {
@@ -168,6 +163,19 @@ export class JokerComposer extends Composer<IBotContext> {
       t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
       return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
     };
+  }
+
+  private async handle8ball(ctx: CommandContext): Promise<void> {
+    const responses = [
+      "Бесспорно.",
+      "Вероятно, да.",
+      "Спроси позже.",
+      "Не рассчитывай на это.",
+      "Определённо нет.",
+      "💩 Лучше не знать ответа.",
+    ];
+    const answer = responses[Math.floor(Math.random() * responses.length)];
+    await ctx.reply(`🎱 ${answer}`);
   }
 
   private async handleTerebinder(ctx: CommandContext): Promise<void> {
