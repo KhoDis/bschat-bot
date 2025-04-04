@@ -159,6 +159,17 @@ export class JokerComposer extends Composer<IBotContext> {
     }
   }
 
+  // Add this function to create a seeded random number generator
+  private createSeededRandom(seed: number) {
+    return function () {
+      // Simple mulberry32 algorithm for seeded random numbers
+      let t = (seed += 0x6d2b79f5);
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
   private async handleTerebinder(ctx: CommandContext): Promise<void> {
     await ctx.reply("🔮 Теребиндер пробуждается...");
 
@@ -203,6 +214,14 @@ export class JokerComposer extends Composer<IBotContext> {
       0,
     );
     const combinedSeed = usernameSeed + dateSeed;
+    // Create seeded random function
+    const seededRandom = this.createSeededRandom(combinedSeed);
+
+    // Then replace your getSeededIndex function with this simpler version
+    const getRandomItem = <T>(array: T[]): T => {
+      const index = Math.floor(seededRandom() * array.length);
+      return array[index % array.length]!;
+    };
 
     // Define fortune components with more variety and modularity
     // Первая часть предсказания - временной период
@@ -353,33 +372,30 @@ export class JokerComposer extends Composer<IBotContext> {
       return Math.abs((combinedSeed * (offset + 1)) % array.length);
     };
 
-    // Собираем предсказание по частям
-    const timeFramePrefix =
-      timeFramePrefixes[getSeededIndex(timeFramePrefixes)];
-    const timeFrameValue = timeFrameValues[getSeededIndex(timeFrameValues, 1)];
-    const location = locations[getSeededIndex(locations, 2)];
-    const verb = verbs[getSeededIndex(verbs, 3)];
-    const object = objects[getSeededIndex(objects, 4)];
-    const consequence = consequences[getSeededIndex(consequences, 5)];
-    const advicePrefix = advicePrefixes[getSeededIndex(advicePrefixes, 6)];
-    const adviceContent = adviceContents[getSeededIndex(adviceContents, 7)];
-    const warningPrefix = warningPrefixes[getSeededIndex(warningPrefixes, 8)];
-    const warningContent = warningContents[getSeededIndex(warningContents, 9)];
-    const randomFactPrefix =
-      randomFactPrefixes[getSeededIndex(randomFactPrefixes, 10)];
-    const randomFactContent =
-      randomFactContents[getSeededIndex(randomFactContents, 11)];
+    // Use it to select items from your arrays
+    const timeFramePrefix = getRandomItem(timeFramePrefixes);
+    const timeFrameValue = getRandomItem(timeFrameValues);
+    const location = getRandomItem(locations);
+    const verb = getRandomItem(verbs);
+    const object = getRandomItem(objects);
+    const consequence = getRandomItem(consequences);
+    const advicePrefix = getRandomItem(advicePrefixes);
+    const adviceContent = getRandomItem(adviceContents);
+    const warningPrefix = getRandomItem(warningPrefixes);
+    const warningContent = getRandomItem(warningContents);
+    const randomFactPrefix = getRandomItem(randomFactPrefixes);
+    const randomFactContent = getRandomItem(randomFactContents);
 
-    // Вычисляем "точность" предсказания
-    const accuracy = (combinedSeed % 42) + 59; // От 59% до 100%
+    // Calculate accuracy using seeded random
+    const accuracy = Math.floor(seededRandom() * 42) + 59; // 59% to 100%
 
-    // Создаем удачные числа
+    // Generate lucky numbers
     const luckyNumbers = [];
     for (let i = 0; i < 3; i++) {
-      luckyNumbers.push(((usernameSeed * (i + 1)) % 100) + 1);
+      luckyNumbers.push(Math.floor(seededRandom() * 100) + 1);
     }
 
-    // Создаем предсказание с использованием всех компонентов
+    // Make the fortune
     const fortuneText =
       `🔮 *ПРЕДСКАЗАНИЕ ТЕРЕБИНДЕРА НА СЕГОДНЯ* 🔮\n\n` +
       `👤 *${username}*\n\n` +
@@ -390,12 +406,12 @@ export class JokerComposer extends Composer<IBotContext> {
       `🎲 *Счастливые числа:* ${luckyNumbers.join(", ")}.\n\n` +
       `📊 *Точность предсказания:* ${accuracy}%`;
 
-    // Отправляем готовое предсказание
+    // Send the fortune
     await ctx.reply(fortuneText, { parse_mode: "Markdown" });
 
     await this.sleep(2000);
 
-    // Добавляем забавное заключение
+    // Generate a conclusion
     const conclusions = [
       "Теребиндер никогда не ошибается. Почти никогда. Иногда. Редко бывает прав, если честно.",
       "Предсказание составлено лично для тебя. И для тех, у кого похожее имя.",
