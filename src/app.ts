@@ -12,6 +12,7 @@ import { CraftyComposer } from "@/bot/composers/CraftyComposer";
 import { container } from "@/container";
 import { TYPES } from "@/types";
 import { TextComposer } from "@/bot/composers/TextComposer";
+import { SorryComposer } from "@/bot/composers/SorryComposer";
 
 class Bot {
   bot: Telegraf<IBotContext>;
@@ -50,6 +51,9 @@ class Bot {
     const textMiddleware = container
       .get<TextComposer>(TYPES.TextComposer)
       .middleware();
+    const sorryMiddleware = container
+      .get<SorryComposer>(TYPES.SorryComposer)
+      .middleware();
 
     // Combine non-private middlewares into a single middleware
     const nonPrivateMiddleware = Composer.compose([
@@ -73,6 +77,7 @@ class Bot {
     this.bot.use(globalMiddleware);
     this.bot.use(jokerMiddleware);
     this.bot.use(textMiddleware);
+    this.bot.use(sorryMiddleware);
   }
 
   init() {
