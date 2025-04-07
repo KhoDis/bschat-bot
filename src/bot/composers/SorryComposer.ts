@@ -10,8 +10,11 @@ export class SorryComposer extends Composer<IBotContext> {
     "CAACAgIAAxkBAAKluGf0Fnpz6OzwjIZJc9pMsd0zMUaEAALyagACR5aoSRoNRPHRrJ-_NgQ",
     "CAACAgIAAxkBAAKlu2f0FoxQFqj_PMdvrHAzu6vkWpP2AAKZRgACQRgoS7q0M1Edekf4NgQ",
     "CAACAgIAAxkBAAKlvmf0FqfwceSQ5Y455UPtjjyuu3XoAALBagACSUmRSxm8R0e6OduJNgQ",
-    "CAACAgIAAxkBAAIHp2SCmwAB9EfhYxTfwvLoqYJuKYmRMQACdVYAAumrMErlNYoxWnP1UDYE", // Additional sticker
-    "CAACAgIAAxkBAAIHqGSCmw-lYj1AYi0_tNyHqtJuQFkVAAJbGAACYyVYSlfNVlT9U-FRNQQ", // Additional sticker
+    "CAACAgIAAxkBAAKlwWf0HcmY3OCd7_CcPzlAfM5tGRIFAAJXgwACAkOQS45lnhCSoq8MNgQ",
+    "CAACAgIAAxkBAAKlxGf0HeFQUlookzE6M2ymIuXDpTpXAAIDUwACMb2oSYkZBV3I0_XNNgQ",
+    "CAACAgIAAxkBAAKlx2f0HfEjFgFf1xDChsKqNPdH-FlwAAJ7UQACT1moSX9Sud2ncpEHNgQ",
+    "CAACAgIAAxkBAAKlymf0HgLdnLPfAAG2wRzT4ZhgztSNZQACUEcAAqImqEnUYlVVxhjHIzYE",
+    "CAACAgIAAxkBAAKlzWf0Hhr8IYJBC-9eFQABOOc6LB72JgACbSEAAo6dAAFI7ON6RhMaI4A2BA",
   ];
 
   // Emoji reactions for the emoji action
@@ -64,7 +67,6 @@ export class SorryComposer extends Composer<IBotContext> {
       this.createApologyQuest,
       this.reverseMessage,
       this.translateToKlingon,
-      this.startApologyGame,
       this.sendApologyMeme,
       this.generateWeirdTranslation,
       this.sendApologyPoem,
@@ -73,7 +75,7 @@ export class SorryComposer extends Composer<IBotContext> {
     ];
 
     const action = actions[randomInt(actions.length)]!;
-    await action.call(this, ctx, apologyCount);
+    await action.call(this, ctx);
     await this.startApologyGame.call(this, ctx, apologyCount);
   }
 
