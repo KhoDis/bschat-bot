@@ -44,7 +44,7 @@ export class SorryComposer extends Composer<IBotContext> {
   private setupApologyHandlers() {
     // Extended with more apology patterns, including Russian and English variations
     const apologyPatterns = [
-      /(извини|прости|сорри|сорян|виноват|sorry|apologize|my bad|мой косяк|пардон|excuse me|forgive me)/i,
+      /(извини|uzur|узур|прости|сорри|сорян|виноват|sorry|apologize|my bad|мой косяк|пардон|excuse me|forgive me)/i,
     ];
 
     apologyPatterns.forEach((pattern) => {
