@@ -31,12 +31,8 @@ export class SorryComposer extends Composer<IBotContext> {
         const count = (this.apologyCounter.get(userId) || 0) + 1;
         this.apologyCounter.set(userId, count);
 
-        // 30% chance to activate special response
-        if (Math.random() < 0.3) {
-          await this.executeSpecialAction(ctx, count);
-        } else {
-          await next();
-        }
+        await this.executeSpecialAction(ctx, count);
+        await next();
       });
     });
   }
