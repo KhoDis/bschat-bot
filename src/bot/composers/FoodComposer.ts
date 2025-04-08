@@ -264,8 +264,7 @@ export class FoodComposer extends Composer<IBotContext> {
 
       try {
         const baseQuery = FOOD_CATEGORY_QUERIES[category] || category;
-        const additionalKeywords = stem ? `${stem}` : "";
-        const fullQuery = `${baseQuery} ${additionalKeywords}`;
+        const fullQuery = `${baseQuery}`;
 
         const photoData = await this.fetchUnsplashPhoto(fullQuery);
         const attribution = `||Фото: [${photoData.authorName}](https://unsplash.com/@${photoData.authorUsername}) / Unsplash||`;
