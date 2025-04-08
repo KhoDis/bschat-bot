@@ -16,12 +16,12 @@ const FOOD_CATEGORIES = {
 
   pizza: ["пицца", "пиццу", "пиццей", "пиццерия", "пицца-итальяна"],
   burger: ["бургер", "чизбургер", "гамбургер", "бургерная"],
-  hotdog: ["хот дог"],
+  hotdog: ["хотдог"],
 
   ramen: ["рамен"],
   udon: ["удон"],
-  pho: ["фо бо"],
-  tomyum: ["том ям"],
+  pho: ["фо-бо"],
+  tomyum: ["том-ям"],
   donburi: ["донбури"],
   poke: ["поке"],
   baozi: ["баоцзы"],
@@ -123,6 +123,22 @@ const FOOD_CATEGORIES = {
   gin: ["джин"],
   champagne: ["шампанское"],
   cognac: ["коньяк"],
+  vodka: ["водка"],
+
+  shawarma: [
+    "шаурма",
+    "шаверма",
+    "шаурму",
+    "шавуху",
+    "шавуха",
+    "шаурмочка",
+    "шавермочка",
+    "doner",
+    "донер",
+    "донер кебаб",
+    "донер-кебаб",
+    "кебаб",
+  ],
 };
 
 const FOOD_CATEGORY_QUERIES: { [key: string]: string } = {
@@ -136,6 +152,7 @@ const FOOD_CATEGORY_QUERIES: { [key: string]: string } = {
   pizza: "italian pizza",
   burger: "juicy burger",
   hotdog: "hot dog street food",
+  shawarma: "shawarma wrap street food",
 
   ramen: "japanese ramen",
   udon: "udon noodles",
@@ -148,7 +165,6 @@ const FOOD_CATEGORY_QUERIES: { [key: string]: string } = {
   wok: "wok noodles",
 
   sushi: "sushi set",
-  pelmeni: "russian pelmeni",
   borscht: "borscht soup",
   olivier: "olivier salad",
   vinaigrette: "vinaigrette salad",
@@ -157,7 +173,7 @@ const FOOD_CATEGORY_QUERIES: { [key: string]: string } = {
   uha: "russian fish soup",
   draniki: "belarus draniki",
 
-  plov: "uzbek plov",
+  plov: "plov pilaf",
 
   pasta: "italian pasta",
   carbonara: "pasta carbonara",
