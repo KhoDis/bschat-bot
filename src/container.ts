@@ -20,6 +20,7 @@ import { RoleComposer } from "@/bot/composers/RoleComposer";
 import { CraftyComposer } from "@/bot/composers/CraftyComposer";
 import { TextComposer } from "@/bot/composers/TextComposer";
 import { SorryComposer } from "@/bot/composers/SorryComposer";
+import { FoodComposer } from "@/bot/composers/FoodComposer";
 
 const container = new Container();
 
@@ -57,5 +58,6 @@ container.bind<RoleComposer>(TYPES.RoleComposer).to(RoleComposer);
 container.bind<CraftyComposer>(TYPES.CraftyComposer).to(CraftyComposer);
 container.bind<TextComposer>(TYPES.TextComposer).to(TextComposer);
 container.bind<SorryComposer>(TYPES.SorryComposer).to(SorryComposer);
+container.bind<FoodComposer>(TYPES.FoodComposer).to(FoodComposer);
 
 export { container };
