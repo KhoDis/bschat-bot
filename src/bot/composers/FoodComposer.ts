@@ -23,7 +23,7 @@ const FOOD_CATEGORIES = {
   pho: ["фо-бо"],
   tomyum: ["том-ям"],
   donburi: ["донбури"],
-  poke: ["поке"],
+  // poke: ["поке"], // removed because it activates on "пока"
   baozi: ["баоцзы"],
   kimchi: ["кимчи"],
   wok: ["вок"],
