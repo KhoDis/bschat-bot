@@ -152,7 +152,7 @@ const FOOD_CATEGORY_QUERIES: { [key: string]: string } = {
   pizza: "italian pizza",
   burger: "juicy burger",
   hotdog: "hot dog street food",
-  shawarma: "shawarma wrap street food",
+  shawarma: "doner kebab",
 
   ramen: "japanese ramen",
   udon: "udon noodles",
