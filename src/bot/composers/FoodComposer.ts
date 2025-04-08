@@ -126,23 +126,97 @@ const FOOD_CATEGORIES = {
 };
 
 const FOOD_CATEGORY_QUERIES: { [key: string]: string } = {
-  pizza: "pizza italian",
-  sushi: "sushi japanese",
-  dessert: "dessert sweet",
-  pasta: "pasta italian",
-  meat: "barbecue meat",
-  asian: "asian cuisine food",
-  russian: "russian cuisine food",
-  vegan: "vegan food",
-  fastfood: "fast food",
-  bakery: "bakery bread",
-  coffee: "coffee drink",
-  tea: "tea drink",
-  drink: "refreshment drink",
-  alcohol: "alcoholic drink",
+  omelet: "omelet breakfast",
+  pancakes: "pancakes with syrup",
+  porridge: "bowl of porridge",
+  toast: "buttered toast",
+  granola: "granola bowl",
+  yogurt: "yogurt with berries",
+
+  pizza: "italian pizza",
+  burger: "juicy burger",
+  hotdog: "hot dog street food",
+
+  ramen: "japanese ramen",
+  udon: "udon noodles",
+  pho: "pho soup",
+  tomyum: "tom yum soup",
+  donburi: "donburi rice bowl",
+  poke: "poke bowl",
+  baozi: "baozi buns",
+  kimchi: "korean kimchi",
+  wok: "wok noodles",
+
+  sushi: "sushi set",
+  pelmeni: "russian pelmeni",
+  borscht: "borscht soup",
+  olivier: "olivier salad",
+  vinaigrette: "vinaigrette salad",
+  okroshka: "okroshka soup",
+  solyanka: "solyanka soup",
+  uha: "russian fish soup",
+  draniki: "belarus draniki",
+
+  plov: "uzbek plov",
+
+  pasta: "italian pasta",
+  carbonara: "pasta carbonara",
+  bolognese: "pasta bolognese",
+
+  steak: "beef steak",
+  porkchop: "pork chop",
+  lambchop: "grilled lamb",
+  chicken: "grilled chicken",
+  barbecue: "meat barbecue",
+
+  salmon: "grilled salmon",
+  tuna: "tuna fillet",
+  cod: "cod fish",
+  shrimp: "shrimp dish",
+  squid: "grilled squid",
+  octopus: "cooked octopus",
+  oyster: "fresh oysters",
+  lobster: "lobster plate",
+  caviar: "black caviar",
+
+  falafel: "falafel plate",
+  hummus: "hummus dip",
+  tofu: "tofu dish",
+  seitan: "seitan vegan",
+
+  salad: "fresh salad",
+  soup: "bowl of soup",
+
+  cake: "slice of cake",
+  muffin: "muffin dessert",
+  donut: "glazed donut",
+  icecream: "ice cream scoop",
+  chocolate: "chocolate sweets",
+
+  croissant: "croissant pastry",
+  pie: "fruit pie",
+  bread: "fresh bread",
+
   fruit: "fresh fruit",
   vegetable: "fresh vegetables",
-  chocolate: "chocolate sweet",
+
+  cheese: "cheese plate",
+
+  smoothie: "fruit smoothie",
+  lemonade: "lemonade drink",
+  milkshake: "milkshake with cream",
+  juice: "fresh juice",
+
+  coffee: "cup of coffee",
+  tea: "tea in teapot",
+
+  wine: "glass of wine",
+  beer: "cold beer",
+  whiskey: "glass of whiskey",
+  rum: "rum cocktail",
+  gin: "gin tonic",
+  champagne: "champagne celebration",
+  cognac: "glass of cognac",
 };
 
 @injectable()
