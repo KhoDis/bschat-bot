@@ -1,178 +1,207 @@
 import { IBotContext } from "@/context/context.interface";
 import { Composer } from "telegraf";
 import { inject, injectable } from "inversify";
-
 import natural from "natural";
 import { createApi } from "unsplash-js";
 import { ConfigService } from "@/config/config.service";
 import { TYPES } from "@/types";
 
-// Категории еды и их ключевые слова
 const FOOD_CATEGORIES = {
-  pizza: ["пицца", "пиццу", "пиццей", "пиццерия", "пиццайоло"],
-  burger: ["бургер", "чизбургер", "бургеры", "бюргер", "гамбургер"],
-  sushi: [
-    "суши",
-    "роллы",
-    "сашими",
-    "нигири",
-    "урамаки",
-    "филадельфия",
-    "калифорния",
+  omelet: ["омлет", "яичница", "глазунья"],
+  pancakes: ["блины", "блинчики"],
+  porridge: ["каша", "овсянка"],
+  toast: ["тост", "тосты"],
+  granola: ["гранола", "мюсли"],
+  yogurt: ["йогурт"],
+
+  pizza: ["пицца", "пиццу", "пиццей", "пиццерия", "пицца-итальяна"],
+  burger: ["бургер", "чизбургер", "гамбургер", "бургерная"],
+  hotdog: ["хот дог"],
+
+  ramen: ["рамен"],
+  udon: ["удон"],
+  pho: ["фо бо"],
+  tomyum: ["том ям"],
+  donburi: ["донбури"],
+  poke: ["поке"],
+  baozi: ["баоцзы"],
+  kimchi: ["кимчи"],
+  wok: ["вок"],
+
+  sushi: ["суши", "роллы", "сашими", "нигири", "урамаки", "гункан"],
+
+  pelmeni: ["пельмени"],
+  borscht: ["борщ"],
+  olivier: ["оливье"],
+  vinaigrette: ["винегрет"],
+  okroshka: ["окрошка"],
+  solyanka: ["солянка"],
+  uha: ["уха"],
+  draniki: ["драники"],
+
+  plov: ["плов"],
+
+  pasta: ["паста", "спагетти", "фетучини", "лазанья", "равиоли"],
+  carbonara: ["карбонара"],
+  bolognese: ["болоньезе"],
+
+  steak: ["стейк", "антрекот"],
+  porkchop: ["свинина", "карбонад", "ребрышки"],
+  lambchop: ["баранина"],
+  chicken: ["курица", "курочка", "курица гриль"],
+  barbecue: ["шашлык", "гриль", "барбекю"],
+
+  salmon: ["лосось"],
+  tuna: ["тунец"],
+  cod: ["треска"],
+  shrimp: ["креветки"],
+  squid: ["кальмары"],
+  octopus: ["осьминог"],
+  oyster: ["устрицы"],
+  lobster: ["лобстер"],
+  caviar: ["икра"],
+
+  falafel: ["фалафель"],
+  hummus: ["хумус"],
+  tofu: ["тофу"],
+  seitan: ["сейтан"],
+
+  salad: ["салат", "цезарь", "греческий", "винегрет", "капрезе"],
+  soup: ["суп", "щи", "харчо", "крем-суп", "бульон"],
+
+  cake: ["торт", "чизкейк", "пирожное", "тирамису", "эклер"],
+  muffin: ["маффин", "кекс"],
+  donut: ["пончик"],
+  icecream: ["мороженое"],
+  chocolate: ["шоколад", "конфеты", "трюфель", "какао"],
+
+  croissant: ["круассан"],
+  pie: ["пирог", "пирожок"],
+  bread: ["хлеб", "батон", "багет", "лаваш", "булочка"],
+
+  fruit: ["яблоко", "банан", "манго", "ананас", "киви", "апельсин", "виноград"],
+  vegetable: [
+    "помидор",
+    "огурец",
+    "морковь",
+    "брокколи",
+    "кабачок",
+    "баклажан",
+    "авокадо",
   ],
-  dessert: [
-    "торт",
-    "десерт",
-    "мороженое",
-    "пирожное",
-    "чизкейк",
-    "тирамису",
-    "кекс",
-    "маффин",
-    "эклер",
-    "пончик",
+
+  cheese: [
+    "сыр",
+    "моцарелла",
+    "чеддер",
+    "пармезан",
+    "фета",
+    "рикотта",
+    "брынза",
   ],
-  pasta: [
-    "паста",
-    "спагетти",
-    "макароны",
-    "фетучини",
-    "равиоли",
-    "лазанья",
-    "каннеллони",
-    "паста карбонара",
+
+  smoothie: ["смузи"],
+  lemonade: ["лимонад"],
+  milkshake: ["милкшейк"],
+  juice: ["фреш", "морс", "компот"],
+
+  coffee: [
+    "кофе",
+    "капучино",
+    "латте",
+    "эспрессо",
+    "мокка",
+    "раф",
+    "американо",
   ],
-  salad: ["салат", "цезарь", "греческий", "оливье", "винегрет", "капрезе"],
-  soup: ["суп", "борщ", "щи", "солянка", "харчо", "том ям", "куриный суп"],
-  breakfast: [
-    "завтрак",
-    "омлет",
-    "глазунья",
-    "блины",
-    "сырники",
-    "каша",
-    "гранола",
-  ],
-  meat: [
-    "стейк",
-    "мясо",
-    "говядина",
-    "свинина",
-    "баранина",
-    "антрекот",
-    "ребрышки",
-    "шашлык",
-  ],
-  seafood: [
-    "морепродукты",
-    "креветки",
-    "мидии",
-    "кальмары",
-    "осьминог",
-    "устрицы",
-    "лобстер",
-  ],
-  asian: ["рамен", "удон", "том ям", "пельмени", "вок", "донбури", "сатай"],
-  russian: [
-    "пельмени",
-    "блины",
-    "борщ",
-    "окрошка",
-    "солянка",
-    "холодец",
-    "селедка под шубой",
-  ],
-  vegan: [
-    "веган",
-    "тофу",
-    "фалафель",
-    "хумус",
-    "бургер веганский",
-    "овощи гриль",
-  ],
-  fastfood: [
-    "фастфуд",
-    "картошка фри",
-    "наггетсы",
-    "хот дог",
-    "шаурма",
-    "бургер",
-  ],
-  bakery: [
-    "хлеб",
-    "булочка",
-    "багет",
-    "круассан",
-    "пирог",
-    "пирожок",
-    "бублик",
-  ],
-  coffee: ["кофе", "капучино", "эспрессо", "латте", "мокка", "американо"],
-  tea: ["чай"],
-  drink: ["лимонад", "смузи", "коктейль", "милкшейк", "фреш"],
-  alcohol: ["вино", "пиво", "коктейль", "виски", "ром", "джин", "шампанское"],
-  fruit: ["фрукты", "яблоко", "банан", "апельсин", "киви", "манго", "ананас"],
-  vegetable: ["овощи", "морковь", "помидор", "огурец", "брокколи", "авокадо"],
-  cheese: ["сыр", "брынза", "моцарелла", "чеддер", "пармезан", "фета"],
-  chocolate: ["шоколад", "шоколадка", "конфеты", "пралине", "трюфель"],
-  bbq: ["гриль", "барбекю", "шашлык", "стейк", "курица гриль"],
+  tea: ["чай", "мате", "пуэр", "улун", "каркаде"],
+
+  wine: ["вино"],
+  beer: ["пиво"],
+  whiskey: ["виски"],
+  rum: ["ром"],
+  gin: ["джин"],
+  champagne: ["шампанское"],
+  cognac: ["коньяк"],
 };
 
-const unsplash = createApi({
-  accessKey: process.env["UNSPLASH_ACCESS_KEY"]!,
-});
+const FOOD_CATEGORY_QUERIES: { [key: string]: string } = {
+  pizza: "pizza italian",
+  sushi: "sushi japanese",
+  dessert: "dessert sweet",
+  pasta: "pasta italian",
+  meat: "barbecue meat",
+  asian: "asian cuisine food",
+  russian: "russian cuisine food",
+  vegan: "vegan food",
+  fastfood: "fast food",
+  bakery: "bakery bread",
+  coffee: "coffee drink",
+  tea: "tea drink",
+  drink: "refreshment drink",
+  alcohol: "alcoholic drink",
+  fruit: "fresh fruit",
+  vegetable: "fresh vegetables",
+  chocolate: "chocolate sweet",
+};
 
 @injectable()
 export class FoodComposer extends Composer<IBotContext> {
   private tokenizer: natural.WordTokenizer;
   private stemmer: natural.Stemmer;
-
   private stemToCategoryMap: Map<string, string> = new Map();
+  private unsplash: ReturnType<typeof createApi>;
+
+  constructor(@inject(TYPES.ConfigService) private config: ConfigService) {
+    super();
+    this.unsplash = createApi({
+      accessKey: this.config.get("UNSPLASH_ACCESS_KEY"),
+    });
+
+    this.tokenizer = new natural.WordTokenizer();
+    this.stemmer = natural.PorterStemmerRu;
+    this.buildStemToCategoryMap();
+    this.setupFoodListener();
+  }
 
   private buildStemToCategoryMap() {
     for (const [category, keywords] of Object.entries(FOOD_CATEGORIES)) {
       for (const keyword of keywords) {
         const stem = this.stemmer.stem(keyword);
-        this.stemToCategoryMap.set(stem, category);
+        if (!this.stemToCategoryMap.has(stem)) {
+          this.stemToCategoryMap.set(stem, category);
+        }
       }
     }
-  }
-
-  constructor(@inject(TYPES.ConfigService) private config: ConfigService) {
-    super();
-    this.setupFoodListener();
-
-    // Инициализация Unsplash
-
-    // NLP для русского языка
-    this.tokenizer = new natural.WordTokenizer();
-    this.stemmer = natural.PorterStemmerRu;
-    this.buildStemToCategoryMap();
   }
 
   private setupFoodListener() {
     this.on("message", async (ctx, next) => {
       if (!ctx.message || !("text" in ctx.message)) return;
+
       const text = ctx.message.text.toLowerCase();
       const tokens = this.tokenizer.tokenize(text);
       const stems = tokens.map((token) => this.stemmer.stem(token));
 
-      // Определяем категорию еды
       const detectedCategory = this.detectFoodCategory(stems);
       if (!detectedCategory) return;
 
-      // Получаем фото из Unsplash
+      const { stem, category } = detectedCategory;
+
       try {
-        const photoData = await this.fetchUnsplashPhoto(detectedCategory);
-        const attribution = `||Photo by [${photoData.authorName}](https://unsplash.com/@${photoData.authorUsername}) on [Unsplash](https://unsplash.com)||`;
-        const photoUrl = photoData.url;
-        await ctx.replyWithPhoto(photoUrl, {
-          caption: `Вот твоя ${detectedCategory}\\! 🍽️\n\n${attribution}`,
+        const baseQuery = FOOD_CATEGORY_QUERIES[category] || category;
+        const additionalKeywords = stem ? `${stem}` : "";
+        const fullQuery = `${baseQuery} ${additionalKeywords}`;
+
+        const photoData = await this.fetchUnsplashPhoto(fullQuery);
+        const attribution = `||Фото: [${photoData.authorName}](https://unsplash.com/@${photoData.authorUsername}) / Unsplash||`;
+        await ctx.replyWithPhoto(photoData.url, {
+          caption: `Вот твоя ${fullQuery}\\! 🍽️\n\n${attribution}`,
           parse_mode: "MarkdownV2",
         });
       } catch (error) {
         await ctx.reply(
-          `Фото не найдено... Может, съешь что-то другое? 😅 \n\n${error}`,
+          `Не удалось найти фото... Попробуй другой запрос! 😅 \n\n${error}`,
         );
       }
 
@@ -180,47 +209,41 @@ export class FoodComposer extends Composer<IBotContext> {
     });
   }
 
-  private detectFoodCategory(stems: string[]): string | null {
+  private detectFoodCategory(
+    stems: string[],
+  ): { stem: string; category: string } | null {
     for (const stem of stems) {
       const category = this.stemToCategoryMap.get(stem);
-      if (category) {
-        return category;
-      }
+      if (category) return { stem, category };
     }
     return null;
   }
 
-  private async fetchUnsplashPhoto(category: string): Promise<{
-    url: string;
-    authorName: string;
-    authorUsername: string;
-  }> {
-    const result = await unsplash.photos.getRandom({
-      query: category,
+  private async fetchUnsplashPhoto(
+    fullQuery: string,
+  ): Promise<{ url: string; authorName: string; authorUsername: string }> {
+    const result = await this.unsplash.photos.getRandom({
+      query: fullQuery,
       count: 1,
+      orientation: "landscape",
     });
 
     if (result.errors || !result.response) {
-      throw new Error(`Unsplash error: ${result.errors}`);
+      throw new Error(result.errors?.[0] || "Unknown error");
     }
 
     const photo = Array.isArray(result.response)
       ? result.response[0]
       : result.response;
 
-    if (
-      !photo ||
-      !photo.urls?.regular ||
-      !photo.user?.name ||
-      !photo.user?.username
-    ) {
-      throw new Error("No photo or author found");
+    if (!photo || !photo.urls?.regular || !photo.user) {
+      throw new Error("Invalid photo response");
     }
 
     return {
       url: photo.urls.regular,
-      authorName: photo.user.name,
-      authorUsername: photo.user.username,
+      authorName: photo.user.name || "Unknown",
+      authorUsername: photo.user.username || "unknown",
     };
   }
 }
