@@ -141,12 +141,12 @@ model Guess {
 model FoodCategory {
   id       Int           @id @default(autoincrement())
   query    String
-  triggers FoodTrigger[]
+  triggers FoodTrigger[] @relation("CategoryToTriggers")
 }
 
 model FoodTrigger {
   id         Int          @id @default(autoincrement())
   trigger    String       @unique
   categoryId Int
-  category   FoodCategory @relation(fields: [categoryId], references: [id])
+  category   FoodCategory @relation("CategoryToTriggers", fields: [categoryId], references: [id], onDelete: Cascade)
 }
