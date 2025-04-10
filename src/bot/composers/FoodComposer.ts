@@ -7,6 +7,7 @@ import { CommandContext, TYPES } from "@/types";
 import { FoodService } from "@/bot/services/FoodService";
 import prisma from "@/prisma/client";
 import { RequirePermission } from "@/bot/decorators/RequirePermission";
+import { Prisma } from "@prisma/client";
 
 const FOOD_CATEGORIES = {
   "omelet breakfast": ["омлет", "яичница", "глазунья"],
@@ -247,22 +248,66 @@ export class FoodComposer extends Composer<IBotContext> {
   @RequirePermission("ADMIN")
   private async handleSeedFood(ctx: CommandContext) {
     try {
-      // Add all from the list as one transaction
-      await prisma.foodCategory.createMany({
-        data: Object.entries(FOOD_CATEGORIES).map(([query, triggers]) => ({
-          query,
-          triggers: {
-            createMany: {
-              data: triggers.map((trigger) => ({ trigger })),
-            },
-          },
-        })),
+      const operations: Prisma.PrismaPromise<any>[] = [];
+
+      // Get all existing triggers first
+      const existingTriggers = await prisma.foodTrigger.findMany({
+        select: { trigger: true },
       });
+      const existingTriggerSet = new Set(
+        existingTriggers.map((t) => t.trigger),
+      );
+
+      for (const [query, triggers] of Object.entries(FOOD_CATEGORIES)) {
+        // Filter out duplicates
+        const uniqueTriggers = triggers.filter(
+          (trigger) => !existingTriggerSet.has(trigger),
+        );
+
+        if (uniqueTriggers.length === 0) continue; // Skip if no new triggers
+
+        operations.push(
+          prisma.foodCategory.create({
+            data: {
+              query,
+              triggers: {
+                create: uniqueTriggers.map((trigger) => ({ trigger })),
+              },
+            },
+          }),
+        );
+
+        // Add them to the set so next iterations can avoid them too
+        uniqueTriggers.forEach((t) => existingTriggerSet.add(t));
+      }
+
+      if (operations.length === 0) {
+        await ctx.reply("⚠️ Nothing new to seed");
+        return;
+      }
+
+      await prisma.$transaction(operations);
 
       await this.foodService.initializeStemMap();
       await ctx.reply(`✅ Seeded food`);
     } catch (error) {
       if (error instanceof Error) {
+        if (error instanceof Prisma.PrismaClientInitializationError) {
+          console.error(error.name, error.errorCode, error.message);
+          return;
+        }
+        if (error instanceof Prisma.PrismaClientKnownRequestError) {
+          console.error(error.name, error.code, error.message);
+          return;
+        }
+        if (error instanceof Prisma.PrismaClientValidationError) {
+          console.error(error.name, error.message);
+          return;
+        }
+        if (error instanceof Prisma.PrismaClientUnknownRequestError) {
+          console.error(error.name, error.message);
+          return;
+        }
         await ctx.reply(`❌ Error: ${error.message}`);
         return;
       }
