@@ -7,80 +7,87 @@ import { ConfigService } from "@/config/config.service";
 import { TYPES } from "@/types";
 
 const FOOD_CATEGORIES = {
-  omelet: ["омлет", "яичница", "глазунья"],
-  pancakes: ["блины", "блинчики"],
-  porridge: ["каша", "овсянка"],
-  toast: ["тост", "тосты"],
-  granola: ["гранола", "мюсли"],
-  yogurt: ["йогурт"],
+  "omelet breakfast": ["омлет", "яичница", "глазунья"],
+  "pancakes with syrup": ["блины", "блинчики"],
+  "bowl of porridge": ["каша", "овсянка"],
+  "buttered toast": ["тост", "тосты"],
+  "granola bowl": ["гранола", "мюсли"],
+  "yogurt with berries": ["йогурт"],
 
-  pizza: ["пицца", "пиццу", "пиццей", "пиццерия", "пицца-итальяна"],
-  burger: ["бургер", "чизбургер", "гамбургер", "бургерная"],
-  hotdog: ["хотдог"],
+  "italian pizza": ["пицца", "пиццу", "пиццей", "пиццерия", "пицца-итальяна"],
+  "juicy burger": ["бургер", "чизбургер", "гамбургер", "бургерная"],
+  "hot dog street food": ["хотдог"],
 
-  ramen: ["рамен"],
-  udon: ["удон"],
-  pho: ["фо-бо"],
-  tomyum: ["том-ям"],
-  donburi: ["донбури"],
-  // poke: ["поке"], // removed because it activates on "пока"
-  baozi: ["баоцзы"],
-  kimchi: ["кимчи"],
-  wok: ["вок"],
+  "japanese ramen": ["рамен"],
+  "udon noodles": ["удон"],
+  "pho soup": ["фо-бо"],
+  "tom yum soup": ["том-ям"],
+  "donburi rice bowl": ["донбури"],
+  "baozi buns": ["баоцзы"],
+  "korean kimchi": ["кимчи"],
+  "wok noodles": ["вок"],
 
-  sushi: ["суши", "роллы", "сашими", "нигири", "урамаки", "гункан"],
+  "sushi set": ["суши", "роллы", "сашими", "нигири", "урамаки", "гункан"],
 
   pelmeni: ["пельмени"],
-  borscht: ["борщ"],
-  olivier: ["оливье"],
-  vinaigrette: ["винегрет"],
-  okroshka: ["окрошка"],
-  solyanka: ["солянка"],
-  uha: ["уха"],
-  draniki: ["драники"],
+  "borscht soup": ["борщ"],
+  "olivier salad": ["оливье"],
+  "vinaigrette salad": ["винегрет"],
+  "okroshka soup": ["окрошка"],
+  "solyanka soup": ["солянка"],
+  "russian fish soup": ["уха"],
+  "belarus draniki": ["драники"],
 
-  plov: ["плов"],
+  "plov pilaf": ["плов"],
 
-  pasta: ["паста", "спагетти", "фетучини", "лазанья", "равиоли"],
-  carbonara: ["карбонара"],
-  bolognese: ["болоньезе"],
+  "italian pasta": ["паста", "спагетти", "фетучини", "лазанья", "равиоли"],
+  "pasta carbonara": ["карбонара"],
+  "pasta bolognese": ["болоньезе"],
 
-  steak: ["стейк", "антрекот"],
-  porkchop: ["свинина", "карбонад", "ребрышки"],
-  lambchop: ["баранина"],
-  chicken: ["курица", "курочка", "курица гриль"],
-  barbecue: ["шашлык", "гриль", "барбекю"],
+  "beef steak": ["стейк", "антрекот"],
+  "pork chop": ["свинина", "карбонад", "ребрышки"],
+  "grilled lamb": ["баранина"],
+  "grilled chicken": ["курица", "курочка", "курица гриль"],
+  "meat barbecue": ["шашлык", "гриль", "барбекю"],
 
-  salmon: ["лосось"],
-  tuna: ["тунец"],
-  cod: ["треска"],
-  shrimp: ["креветки"],
-  squid: ["кальмары"],
-  octopus: ["осьминог"],
-  oyster: ["устрицы"],
-  lobster: ["лобстер"],
-  caviar: ["икра"],
+  "grilled salmon": ["лосось"],
+  "tuna fillet": ["тунец"],
+  "cod fish": ["треска"],
+  "shrimp dish": ["креветки"],
+  "grilled squid": ["кальмары"],
+  "cooked octopus": ["осьминог"],
+  "fresh oysters": ["устрицы"],
+  "lobster plate": ["лобстер"],
+  "black caviar": ["икра"],
 
-  falafel: ["фалафель"],
-  hummus: ["хумус"],
-  tofu: ["тофу"],
-  seitan: ["сейтан"],
+  "falafel plate": ["фалафель"],
+  "hummus dip": ["хумус"],
+  "tofu dish": ["тофу"],
+  "seitan vegan": ["сейтан"],
 
-  salad: ["салат", "цезарь", "греческий", "винегрет", "капрезе"],
-  soup: ["суп", "щи", "харчо", "крем-суп", "бульон"],
+  "fresh salad": ["салат", "цезарь", "греческий", "винегрет", "капрезе"],
+  "bowl of soup": ["суп", "щи", "харчо", "крем-суп", "бульон"],
 
-  cake: ["торт", "чизкейк", "пирожное", "тирамису", "эклер"],
-  muffin: ["маффин", "кекс"],
-  donut: ["пончик"],
-  icecream: ["мороженое"],
-  chocolate: ["шоколад", "конфеты", "трюфель", "какао"],
+  "slice of cake": ["торт", "чизкейк", "пирожное", "тирамису", "эклер"],
+  "muffin dessert": ["маффин", "кекс"],
+  "glazed donut": ["пончик"],
+  "ice cream scoop": ["мороженое"],
+  "chocolate sweets": ["шоколад", "конфеты", "трюфель", "какао"],
 
-  croissant: ["круассан"],
-  pie: ["пирог", "пирожок"],
-  bread: ["хлеб", "батон", "багет", "лаваш", "булочка"],
+  "croissant pastry": ["круассан"],
+  "fruit pie": ["пирог", "пирожок"],
+  "fresh bread": ["хлеб", "батон", "багет", "лаваш", "булочка"],
 
-  fruit: ["яблоко", "банан", "манго", "ананас", "киви", "апельсин", "виноград"],
-  vegetable: [
+  "fresh fruit": [
+    "яблоко",
+    "банан",
+    "манго",
+    "ананас",
+    "киви",
+    "апельсин",
+    "виноград",
+  ],
+  "fresh vegetables": [
     "помидор",
     "огурец",
     "морковь",
@@ -90,7 +97,7 @@ const FOOD_CATEGORIES = {
     "авокадо",
   ],
 
-  cheese: [
+  "cheese plate": [
     "сыр",
     "моцарелла",
     "чеддер",
@@ -100,12 +107,12 @@ const FOOD_CATEGORIES = {
     "брынза",
   ],
 
-  smoothie: ["смузи"],
-  lemonade: ["лимонад"],
-  milkshake: ["милкшейк"],
-  juice: ["фреш", "морс", "компот"],
+  "fruit smoothie": ["смузи"],
+  "lemonade drink": ["лимонад"],
+  "milkshake with cream": ["милкшейк"],
+  "fresh juice": ["фреш", "морс", "компот"],
 
-  coffee: [
+  "cup of coffee": [
     "кофе",
     "капучино",
     "латте",
@@ -114,18 +121,18 @@ const FOOD_CATEGORIES = {
     "раф",
     "американо",
   ],
-  tea: ["чай", "мате", "пуэр", "улун", "каркаде"],
+  "tea in teapot": ["чай", "мате", "пуэр", "улун", "каркаде"],
 
-  wine: ["вино"],
-  beer: ["пиво"],
-  whiskey: ["виски"],
-  rum: ["ром"],
-  gin: ["джин"],
-  champagne: ["шампанское"],
-  cognac: ["коньяк"],
+  "glass of wine": ["вино"],
+  "cold beer": ["пиво"],
+  "glass of whiskey": ["виски"],
+  "rum cocktail": ["ром"],
+  "gin tonic": ["джин"],
+  "champagne celebration": ["шампанское"],
+  "glass of cognac": ["коньяк"],
   vodka: ["водка"],
 
-  shawarma: [
+  "doner kebab": [
     "шаурма",
     "шаверма",
     "шаурму",
@@ -139,100 +146,6 @@ const FOOD_CATEGORIES = {
     "донер-кебаб",
     "кебаб",
   ],
-};
-
-const FOOD_CATEGORY_QUERIES: { [key: string]: string } = {
-  omelet: "omelet breakfast",
-  pancakes: "pancakes with syrup",
-  porridge: "bowl of porridge",
-  toast: "buttered toast",
-  granola: "granola bowl",
-  yogurt: "yogurt with berries",
-
-  pizza: "italian pizza",
-  burger: "juicy burger",
-  hotdog: "hot dog street food",
-  shawarma: "doner kebab",
-
-  ramen: "japanese ramen",
-  udon: "udon noodles",
-  pho: "pho soup",
-  tomyum: "tom yum soup",
-  donburi: "donburi rice bowl",
-  poke: "poke bowl",
-  baozi: "baozi buns",
-  kimchi: "korean kimchi",
-  wok: "wok noodles",
-
-  sushi: "sushi set",
-  borscht: "borscht soup",
-  olivier: "olivier salad",
-  vinaigrette: "vinaigrette salad",
-  okroshka: "okroshka soup",
-  solyanka: "solyanka soup",
-  uha: "russian fish soup",
-  draniki: "belarus draniki",
-
-  plov: "plov pilaf",
-
-  pasta: "italian pasta",
-  carbonara: "pasta carbonara",
-  bolognese: "pasta bolognese",
-
-  steak: "beef steak",
-  porkchop: "pork chop",
-  lambchop: "grilled lamb",
-  chicken: "grilled chicken",
-  barbecue: "meat barbecue",
-
-  salmon: "grilled salmon",
-  tuna: "tuna fillet",
-  cod: "cod fish",
-  shrimp: "shrimp dish",
-  squid: "grilled squid",
-  octopus: "cooked octopus",
-  oyster: "fresh oysters",
-  lobster: "lobster plate",
-  caviar: "black caviar",
-
-  falafel: "falafel plate",
-  hummus: "hummus dip",
-  tofu: "tofu dish",
-  seitan: "seitan vegan",
-
-  salad: "fresh salad",
-  soup: "bowl of soup",
-
-  cake: "slice of cake",
-  muffin: "muffin dessert",
-  donut: "glazed donut",
-  icecream: "ice cream scoop",
-  chocolate: "chocolate sweets",
-
-  croissant: "croissant pastry",
-  pie: "fruit pie",
-  bread: "fresh bread",
-
-  fruit: "fresh fruit",
-  vegetable: "fresh vegetables",
-
-  cheese: "cheese plate",
-
-  smoothie: "fruit smoothie",
-  lemonade: "lemonade drink",
-  milkshake: "milkshake with cream",
-  juice: "fresh juice",
-
-  coffee: "cup of coffee",
-  tea: "tea in teapot",
-
-  wine: "glass of wine",
-  beer: "cold beer",
-  whiskey: "glass of whiskey",
-  rum: "rum cocktail",
-  gin: "gin tonic",
-  champagne: "champagne celebration",
-  cognac: "glass of cognac",
 };
 
 @injectable()
@@ -279,8 +192,7 @@ export class FoodComposer extends Composer<IBotContext> {
       const { stem, category } = detectedCategory;
 
       try {
-        const baseQuery = FOOD_CATEGORY_QUERIES[category] || category;
-        const fullQuery = `${baseQuery}`;
+        const fullQuery = `${category}`;
 
         const photoData = await this.fetchUnsplashPhoto(fullQuery);
         const attribution = `||Фото: [${photoData.authorName}](https://unsplash.com/@${photoData.authorUsername}) / Unsplash||`;
