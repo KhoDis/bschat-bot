@@ -137,3 +137,16 @@ model Guess {
 
   @@unique([roundId, userId])
 }
+
+model FoodCategory {
+  id       Int           @id @default(autoincrement())
+  query    String
+  triggers FoodTrigger[]
+}
+
+model FoodTrigger {
+  id         Int          @id @default(autoincrement())
+  trigger    String       @unique
+  categoryId Int
+  category   FoodCategory @relation(fields: [categoryId], references: [id])
+}
