@@ -30,148 +30,6 @@ const specialChars = [
   "!",
 ];
 
-const FOOD_CATEGORIES = {
-  "omelet breakfast": ["омлет", "яичница", "глазунья"],
-  "pancakes with syrup": ["блины", "блинчики"],
-  "bowl of porridge": ["каша", "овсянка"],
-  "buttered toast": ["тост", "тосты"],
-  "granola bowl": ["гранола", "мюсли"],
-  "yogurt with berries": ["йогурт"],
-
-  "italian pizza": ["пицца", "пиццу", "пиццей", "пиццерия", "пицца-итальяна"],
-  "juicy burger": ["бургер", "чизбургер", "гамбургер", "бургерная"],
-  "hot dog street food": ["хотдог"],
-
-  "japanese ramen": ["рамен"],
-  "udon noodles": ["удон"],
-  "pho soup": ["фо-бо"],
-  "tom yum soup": ["том-ям"],
-  "donburi rice bowl": ["донбури"],
-  "baozi buns": ["баоцзы"],
-  "korean kimchi": ["кимчи"],
-  "wok noodles": ["вок"],
-
-  "sushi set": ["суши", "роллы", "сашими", "нигири", "урамаки", "гункан"],
-
-  pelmeni: ["пельмени"],
-  "borscht soup": ["борщ"],
-  "olivier salad": ["оливье"],
-  "vinaigrette salad": ["винегрет"],
-  "okroshka soup": ["окрошка"],
-  "solyanka soup": ["солянка"],
-  "russian fish soup": ["уха"],
-  "belarus draniki": ["драники"],
-
-  "plov pilaf": ["плов"],
-
-  "italian pasta": ["паста", "спагетти", "фетучини", "лазанья", "равиоли"],
-  "pasta carbonara": ["карбонара"],
-  "pasta bolognese": ["болоньезе"],
-
-  "beef steak": ["стейк", "антрекот"],
-  "pork chop": ["свинина", "карбонад", "ребрышки"],
-  "grilled lamb": ["баранина"],
-  "grilled chicken": ["курица", "курочка", "курица гриль"],
-  "meat barbecue": ["шашлык", "гриль", "барбекю"],
-
-  "grilled salmon": ["лосось"],
-  "tuna fillet": ["тунец"],
-  "cod fish": ["треска"],
-  "shrimp dish": ["креветки"],
-  "grilled squid": ["кальмары"],
-  "cooked octopus": ["осьминог"],
-  "fresh oysters": ["устрицы"],
-  "lobster plate": ["лобстер"],
-  "black caviar": ["икра"],
-
-  "falafel plate": ["фалафель"],
-  "hummus dip": ["хумус"],
-  "tofu dish": ["тофу"],
-  "seitan vegan": ["сейтан"],
-
-  "fresh salad": ["салат", "цезарь", "греческий", "винегрет", "капрезе"],
-  "bowl of soup": ["суп", "щи", "харчо", "крем-суп", "бульон"],
-
-  "slice of cake": ["торт", "чизкейк", "пирожное", "тирамису", "эклер"],
-  "muffin dessert": ["маффин", "кекс"],
-  "glazed donut": ["пончик"],
-  "ice cream scoop": ["мороженое"],
-  "chocolate sweets": ["шоколад", "конфеты", "трюфель", "какао"],
-
-  "croissant pastry": ["круассан"],
-  "fruit pie": ["пирог", "пирожок"],
-  "fresh bread": ["хлеб", "батон", "багет", "лаваш", "булочка"],
-
-  "fresh fruit": [
-    "яблоко",
-    "банан",
-    "манго",
-    "ананас",
-    "киви",
-    "апельсин",
-    "виноград",
-  ],
-  "fresh vegetables": [
-    "помидор",
-    "огурец",
-    "морковь",
-    "брокколи",
-    "кабачок",
-    "баклажан",
-    "авокадо",
-  ],
-
-  "cheese plate": [
-    "сыр",
-    "моцарелла",
-    "чеддер",
-    "пармезан",
-    "фета",
-    "рикотта",
-    "брынза",
-  ],
-
-  "fruit smoothie": ["смузи"],
-  "lemonade drink": ["лимонад"],
-  "milkshake with cream": ["милкшейк"],
-  "fresh juice": ["фреш", "морс", "компот"],
-
-  "cup of coffee": [
-    "кофе",
-    "капучино",
-    "латте",
-    "эспрессо",
-    "мокка",
-    "раф",
-    "американо",
-  ],
-  "tea in teapot": ["чай", "мате", "пуэр", "улун", "каркаде"],
-
-  "glass of wine": ["вино"],
-  "cold beer": ["пиво"],
-  "glass of whiskey": ["виски"],
-  "rum cocktail": ["ром"],
-  "gin tonic": ["джин"],
-  "champagne celebration": ["шампанское"],
-  "glass of cognac": ["коньяк"],
-  vodka: ["водка"],
-
-  "doner kebab": [
-    "шаурма",
-    "шаверма",
-    "шаурму",
-    "шавуху",
-    "шавуха",
-    "шаурмочка",
-    "шавермочка",
-    "doner",
-    "донер",
-    "донер кебаб",
-    "донер-кебаб",
-    "кебаб",
-  ],
-};
-
 @injectable()
 export class FoodComposer extends Composer<IBotContext> {
   private unsplash: ReturnType<typeof createApi>;
@@ -196,12 +54,12 @@ export class FoodComposer extends Composer<IBotContext> {
     this.command("removefood", (ctx) => this.handleRemoveFood(ctx));
     this.command("listfood", (ctx) => this.handleListFood(ctx));
 
+    this.command("renamefood", (ctx) => this.handleRenameFood(ctx));
+
     // New commands
     this.command("addtrigger", (ctx) => this.handleAddTrigger(ctx));
     this.command("removetrigger", (ctx) => this.handleRemoveTrigger(ctx));
     this.command("listtriggers", (ctx) => this.handleListTriggers(ctx));
-
-    this.command("seedfood", (ctx) => this.handleSeedFood(ctx));
   }
 
   private splitArgs(text: string): string[] {
@@ -242,95 +100,102 @@ export class FoodComposer extends Composer<IBotContext> {
     }
 
     try {
-      await prisma.foodCategory.create({
+      // First check for existing triggers
+      const existingTriggers = await prisma.foodTrigger.findMany({
+        where: {
+          trigger: {
+            in: triggers,
+          },
+        },
+        include: {
+          category: true,
+        },
+      });
+
+      const existingTriggerMap = new Map(
+        existingTriggers.map((t) => [t.trigger, t]),
+      );
+      const newTriggers = triggers.filter((t) => !existingTriggerMap.has(t));
+      const transfers: { trigger: string; from: string }[] = [];
+
+      // Create the new category
+      const category = await prisma.foodCategory.create({
         data: {
           query,
           triggers: {
-            createMany: {
-              data: triggers.map((trigger) => ({ trigger })),
-            },
+            create: newTriggers.map((trigger) => ({ trigger })),
           },
         },
+        include: {
+          triggers: true,
+        },
       });
+
+      // Process transfers if needed
+      if (existingTriggers.length > 0) {
+        for (const { trigger, category: oldCategory } of existingTriggers) {
+          await prisma.foodTrigger.update({
+            where: { id: existingTriggerMap.get(trigger)!.id },
+            data: { categoryId: category.id },
+          });
+          transfers.push({ trigger, from: oldCategory.query });
+        }
+      }
+
       await this.foodService.initializeStemMap();
-      await ctx.reply(
-        `✅ Added "${query}" with triggers: ${triggers.join(", ")}`,
-      );
+
+      let message = `✅ Added "${query}" with triggers: ${triggers.join(", ")}`;
+      if (transfers.length > 0) {
+        const transferMessages = transfers.map(
+          (t) => `\n⚠️ Trigger "${t.trigger}" was transferred from "${t.from}"`,
+        );
+        message += `\n\n${transferMessages.join("")}`;
+      }
+
+      await ctx.reply(message);
     } catch (error) {
       if (error instanceof Error) {
         await ctx.reply(`❌ Error: ${error.message}`);
         return;
       }
-
       throw error;
     }
   }
 
-  @RequirePermission("ADMIN")
-  private async handleSeedFood(ctx: CommandContext) {
+  @RequirePermission("MANAGE_FOOD")
+  private async handleRenameFood(ctx: CommandContext) {
+    const args = this.splitArgs(ctx.message.text);
+    if (args.length < 3) {
+      await ctx.reply('Usage: /renamefood "oldname" "newname"');
+      return;
+    }
+
+    const oldName = args[1];
+    const newName = args[2];
+
+    if (!oldName || !newName) {
+      await ctx.reply('Usage: /renamefood "oldname" "newname"');
+      return;
+    }
+
     try {
-      const operations: Prisma.PrismaPromise<any>[] = [];
-
-      // Get all existing triggers first
-      const existingTriggers = await prisma.foodTrigger.findMany({
-        select: { trigger: true },
+      const updatedCategory = await prisma.foodCategory.update({
+        where: { query: oldName },
+        data: { query: newName },
       });
-      const existingTriggerSet = new Set(
-        existingTriggers.map((t) => t.trigger),
-      );
-
-      for (const [query, triggers] of Object.entries(FOOD_CATEGORIES)) {
-        // Filter out duplicates
-        const uniqueTriggers = triggers.filter(
-          (trigger) => !existingTriggerSet.has(trigger),
-        );
-
-        if (uniqueTriggers.length === 0) continue; // Skip if no new triggers
-
-        operations.push(
-          prisma.foodCategory.create({
-            data: {
-              query,
-              triggers: {
-                create: uniqueTriggers.map((trigger) => ({ trigger })),
-              },
-            },
-          }),
-        );
-
-        // Add them to the set so next iterations can avoid them too
-        uniqueTriggers.forEach((t) => existingTriggerSet.add(t));
-      }
-
-      if (operations.length === 0) {
-        await ctx.reply("⚠️ Nothing new to seed");
-        return;
-      }
-
-      await prisma.$transaction(operations);
 
       await this.foodService.initializeStemMap();
-      await ctx.reply(`✅ Seeded food`);
+      await ctx.reply(`✅ Renamed "${oldName}" to "${newName}"`);
     } catch (error) {
-      if (error instanceof Error) {
-        if (error instanceof Prisma.PrismaClientInitializationError) {
-          console.error(error.name, error.errorCode, error.message);
-          return;
-        }
-        if (error instanceof Prisma.PrismaClientKnownRequestError) {
-          console.error(error.name, error.code, error.message);
-          return;
-        }
-        if (error instanceof Prisma.PrismaClientValidationError) {
-          console.error(error.name, error.message);
-          return;
-        }
-        if (error instanceof Prisma.PrismaClientUnknownRequestError) {
-          console.error(error.name, error.message);
-          return;
-        }
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === "P2025"
+      ) {
+        await ctx.reply(`❌ Category "${oldName}" not found!`);
+      } else if (error instanceof Error) {
         await ctx.reply(`❌ Error: ${error.message}`);
-        return;
+      } else {
+        throw error;
       }
     }
   }

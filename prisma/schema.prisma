@@ -140,7 +140,7 @@ model Guess {
 
 model FoodCategory {
   id       Int           @id @default(autoincrement())
-  query    String
+  query    String        @unique
   triggers FoodTrigger[] @relation("CategoryToTriggers")
 }
 
