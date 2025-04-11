@@ -9,6 +9,27 @@ import prisma from "@/prisma/client";
 import { RequirePermission } from "@/bot/decorators/RequirePermission";
 import { Prisma } from "@prisma/client";
 
+const specialChars = [
+  "_",
+  "*",
+  "[",
+  "]",
+  "(",
+  ")",
+  "~",
+  "`",
+  ">",
+  "#",
+  "+",
+  "-",
+  "=",
+  "|",
+  "{",
+  "}",
+  ".",
+  "!",
+];
+
 const FOOD_CATEGORIES = {
   "omelet breakfast": ["омлет", "яичница", "глазунья"],
   "pancakes with syrup": ["блины", "блинчики"],
@@ -550,6 +571,13 @@ export class FoodComposer extends Composer<IBotContext> {
     });
   }
 
+  private escapeMarkdownV2(text: string): string {
+    return text
+      .split("")
+      .map((char) => (specialChars.includes(char) ? `\\${char}` : char))
+      .join("");
+  }
+
   private async fetchUnsplashPhoto(
     fullQuery: string,
   ): Promise<{ url: string; authorName: string; authorUsername: string }> {
@@ -573,8 +601,8 @@ export class FoodComposer extends Composer<IBotContext> {
 
     return {
       url: photo.urls.regular,
-      authorName: photo.user.name || "Unknown",
-      authorUsername: photo.user.username || "unknown",
+      authorName: this.escapeMarkdownV2(photo.user.name || "Unknown"),
+      authorUsername: this.escapeMarkdownV2(photo.user.username || "unknown"),
     };
   }
 }
