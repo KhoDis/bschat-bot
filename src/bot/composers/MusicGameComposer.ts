@@ -33,6 +33,7 @@ export class MusicGameComposer extends Composer<IBotContext> {
     this.command("next_round", this.handleNextRound.bind(this));
     this.command("show_hint", this.handleShowHint.bind(this));
     this.command("list_games", this.handleListGames.bind(this));
+    this.command("send_track", this.handleSendTrack.bind(this));
 
     // New handlers for multiple games
     this.command("active_game", this.handleActiveGameCommand.bind(this));
@@ -67,6 +68,17 @@ export class MusicGameComposer extends Composer<IBotContext> {
     await this.checkPermissions(ctx, async () => {
       await this.musicGuessService.listGames(ctx);
     });
+  }
+
+  private async handleSendTrack(ctx: CommandContext): Promise<void> {
+    // Extract file id from arguments
+    const parts = ctx.message.text.split(" ");
+    const fileId = parts[1];
+    if (!fileId) {
+      await ctx.reply("Пожалуйста, укажите ID трека: /send_track [id]");
+      return;
+    }
+    await ctx.replyWithAudio(fileId);
   }
 
   // New method to show specific game details
