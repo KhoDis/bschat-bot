@@ -22,7 +22,7 @@ export class TextComposer extends Composer<IBotContext> {
   }
 
   private loadResponses() {
-    const responsesDir = path.join(__dirname, "responses");
+    const responsesDir = path.join(process.cwd(), "responses");
 
     // Load all JSON files from the responses directory
     fs.readdirSync(responsesDir).forEach((file) => {
