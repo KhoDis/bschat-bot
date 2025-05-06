@@ -28,6 +28,9 @@ class Bot {
       }),
     );
 
+    const textMiddleware = container
+      .get<TextComposer>(TYPES.TextComposer)
+      .middleware();
     const privateMiddleware = container
       .get<PrivateComposer>(TYPES.PrivateComposer)
       .middleware();
@@ -48,9 +51,6 @@ class Bot {
       .middleware();
     const craftyMiddleware = container
       .get<CraftyComposer>(TYPES.CraftyComposer)
-      .middleware();
-    const textMiddleware = container
-      .get<TextComposer>(TYPES.TextComposer)
       .middleware();
     const sorryMiddleware = container
       .get<SorryComposer>(TYPES.SorryComposer)

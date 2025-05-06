@@ -109,8 +109,12 @@ export class TextComposer extends Composer<IBotContext> {
   private setupHandlers() {
     this.triggers.forEach(({ pattern, parts }) => {
       this.hears(pattern, async (ctx, next) => {
+        // Avoid spam
+        if (Math.random() > 1 / 3) next();
+
         const response = this.generateResponse(parts);
         await ctx.reply(response);
+
         return next();
       });
     });
