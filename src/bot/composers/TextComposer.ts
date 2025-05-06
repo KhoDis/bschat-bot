@@ -72,6 +72,23 @@ export class TextComposer extends Composer<IBotContext> {
         "howAreYou",
         /(как\s+(у тебя\s+)?дела|ч[оеё]\s+как|что\s+по\s+делам|как\s+жизнь|как\s+ты)/i,
       ),
+      make("called", /\b(бисруз|бися|ботяра)\b/i),
+      make(
+        "musicEvent",
+        /(check_music|угадайка|музыкальн(ый|ая)|треки\s+в\s+лс|отправил\s+трек|эвент|битва\s+треков)/i,
+      ),
+      make("arina", /(арин[ауеы])/i),
+      make("behruz", /(бехруз)/i),
+      make("dana", /(дан[ауеы])/i),
+      make("eugene", /(жен[яюе])/i),
+      make("gleb", /(глеб)/i),
+      make("liana", /(лиан[ауеы])/i),
+      make("rusya", /(рус[яюе])/i),
+      make("savva", /(савв[ауеы])/i),
+      make("sglipa", /(сглып[ауеы]|s g)/i),
+      make("ulyasha", /(уляш[ауеы]|ул[яюе]|ульян[ауеы])/i),
+      make("xene", /(ксен|какн|ксюш[ауеы])/i),
+      make("adis", /(адис)/i),
     ];
   }
 
