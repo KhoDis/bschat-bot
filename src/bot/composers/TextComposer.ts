@@ -48,7 +48,7 @@ export class TextComposer extends Composer<IBotContext> {
       make("bored", /(мне\s+)?скучн[оы]|нечего делать|делать нечего/i),
       make("goodMorning", /(доброе\s+(утро|утречко)|с\s+утречком)/i),
       make(
-        "goodnight",
+        "goodNight",
         /(спокойной\s+ночи|споки\s*ноки|(иду|я) спать|пош[ёе]л спать)/i,
       ),
       make(
@@ -67,12 +67,17 @@ export class TextComposer extends Composer<IBotContext> {
         "weekend",
         /(пятниц[аы]|выходн(ой|ые)|отдыхаю|тус[аоу]ю|чиллю|релакс)/i,
       ),
+      make("minecraft", /(майнкрафт|minecraft|блоки|майн)/i),
+      make(
+        "howAreYou",
+        /(как\s+(у тебя\s+)?дела|ч[оеё]\s+как|что\s+по\s+делам|как\s+жизнь|как\s+ты)/i,
+      ),
     ];
   }
 
   private generateResponse(topic: string): string {
     const parts = this.responses[topic];
-    if (!parts) return "Ой, что-то пошло не так...";
+    if (!parts) return "Я не нашёл ответов на эту тему :(";
 
     const getRandom = (arr: string[]) =>
       arr[Math.floor(Math.random() * arr.length)];
