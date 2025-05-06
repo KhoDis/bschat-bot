@@ -72,7 +72,7 @@ export class TextComposer extends Composer<IBotContext> {
         "howAreYou",
         /(как\s+(у тебя\s+)?дела|ч[оеё]\s+как|что\s+по\s+делам|как\s+жизнь|как\s+ты)/i,
       ),
-      make("called", /\b(бисруз|бис[яюе]|ботяр[ауеы])\b/i),
+      make("called", /(бисруз|бис[яюе]|ботяр[ауеы])/i),
       make(
         "musicEvent",
         /(check_music|угадайка|музыкальн(ый|ая)|треки\s+в\s+лс|отправил\s+трек|эвент|битва\s+треков)/i,
