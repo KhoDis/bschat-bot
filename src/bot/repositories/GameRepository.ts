@@ -243,8 +243,9 @@ export class GameRepository {
     });
   }
 
-  async getAllGames(): Promise<GameWithData[]> {
+  async getGamesOfChat(chatId: number): Promise<GameWithData[]> {
     return prisma.game.findMany({
+      where: { chatId },
       orderBy: {
         createdAt: "desc",
       },

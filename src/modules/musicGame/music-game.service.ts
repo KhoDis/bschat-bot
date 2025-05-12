@@ -1,10 +1,9 @@
-import { Context } from "telegraf";
 import {
   GameRepository,
   GameWithData,
 } from "@/bot/repositories/GameRepository";
 import { inject, injectable } from "inversify";
-import { CallbackQueryContext, TYPES } from "@/types";
+import { CallbackQueryContext, CommandContext, TYPES } from "@/types";
 import { TextService } from "@/bot/services/TextService";
 
 @injectable()
@@ -43,8 +42,8 @@ export class MusicGameService {
     return game;
   }
 
-  async listGames(ctx: Context) {
-    const games = await this.gameRepository.getAllGames();
+  async listGames(ctx: CommandContext) {
+    const games = await this.gameRepository.getGamesOfChat(ctx.chat.id);
 
     if (!games.length) {
       await ctx.reply("Нет сохранённых игр.");

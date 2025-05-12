@@ -11,7 +11,7 @@ export class LeaderboardService {
     @inject(TYPES.TextService) private text: TextService,
   ) {}
 
-  async showLeaderboard(chatId: number): Promise<string | null> {
+  async generateLeaderboard(chatId: number): Promise<string | null> {
     const game = await this.gameRepository.getCurrentGameByChatId(chatId);
     if (!game) {
       return null;

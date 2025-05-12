@@ -21,7 +21,6 @@ export const TYPES = {
   CraftyService: Symbol.for("CraftyService"),
   GuessService: Symbol.for("GuessService"),
   LeaderboardService: Symbol.for("LeaderboardService"),
-  MusicGameService: Symbol.for("MusicGameService"),
   PermissionService: Symbol.for("PermissionService"),
   RoleService: Symbol.for("RoleService"),
   RoundService: Symbol.for("RoundService"),
@@ -33,7 +32,6 @@ export const TYPES = {
   CraftyComposer: Symbol.for("CraftyComposer"),
   GlobalComposer: Symbol.for("GlobalComposer"),
   JokerComposer: Symbol.for("JokerComposer"),
-  MusicGameComposer: Symbol.for("MusicGameComposer"),
   ParticipantComposer: Symbol.for("ParticipantComposer"),
   PrivateComposer: Symbol.for("PrivateComposer"),
   RoleComposer: Symbol.for("RoleComposer"),
@@ -41,6 +39,11 @@ export const TYPES = {
   SorryComposer: Symbol.for("SorryComposer"),
   FoodComposer: Symbol.for("FoodComposer"),
   LLMComposer: Symbol.for("LLMComposer"),
+
+  MusicGameService: Symbol.for("MusicGameService"),
+  MusicGameCommands: Symbol.for("MusicGameCommands"),
+  MusicGameActions: Symbol.for("MusicGameActions"),
+  MusicGameComposer: Symbol.for("MusicGameComposer"),
 };
 
 export type Types = (typeof TYPES)[keyof typeof TYPES];

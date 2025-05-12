@@ -26,7 +26,9 @@ export class GlobalComposer extends Composer<IBotContext> {
   }
 
   private async handleShowLeaderboard(ctx: CommandContext): Promise<void> {
-    const response = await this.leaderboardService.showLeaderboard(ctx.chat.id);
+    const response = await this.leaderboardService.generateLeaderboard(
+      ctx.chat.id,
+    );
     await ctx.reply(response ?? this.text.get("musicGame.noGame"));
   }
 
