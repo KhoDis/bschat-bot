@@ -6,6 +6,7 @@ import { MemberService } from "@/bot/services/MemberService";
 import { MusicGameService } from "@/modules/musicGame/music-game.service";
 import { TextService } from "@/bot/services/TextService";
 import { RoundService } from "@/bot/services/RoundService";
+import getCommandArgs from "@/utils/getCommandArgs";
 
 @injectable()
 export class MusicGameCommands {
@@ -44,8 +45,7 @@ export class MusicGameCommands {
     if (!ctx.chat) return;
 
     // Extract gameId from command if provided
-    const message = ctx.message.text;
-    const parts = message.split(" ");
+    const parts = getCommandArgs(ctx);
     const gameId =
       parts.length > 1 ? parseInt(parts[1] || "0") || undefined : undefined;
 

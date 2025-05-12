@@ -7,6 +7,7 @@ import CraftyService from "@/bot/services/CraftyService";
 import { AxiosError } from "axios";
 import { TYPES } from "@/types";
 import { inject, injectable } from "inversify";
+import getCommandArgs from "@/utils/getCommandArgs";
 
 type CommandContext = NarrowedContext<
   IBotContext,
@@ -138,7 +139,7 @@ export class CraftyComposer extends Composer<IBotContext> {
   }
 
   private async handleGetSchema(ctx: CommandContext) {
-    const [_, schema] = ctx.message.text.split(" ");
+    const [_, schema] = getCommandArgs(ctx);
 
     if (schema === undefined) {
       await ctx.reply(this.text.get("crafty.schema.usage"));
