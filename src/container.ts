@@ -1,14 +1,14 @@
 import { Container } from "inversify";
 import { TYPES } from "./types";
 import { MemberService } from "@/bot/services/MemberService";
-import { MusicGameService } from "@/bot/services/MusicGameService";
+import { MusicGameService } from "@/modules/musicGame/music-game.service";
 import { GuessService } from "@/bot/services/GuessService";
 import { LeaderboardService } from "@/bot/services/LeaderboardService";
 import { GameRepository } from "@/bot/repositories/GameRepository";
 import { TextService } from "@/bot/services/TextService";
 import { ConfigService } from "./config/config.service";
 import { RoundService } from "@/bot/services/RoundService";
-import { MusicGameComposer } from "@/bot/composers/MusicGameComposer";
+import { MusicGameComposer } from "@/modules/musicGame/music-game.composer";
 import { RoleService } from "@/bot/services/RoleService";
 import { PermissionService } from "@/bot/services/PermissionService";
 import CraftyService from "@/bot/services/CraftyService";

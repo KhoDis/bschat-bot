@@ -58,7 +58,7 @@ export class GameRepository {
     });
   }
 
-  async getCurrentGame(chatId: number): Promise<GameWithData | null> {
+  async getCurrentGameByChatId(chatId: number): Promise<GameWithData | null> {
     const chat = await prisma.chat.findUnique({
       where: { id: chatId },
       include: {

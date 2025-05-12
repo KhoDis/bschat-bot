@@ -5,7 +5,7 @@ import { IBotContext } from "./context/context.interface";
 import { GlobalComposer } from "./bot/composers/GlobalComposer";
 import { PrivateComposer } from "./bot/composers/PrivateComposer";
 import { JokerComposer } from "./bot/composers/JokerComposer";
-import { MusicGameComposer } from "@/bot/composers/MusicGameComposer";
+import { MusicGameComposer } from "@/modules/musicGame/music-game.composer";
 import { ParticipantComposer } from "@/bot/composers/ParticipantComposer";
 import { RoleComposer } from "@/bot/composers/RoleComposer";
 import { CraftyComposer } from "@/bot/composers/CraftyComposer";

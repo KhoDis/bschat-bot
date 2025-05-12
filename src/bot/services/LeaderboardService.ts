@@ -12,7 +12,7 @@ export class LeaderboardService {
   ) {}
 
   async showLeaderboard(chatId: number): Promise<string | null> {
-    const game = await this.gameRepository.getCurrentGame(chatId);
+    const game = await this.gameRepository.getCurrentGameByChatId(chatId);
     if (!game) {
       return null;
     }

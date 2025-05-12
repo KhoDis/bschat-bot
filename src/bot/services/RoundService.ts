@@ -25,7 +25,7 @@ export class RoundService {
     chatId: number,
     onNoRound: () => Promise<void>,
   ) {
-    const game = await this.gameRepository.getCurrentGame(chatId);
+    const game = await this.gameRepository.getCurrentGameByChatId(chatId);
     const context = this.validateRound(game);
 
     await context.match(
@@ -113,7 +113,7 @@ export class RoundService {
   ) {
     const game = gameId
       ? await this.gameRepository.getGameById(gameId)
-      : await this.gameRepository.getCurrentGame(ctx.chat.id);
+      : await this.gameRepository.getCurrentGameByChatId(ctx.chat.id);
     if (!game) {
       await ctx.reply(this.text.get("musicGame.noGame"));
       return;
@@ -134,7 +134,7 @@ export class RoundService {
   }
 
   async showHint(ctx: IBotContext, chatId: number) {
-    const game = await this.gameRepository.getCurrentGame(chatId);
+    const game = await this.gameRepository.getCurrentGameByChatId(chatId);
     const context = this.validateRound(game).andThen((context) =>
       this.validateHintShown(context.game, context.round),
     );
