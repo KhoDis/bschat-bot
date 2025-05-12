@@ -46,8 +46,11 @@ export class MusicGameCommands {
 
     // Extract gameId from command if provided
     const parts = getCommandArgs(ctx);
-    const gameId =
-      parts.length > 1 ? parseInt(parts[1] || "0") || undefined : undefined;
+    const gameId = parts[1] ? Number(parts[1]) : undefined;
+    if (!gameId || (parts[1] && isNaN(gameId))) {
+      await ctx.reply("Некорректный ID игры.");
+      return;
+    }
 
     await this.roundService.nextRound(ctx, gameId);
   }

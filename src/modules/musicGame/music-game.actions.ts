@@ -18,10 +18,12 @@ export class MusicGameActions {
     const action = ctx.callbackQuery.data.split(":")[1];
     if (!action) return;
 
-    const [roundId, guessId] = action.split("_").map(Number);
-    // NOTE: don't change === undefined to !, because it can be 0!!!
-    if (roundId === undefined || guessId === undefined) {
-      await ctx.reply(`Не смог запарсить данные: ${action}`);
+    const [roundIdStr, guessIdStr] = action.split("_");
+    const roundId = Number(roundIdStr);
+    const guessId = Number(guessIdStr);
+
+    if (isNaN(roundId) || isNaN(guessId)) {
+      await ctx.reply(`Не смог распознать данные: ${action}`);
       return;
     }
 
