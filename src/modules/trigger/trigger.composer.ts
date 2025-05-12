@@ -14,6 +14,8 @@ type ResponseParts = {
 export class TriggerComposer extends Composer<IBotContext> {
   private responses: Record<string, ResponseParts> = {};
   private triggers: { pattern: RegExp; parts: string }[] = [];
+  private messageCounts: Map<number, number> = new Map(); // Track message counts by chat ID
+  private readonly RESPONSE_FREQUENCY = 3;
 
   constructor() {
     super();
@@ -109,8 +111,13 @@ export class TriggerComposer extends Composer<IBotContext> {
   private setupHandlers() {
     this.triggers.forEach(({ pattern, parts }) => {
       this.hears(pattern, async (ctx, next) => {
-        // Avoid spam
-        if (Math.random() < 1 / 3) {
+        const chatId = ctx.chat?.id;
+        if (!chatId) return next();
+
+        const currentCount = (this.messageCounts.get(chatId) || 0) + 1;
+        this.messageCounts.set(chatId, currentCount);
+
+        if (currentCount % this.RESPONSE_FREQUENCY === 0) {
           const response = this.generateResponse(parts);
           await ctx.reply(response);
         }
