@@ -9,6 +9,7 @@ import { TYPES } from "@/types";
 import { inject, injectable } from "inversify";
 import { ZazuService } from "@/bot/services/ZazuService";
 import { RequirePermission } from "@/bot/decorators/RequirePermission";
+import getCommandArgs from "@/utils/getCommandArgs";
 
 type CommandContext = NarrowedContext<
   IBotContext,
@@ -142,7 +143,7 @@ export class CraftyComposer extends Composer<IBotContext> {
   }
 
   private async handleGetSchema(ctx: CommandContext) {
-    const [_, schema] = ctx.message.text.split(" ");
+    const [_, schema] = getCommandArgs(ctx);
 
     if (schema === undefined) {
       await ctx.reply(this.text.get("crafty.schema.usage"));

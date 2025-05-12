@@ -1,7 +1,7 @@
 import { RoleService } from "@/bot/services/RoleService";
 import { TextService } from "@/bot/services/TextService";
 import { IBotContext } from "@/context/context.interface";
-import { CommandContext, TYPES } from "@/types";
+import { TYPES } from "@/types";
 import { Permission } from "@/bot/services/PermissionService";
 import { container } from "@/container";
 

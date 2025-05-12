@@ -4,6 +4,7 @@ import { MemberService } from "../services/MemberService";
 import { TextService } from "@/bot/services/TextService";
 import { inject, injectable } from "inversify";
 import { CommandContext, TYPES } from "@/types";
+import getCommandArgs from "@/utils/getCommandArgs";
 
 @injectable()
 export class JokerComposer extends Composer<IBotContext> {
@@ -74,7 +75,7 @@ export class JokerComposer extends Composer<IBotContext> {
   }
 
   private async handleBanbs(ctx: CommandContext): Promise<void> {
-    const commandArgs = ctx.message.text.split(" ");
+    const commandArgs = getCommandArgs(ctx);
     if (commandArgs.length < 2) {
       await ctx.reply("Нужно указать пользователя");
       return;
@@ -113,7 +114,7 @@ export class JokerComposer extends Composer<IBotContext> {
   }
 
   private async handleRoast(ctx: CommandContext): Promise<void> {
-    const mention = ctx.message.text.split(" ")[1] || "@неудачник";
+    const mention = getCommandArgs(ctx)[1] || "@неудачник";
     const roast = this.roasts[Math.floor(Math.random() * this.roasts.length)];
     await ctx.reply(`${mention}, ${roast}`);
   }
