@@ -22,6 +22,8 @@ import { TextComposer } from "@/bot/composers/TextComposer";
 import { SorryComposer } from "@/bot/composers/SorryComposer";
 import { FoodComposer } from "@/bot/composers/FoodComposer";
 import { FoodService } from "@/bot/services/FoodService";
+import { MusicGameCommands } from "@/modules/musicGame/music-game.commands";
+import { MusicGameActions } from "@/modules/musicGame/music-game.actions";
 
 const container = new Container();
 
@@ -45,6 +47,12 @@ container.bind<RoundService>(TYPES.RoundService).to(RoundService);
 container.bind<TextService>(TYPES.TextService).to(TextService);
 container.bind<MemberService>(TYPES.MemberService).to(MemberService);
 container.bind<FoodService>(TYPES.FoodService).to(FoodService);
+
+// Bind commands
+container
+  .bind<MusicGameCommands>(TYPES.MusicGameCommands)
+  .to(MusicGameCommands);
+container.bind<MusicGameActions>(TYPES.MusicGameActions).to(MusicGameActions);
 
 // Bind composers
 container

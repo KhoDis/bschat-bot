@@ -2,7 +2,7 @@ import { Update } from "telegraf/types";
 import { callbackQuery } from "telegraf/filters";
 import { CallbackQuery } from "@telegraf/types";
 
-export function callbackData(pattern: RegExp) {
+export function dataAction(pattern: RegExp) {
   return (
     update: Update,
   ): update is Update.CallbackQueryUpdate<CallbackQuery.DataQuery> => {

@@ -11,19 +11,39 @@ import { Game, GameRound, User } from "@prisma/client";
 import * as tg from "telegraf/src/core/types/typegram";
 import { TextService } from "@/bot/services/TextService";
 import { inject, injectable } from "inversify";
-import { CommandContext, TYPES } from "@/types";
+import { CallbackQueryContext, CommandContext, TYPES } from "@/types";
+import { LeaderboardService } from "@/bot/services/LeaderboardService";
 
 @injectable()
 export class RoundService {
   constructor(
     @inject(TYPES.GameRepository) private gameRepository: GameRepository,
     @inject(TYPES.TextService) private text: TextService,
+    @inject(TYPES.LeaderboardService)
+    private leaderboardService: LeaderboardService,
   ) {}
 
-  async processRound(
-    ctx: Context,
+  private async showLeaderboard(ctx: Context, chatId: number) {
+    const leaderboard =
+      await this.leaderboardService.generateLeaderboard(chatId);
+    if (!leaderboard) {
+      await ctx.reply("Произошла ошибка при генерации лидерборда");
+      return;
+    }
+    await ctx.reply(leaderboard);
+  }
+
+  private async handleGameEnd(
+    ctx: CommandContext | CallbackQueryContext,
     chatId: number,
-    onNoRound: () => Promise<void>,
+  ): Promise<void> {
+    await ctx.reply(this.text.get("rounds.noMoreRounds"));
+    await this.showLeaderboard(ctx, chatId);
+  }
+
+  async processRound(
+    ctx: CallbackQueryContext | CommandContext,
+    chatId: number,
   ) {
     const game = await this.gameRepository.getCurrentGameByChatId(chatId);
     const context = this.validateRound(game);
@@ -32,7 +52,7 @@ export class RoundService {
       async ({ game, round }) => {
         const currentRound = await this.gameRepository.getCurrentRound(chatId);
         if (!currentRound) {
-          await onNoRound();
+          await this.handleGameEnd(ctx, chatId);
           return;
         }
         const participants = await this.gameRepository.getParticipants(game.id);
@@ -106,11 +126,7 @@ export class RoundService {
     );
   }
 
-  async nextRound(
-    ctx: CommandContext,
-    onNoRound: () => Promise<void>,
-    gameId?: number,
-  ) {
+  async nextRound(ctx: CommandContext, gameId?: number) {
     const game = gameId
       ? await this.gameRepository.getGameById(gameId)
       : await this.gameRepository.getCurrentGameByChatId(ctx.chat.id);
@@ -121,7 +137,7 @@ export class RoundService {
 
     await ctx.reply(this.text.get("rounds.nextRound"));
     await this.gameRepository.updateGameRound(game.id, game.currentRound + 1);
-    await this.processRound(ctx, ctx.chat.id, onNoRound);
+    await this.processRound(ctx, ctx.chat.id);
   }
 
   private getThreadId<U extends tg.Update>(ctx: Context<U>) {

@@ -6,7 +6,7 @@ import { MemberService } from "../services/MemberService";
 import { TextService } from "@/bot/services/TextService";
 import { inject, injectable } from "inversify";
 import { CallbackQueryContext, CommandContext, TYPES } from "@/types";
-import { callbackData } from "@/utils/filters";
+import { dataAction } from "@/utils/filters";
 
 type MessageContext<T extends Message = Message> = NarrowedContext<
   IBotContext,
@@ -45,7 +45,7 @@ export class PrivateComposer extends Composer<IBotContext> {
   private setupHandlers(): void {
     this.command("start", this.handleStartCommand.bind(this)); // Chat selection command
     this.on(
-      callbackData(/^chat_select_(.+)$/),
+      dataAction(/^chat_select_(.+)$/),
       this.handleChatSelectAction.bind(this),
     ); // Handle chat selection via inline buttons
     this.on(message("audio"), this.handleAudioMessage.bind(this));
