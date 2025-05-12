@@ -11,7 +11,7 @@ type ResponseParts = {
 };
 
 @injectable()
-export class TextComposer extends Composer<IBotContext> {
+export class TriggerComposer extends Composer<IBotContext> {
   private responses: Record<string, ResponseParts> = {};
   private triggers: { pattern: RegExp; parts: string }[] = [];
 

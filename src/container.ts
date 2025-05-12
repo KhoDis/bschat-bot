@@ -18,12 +18,14 @@ import { ParticipantComposer } from "@/bot/composers/ParticipantComposer";
 import { PrivateComposer } from "@/bot/composers/PrivateComposer";
 import { RoleComposer } from "@/bot/composers/RoleComposer";
 import { CraftyComposer } from "@/bot/composers/CraftyComposer";
-import { TextComposer } from "@/bot/composers/TextComposer";
+import { TriggerComposer } from "@/modules/trigger/trigger.composer";
 import { SorryComposer } from "@/bot/composers/SorryComposer";
 import { FoodComposer } from "@/bot/composers/FoodComposer";
 import { FoodService } from "@/bot/services/FoodService";
 import { LLMComposer } from "@/bot/composers/LLMComposer";
 import { ZazuService } from "@/bot/services/ZazuService";
+import { FoodComposer } from "@/modules/food/food.composer";
+import { FoodService } from "@/modules/food/food.service";
 import { MusicGameCommands } from "@/modules/musicGame/music-game.commands";
 import { MusicGameActions } from "@/modules/musicGame/music-game.actions";
 
@@ -69,7 +71,7 @@ container
 container.bind<PrivateComposer>(TYPES.PrivateComposer).to(PrivateComposer);
 container.bind<RoleComposer>(TYPES.RoleComposer).to(RoleComposer);
 container.bind<CraftyComposer>(TYPES.CraftyComposer).to(CraftyComposer);
-container.bind<TextComposer>(TYPES.TextComposer).to(TextComposer);
+container.bind<TriggerComposer>(TYPES.TextComposer).to(TriggerComposer);
 container.bind<SorryComposer>(TYPES.SorryComposer).to(SorryComposer);
 container.bind<FoodComposer>(TYPES.FoodComposer).to(FoodComposer);
 container.bind<LLMComposer>(TYPES.LLMComposer).to(LLMComposer);

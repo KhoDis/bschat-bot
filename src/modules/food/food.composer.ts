@@ -4,7 +4,7 @@ import { inject, injectable } from "inversify";
 import { createApi } from "unsplash-js";
 import { ConfigService } from "@/config/config.service";
 import { CommandContext, TYPES } from "@/types";
-import { FoodService } from "@/bot/services/FoodService";
+import { FoodService } from "@/modules/food/food.service";
 import prisma from "@/prisma/client";
 import { RequirePermission } from "@/bot/decorators/RequirePermission";
 import { Prisma } from "@prisma/client";
