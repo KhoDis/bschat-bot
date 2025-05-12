@@ -1,5 +1,8 @@
 import { Context } from "telegraf";
-import { GameRepository, GameWithData } from "../repositories/GameRepository";
+import {
+  GameRepository,
+  GameWithData,
+} from "@/bot/repositories/GameRepository";
 import { inject, injectable } from "inversify";
 import { CallbackQueryContext, TYPES } from "@/types";
 import { TextService } from "@/bot/services/TextService";
@@ -11,19 +14,21 @@ export class MusicGameService {
     @inject(TYPES.TextService) private text: TextService,
   ) {}
 
-  async getCurrentGame(chatId: number): Promise<GameWithData | null> {
-    return this.gameRepository.getCurrentGame(chatId);
+  async getCurrentGameByChatId(chatId: number): Promise<GameWithData | null> {
+    return this.gameRepository.getCurrentGameByChatId(chatId);
   }
 
   async isGameStarted(chatId: number): Promise<boolean> {
-    const game = await this.gameRepository.getCurrentGame(chatId);
+    const game = await this.gameRepository.getCurrentGameByChatId(chatId);
     return !!game;
   }
 
   async startGame(ctx: CallbackQueryContext) {
     if (!ctx.chat) return;
     // Check if there's already an active game
-    const activeGame = await this.gameRepository.getCurrentGame(ctx.chat.id);
+    const activeGame = await this.gameRepository.getCurrentGameByChatId(
+      ctx.chat.id,
+    );
     if (activeGame) {
       await ctx.reply(
         "Уже есть активная игра. Завершите её перед началом новой.",

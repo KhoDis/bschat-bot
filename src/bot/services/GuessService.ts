@@ -19,7 +19,7 @@ export class GuessService {
     onSuccess?: () => Promise<void>,
   ) {
     // Validate game exists
-    const game = await this.gameRepository.getCurrentGame(chatId);
+    const game = await this.gameRepository.getCurrentGameByChatId(chatId);
     if (!game) {
       await ctx.answerCbQuery(this.text.get("musicGame.noGame"));
       return;
