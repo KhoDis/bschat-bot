@@ -10,6 +10,7 @@ import { inject, injectable } from "inversify";
 import { ZazuService } from "@/bot/services/ZazuService";
 import { RequirePermission } from "@/bot/decorators/RequirePermission";
 import getCommandArgs from "@/utils/getCommandArgs";
+import { RequirePermission } from "@/bot/decorators/RequirePermission";
 
 type CommandContext = NarrowedContext<
   IBotContext,
@@ -110,36 +111,33 @@ export class CraftyComposer extends Composer<IBotContext> {
     }
   }
 
+  @RequirePermission("MANAGE_CRAFTY")
   private async handleServerList(ctx: CommandContext) {
-    await this.checkPermissions(ctx, async () => {
-      try {
-        const servers = await this.craftyService.getServerList();
-        const serverList = await this.getServerListText();
+    try {
+      const servers = await this.craftyService.getServerList();
+      const serverList = await this.getServerListText();
 
-        // Создаем inline-кнопки
-        const buttons = servers.map((server) => {
-          return [
-            {
-              text: `${server.server_name} 🚀`,
-              callback_data: `crafty:start_server:${server.server_id}`,
-            },
-            {
-              text: `${server.server_name} ⛔`,
-              callback_data: `crafty:stop_server:${server.server_id}`,
-            },
-          ];
-        });
-
-        // Отправляем сообщение с кнопками
-        await ctx.reply(this.text.get("crafty.list.success", { serverList }), {
-          reply_markup: {
-            inline_keyboard: buttons,
+      const buttons = servers.map((server) => {
+        return [
+          {
+            text: `${server.server_name} 🚀`,
+            callback_data: `crafty:start_server:${server.server_id}`,
           },
-        });
-      } catch (error) {
-        await this.handleCraftyError(ctx, error);
-      }
-    });
+          {
+            text: `${server.server_name} ⛔`,
+            callback_data: `crafty:stop_server:${server.server_id}`,
+          },
+        ];
+      });
+
+      await ctx.reply(this.text.get("crafty.list.success", { serverList }), {
+        reply_markup: {
+          inline_keyboard: buttons,
+        },
+      });
+    } catch (error) {
+      await this.handleCraftyError(ctx, error);
+    }
   }
 
   private async handleGetSchema(ctx: CommandContext) {
@@ -156,28 +154,6 @@ export class CraftyComposer extends Composer<IBotContext> {
       await ctx.reply(JSON.stringify(schemas, null, 2));
     } catch (error) {
       await this.handleCraftyError(ctx, error);
-    }
-  }
-
-  private async checkPermissions(ctx: IBotContext, next: () => Promise<void>) {
-    const userId = ctx.from?.id;
-    const chatId = ctx.chat?.id;
-
-    if (!userId || !chatId) {
-      await ctx.reply(this.text.get("crafty.chatOnly"));
-      return;
-    }
-
-    const hasPermission = await this.roleService.hasPermission(
-      BigInt(userId),
-      BigInt(chatId),
-      "MANAGE_CRAFTY",
-    );
-
-    if (hasPermission) {
-      await next();
-    } else {
-      await ctx.reply(this.text.get("permissions.denied"));
     }
   }
 
