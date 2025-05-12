@@ -11,9 +11,9 @@ import { RoleComposer } from "@/bot/composers/RoleComposer";
 import { CraftyComposer } from "@/bot/composers/CraftyComposer";
 import { container } from "@/container";
 import { TYPES } from "@/types";
-import { TextComposer } from "@/bot/composers/TextComposer";
+import { TriggerComposer } from "@/modules/trigger/trigger.composer";
 import { SorryComposer } from "@/bot/composers/SorryComposer";
-import { FoodComposer } from "@/bot/composers/FoodComposer";
+import { FoodComposer } from "@/modules/food/food.composer";
 
 class Bot {
   bot: Telegraf<IBotContext>;
@@ -29,7 +29,7 @@ class Bot {
     );
 
     const textMiddleware = container
-      .get<TextComposer>(TYPES.TextComposer)
+      .get<TriggerComposer>(TYPES.TextComposer)
       .middleware();
     const privateMiddleware = container
       .get<PrivateComposer>(TYPES.PrivateComposer)
