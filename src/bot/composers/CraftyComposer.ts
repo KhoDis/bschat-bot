@@ -8,6 +8,7 @@ import { AxiosError } from "axios";
 import { TYPES } from "@/types";
 import { inject, injectable } from "inversify";
 import getCommandArgs from "@/utils/getCommandArgs";
+import { RequirePermission } from "@/bot/decorators/RequirePermission";
 
 type CommandContext = NarrowedContext<
   IBotContext,
@@ -38,6 +39,7 @@ export class CraftyComposer extends Composer<IBotContext> {
     this.action(/^crafty:(.+?):(.+)$/, this.handleServerAction.bind(this));
   }
 
+  @RequirePermission("MANAGE_CRAFTY")
   private async handleServerAction(ctx: CallbackContext) {
     const [_fullMatch, action, serverId] = ctx.match;
 
@@ -51,29 +53,27 @@ export class CraftyComposer extends Composer<IBotContext> {
       return;
     }
 
-    await this.checkPermissions(ctx, async () => {
-      try {
-        if (action === "start_server") {
-          await ctx.answerCbQuery(`Ожидайте...`);
-          const started = await this.craftyService.startServer(serverId);
-          if (started) {
-            await ctx.reply(`Сервер ${serverId} запущен!`);
-          } else {
-            await ctx.reply(`Ошибка при запуске сервера ${serverId}`);
-          }
-        } else if (action === "stop_server") {
-          await ctx.answerCbQuery(`Ожидайте...`);
-          const stopped = await this.craftyService.stopServer(serverId);
-          if (stopped) {
-            await ctx.reply(`Сервер ${serverId} остановлен!`);
-          } else {
-            await ctx.reply(`Ошибка при остановке сервера ${serverId}`);
-          }
+    try {
+      if (action === "start_server") {
+        await ctx.answerCbQuery(`Ожидайте...`);
+        const started = await this.craftyService.startServer(serverId);
+        if (started) {
+          await ctx.reply(`Сервер ${serverId} запущен!`);
+        } else {
+          await ctx.reply(`Ошибка при запуске сервера ${serverId}`);
         }
-      } catch (error) {
-        await this.handleCraftyError(ctx, error);
+      } else if (action === "stop_server") {
+        await ctx.answerCbQuery(`Ожидайте...`);
+        const stopped = await this.craftyService.stopServer(serverId);
+        if (stopped) {
+          await ctx.reply(`Сервер ${serverId} остановлен!`);
+        } else {
+          await ctx.reply(`Ошибка при остановке сервера ${serverId}`);
+        }
       }
-    });
+    } catch (error) {
+      await this.handleCraftyError(ctx, error);
+    }
   }
 
   private async getServerListText(): Promise<string> {
@@ -106,36 +106,35 @@ export class CraftyComposer extends Composer<IBotContext> {
     }
   }
 
+  @RequirePermission("MANAGE_CRAFTY")
   private async handleServerList(ctx: CommandContext) {
-    await this.checkPermissions(ctx, async () => {
-      try {
-        const servers = await this.craftyService.getServerList();
-        const serverList = await this.getServerListText();
+    try {
+      const servers = await this.craftyService.getServerList();
+      const serverList = await this.getServerListText();
 
-        // Создаем inline-кнопки
-        const buttons = servers.map((server) => {
-          return [
-            {
-              text: `${server.server_name} 🚀`,
-              callback_data: `crafty:start_server:${server.server_id}`,
-            },
-            {
-              text: `${server.server_name} ⛔`,
-              callback_data: `crafty:stop_server:${server.server_id}`,
-            },
-          ];
-        });
-
-        // Отправляем сообщение с кнопками
-        await ctx.reply(this.text.get("crafty.list.success", { serverList }), {
-          reply_markup: {
-            inline_keyboard: buttons,
+      // Создаем inline-кнопки
+      const buttons = servers.map((server) => {
+        return [
+          {
+            text: `${server.server_name} 🚀`,
+            callback_data: `crafty:start_server:${server.server_id}`,
           },
-        });
-      } catch (error) {
-        await this.handleCraftyError(ctx, error);
-      }
-    });
+          {
+            text: `${server.server_name} ⛔`,
+            callback_data: `crafty:stop_server:${server.server_id}`,
+          },
+        ];
+      });
+
+      // Отправляем сообщение с кнопками
+      await ctx.reply(this.text.get("crafty.list.success", { serverList }), {
+        reply_markup: {
+          inline_keyboard: buttons,
+        },
+      });
+    } catch (error) {
+      await this.handleCraftyError(ctx, error);
+    }
   }
 
   private async handleGetSchema(ctx: CommandContext) {
@@ -152,28 +151,6 @@ export class CraftyComposer extends Composer<IBotContext> {
       await ctx.reply(JSON.stringify(schemas, null, 2));
     } catch (error) {
       await this.handleCraftyError(ctx, error);
-    }
-  }
-
-  private async checkPermissions(ctx: IBotContext, next: () => Promise<void>) {
-    const userId = ctx.from?.id;
-    const chatId = ctx.chat?.id;
-
-    if (!userId || !chatId) {
-      await ctx.reply(this.text.get("crafty.chatOnly"));
-      return;
-    }
-
-    const hasPermission = await this.roleService.hasPermission(
-      BigInt(userId),
-      BigInt(chatId),
-      "MANAGE_CRAFTY",
-    );
-
-    if (hasPermission) {
-      await next();
-    } else {
-      await ctx.reply(this.text.get("permissions.denied"));
     }
   }
 
