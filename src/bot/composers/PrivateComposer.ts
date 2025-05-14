@@ -7,6 +7,7 @@ import { TextService } from "@/bot/services/TextService";
 import { inject, injectable } from "inversify";
 import { CallbackQueryContext, CommandContext, TYPES } from "@/types";
 import { callbackData } from "@/utils/filters";
+import { ZazuService } from "@/bot/services/ZazuService";
 
 type MessageContext<T extends Message = Message> = NarrowedContext<
   IBotContext,
@@ -36,6 +37,7 @@ export class PrivateComposer extends Composer<IBotContext> {
   constructor(
     @inject(TYPES.MemberService) private readonly memberService: MemberService,
     @inject(TYPES.TextService) private readonly text: TextService,
+    @inject(TYPES.ZazuService) private readonly zazuService: ZazuService,
   ) {
     super();
 
@@ -133,6 +135,7 @@ export class PrivateComposer extends Composer<IBotContext> {
       await ctx.reply(this.text.get("chat.trackNotFound"));
       return;
     }
+    await this.zazuService.sendFunnyReaction(ctx);
 
     await this.memberService.addMusicHint(
       ctx.from.id,
@@ -152,6 +155,7 @@ export class PrivateComposer extends Composer<IBotContext> {
       await ctx.reply(this.text.get("chat.noChatSelected"));
       return;
     }
+    await this.zazuService.sendCuteReaction(ctx);
 
     const userId = ctx.from.id;
     const exists = await this.memberService.existsMember(userId, groupChatId);

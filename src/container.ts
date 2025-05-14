@@ -23,6 +23,7 @@ import { SorryComposer } from "@/bot/composers/SorryComposer";
 import { FoodComposer } from "@/bot/composers/FoodComposer";
 import { FoodService } from "@/bot/services/FoodService";
 import { LLMComposer } from "@/bot/composers/LLMComposer";
+import { ZazuService } from "@/bot/services/ZazuService";
 
 const container = new Container();
 
@@ -46,6 +47,7 @@ container.bind<RoundService>(TYPES.RoundService).to(RoundService);
 container.bind<TextService>(TYPES.TextService).to(TextService);
 container.bind<MemberService>(TYPES.MemberService).to(MemberService);
 container.bind<FoodService>(TYPES.FoodService).to(FoodService);
+container.bind<ZazuService>(TYPES.ZazuService).to(ZazuService);
 
 // Bind composers
 container

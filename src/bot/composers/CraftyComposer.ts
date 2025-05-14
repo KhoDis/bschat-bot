@@ -7,6 +7,8 @@ import CraftyService from "@/bot/services/CraftyService";
 import { AxiosError } from "axios";
 import { TYPES } from "@/types";
 import { inject, injectable } from "inversify";
+import { ZazuService } from "@/bot/services/ZazuService";
+import { RequirePermission } from "@/bot/decorators/RequirePermission";
 
 type CommandContext = NarrowedContext<
   IBotContext,
@@ -26,6 +28,7 @@ export class CraftyComposer extends Composer<IBotContext> {
     @inject(TYPES.CraftyService) private craftyService: CraftyService,
     @inject(TYPES.RoleService) private roleService: RoleService,
     @inject(TYPES.TextService) private text: TextService,
+    @inject(TYPES.ZazuService) private zazuService: ZazuService,
   ) {
     super();
 
@@ -37,6 +40,7 @@ export class CraftyComposer extends Composer<IBotContext> {
     this.action(/^crafty:(.+?):(.+)$/, this.handleServerAction.bind(this));
   }
 
+  @RequirePermission("MANAGE_CRAFTY")
   private async handleServerAction(ctx: CallbackContext) {
     const [_fullMatch, action, serverId] = ctx.match;
 
@@ -50,29 +54,29 @@ export class CraftyComposer extends Composer<IBotContext> {
       return;
     }
 
-    await this.checkPermissions(ctx, async () => {
-      try {
-        if (action === "start_server") {
-          await ctx.answerCbQuery(`Ожидайте...`);
-          const started = await this.craftyService.startServer(serverId);
-          if (started) {
-            await ctx.reply(`Сервер ${serverId} запущен!`);
-          } else {
-            await ctx.reply(`Ошибка при запуске сервера ${serverId}`);
-          }
-        } else if (action === "stop_server") {
-          await ctx.answerCbQuery(`Ожидайте...`);
-          const stopped = await this.craftyService.stopServer(serverId);
-          if (stopped) {
-            await ctx.reply(`Сервер ${serverId} остановлен!`);
-          } else {
-            await ctx.reply(`Ошибка при остановке сервера ${serverId}`);
-          }
+    try {
+      if (action === "start_server") {
+        await this.zazuService.sendMinecraftReaction(ctx);
+        await ctx.answerCbQuery(`Ожидайте...`);
+        const started = await this.craftyService.startServer(serverId);
+        if (started) {
+          await ctx.reply(`Сервер ${serverId} запущен!`);
+        } else {
+          await ctx.reply(`Ошибка при запуске сервера ${serverId}`);
         }
-      } catch (error) {
-        await this.handleCraftyError(ctx, error);
+      } else if (action === "stop_server") {
+        await this.zazuService.sendMinecraftReaction(ctx);
+        await ctx.answerCbQuery(`Ожидайте...`);
+        const stopped = await this.craftyService.stopServer(serverId);
+        if (stopped) {
+          await ctx.reply(`Сервер ${serverId} остановлен!`);
+        } else {
+          await ctx.reply(`Ошибка при остановке сервера ${serverId}`);
+        }
       }
-    });
+    } catch (error) {
+      await this.handleCraftyError(ctx, error);
+    }
   }
 
   private async getServerListText(): Promise<string> {

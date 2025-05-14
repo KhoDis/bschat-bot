@@ -28,6 +28,7 @@ export const TYPES = {
   TextService: Symbol.for("TextService"),
   MemberService: Symbol.for("MemberService"),
   FoodService: Symbol.for("FoodService"),
+  ZazuService: Symbol.for("ZazuService"),
 
   CraftyComposer: Symbol.for("CraftyComposer"),
   GlobalComposer: Symbol.for("GlobalComposer"),

@@ -10,6 +10,7 @@ import { CallbackQueryContext, CommandContext, TYPES } from "@/types";
 import { TextService } from "@/bot/services/TextService";
 import { RoleService } from "@/bot/services/RoleService";
 import { callbackData } from "@/utils/filters";
+import { ZazuService } from "@/bot/services/ZazuService";
 
 @injectable()
 export class MusicGameComposer extends Composer<IBotContext> {
@@ -22,6 +23,7 @@ export class MusicGameComposer extends Composer<IBotContext> {
     private leaderboardService: LeaderboardService,
     @inject(TYPES.TextService) private text: TextService,
     @inject(TYPES.RoleService) private roleService: RoleService,
+    @inject(TYPES.ZazuService) private zazuService: ZazuService,
   ) {
     super();
 
@@ -47,6 +49,7 @@ export class MusicGameComposer extends Composer<IBotContext> {
 
   private async handleMusicGuessCommand(ctx: CommandContext): Promise<void> {
     await this.checkPermissions(ctx, async () => {
+      await this.zazuService.sendFunnyReaction(ctx);
       const keyboard = Markup.inlineKeyboard([
         Markup.button.callback("Начать мучения", "service:start_game"),
       ]);
