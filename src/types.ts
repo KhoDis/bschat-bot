@@ -39,6 +39,7 @@ export const TYPES = {
   TextComposer: Symbol.for("TextComposer"),
   SorryComposer: Symbol.for("SorryComposer"),
   FoodComposer: Symbol.for("FoodComposer"),
+  LLMComposer: Symbol.for("LLMComposer"),
 };
 
 export type Types = (typeof TYPES)[keyof typeof TYPES];

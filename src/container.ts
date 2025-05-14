@@ -22,6 +22,7 @@ import { TextComposer } from "@/bot/composers/TextComposer";
 import { SorryComposer } from "@/bot/composers/SorryComposer";
 import { FoodComposer } from "@/bot/composers/FoodComposer";
 import { FoodService } from "@/bot/services/FoodService";
+import { LLMComposer } from "@/bot/composers/LLMComposer";
 
 const container = new Container();
 
@@ -61,5 +62,6 @@ container.bind<CraftyComposer>(TYPES.CraftyComposer).to(CraftyComposer);
 container.bind<TextComposer>(TYPES.TextComposer).to(TextComposer);
 container.bind<SorryComposer>(TYPES.SorryComposer).to(SorryComposer);
 container.bind<FoodComposer>(TYPES.FoodComposer).to(FoodComposer);
+container.bind<LLMComposer>(TYPES.LLMComposer).to(LLMComposer);
 
 export { container };
