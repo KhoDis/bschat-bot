@@ -7,8 +7,8 @@ import CraftyService from "@/modules/crafty/crafty.service";
 import { AxiosError } from "axios";
 import { TYPES } from "@/types";
 import { inject, injectable } from "inversify";
-import getCommandArgs from "@/utils/getCommandArgs";
 import { RequirePermission } from "@/modules/permissions/require-permission.decorator";
+import { ArgsService } from "@/modules/common/args.service";
 
 type CommandContext = NarrowedContext<
   IBotContext,
@@ -28,6 +28,7 @@ export class CraftyComposer extends Composer<IBotContext> {
     @inject(TYPES.CraftyService) private craftyService: CraftyService,
     @inject(TYPES.RoleService) private roleService: RoleService,
     @inject(TYPES.TextService) private text: TextService,
+    @inject(TYPES.ArgsService) private args: ArgsService,
   ) {
     super();
 
@@ -138,7 +139,7 @@ export class CraftyComposer extends Composer<IBotContext> {
   }
 
   private async handleGetSchema(ctx: CommandContext) {
-    const [_, schema] = getCommandArgs(ctx);
+    const [_, schema] = this.args.parse(ctx.message.text);
 
     if (schema === undefined) {
       await ctx.reply(this.text.get("crafty.schema.usage"));

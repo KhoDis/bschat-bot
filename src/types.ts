@@ -17,6 +17,7 @@ export const TYPES = {
   GameRepository: Symbol.for("GameRepository"),
 
   ConfigService: Symbol.for("ConfigService"),
+  ArgsService: Symbol.for("ArgsService"),
 
   CraftyService: Symbol.for("CraftyService"),
   PermissionService: Symbol.for("PermissionService"),
