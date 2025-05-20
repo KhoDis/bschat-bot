@@ -11,8 +11,8 @@ import {
 import { TextService } from "@/modules/common/text.service";
 import { TYPES } from "@/types";
 import { inject, injectable } from "inversify";
-import getCommandArgs from "@/utils/getCommandArgs";
 import { RequirePermission } from "@/modules/permissions/require-permission.decorator";
+import { ArgsService } from "@/modules/common/args.service";
 
 type CommandContext = NarrowedContext<
   IBotContext,
@@ -27,6 +27,7 @@ export class RoleComposer extends Composer<IBotContext> {
     private permissionService: PermissionService,
     @inject(TYPES.MemberService) private userService: MemberService,
     @inject(TYPES.TextService) private text: TextService,
+    @inject(TYPES.ArgsService) private args: ArgsService,
   ) {
     super();
 
@@ -92,7 +93,7 @@ export class RoleComposer extends Composer<IBotContext> {
    */
   @RequirePermission("MANAGE_ROLES")
   private async handleListRolePermissions(ctx: CommandContext) {
-    const [_, roleName] = getCommandArgs(ctx);
+    const [_, roleName] = this.args.parse(ctx.message.text);
 
     if (!roleName) {
       await ctx.reply(this.text.get("roles.nameNotSpecified"));
@@ -164,7 +165,7 @@ export class RoleComposer extends Composer<IBotContext> {
    */
   @RequirePermission("MANAGE_ROLES")
   private async handleGrantPermission(ctx: CommandContext) {
-    const parts = getCommandArgs(ctx);
+    const parts = this.args.parse(ctx.message.text);
 
     if (parts.length !== 3) {
       await ctx.reply(this.text.get("roles.grant.usage"));
@@ -209,7 +210,7 @@ export class RoleComposer extends Composer<IBotContext> {
    */
   @RequirePermission("MANAGE_ROLES")
   private async handleRevokePermission(ctx: CommandContext) {
-    const parts = getCommandArgs(ctx);
+    const parts = this.args.parse(ctx.message.text);
 
     if (parts.length !== 3) {
       await ctx.reply(this.text.get("roles.revoke.usage"));
@@ -299,7 +300,7 @@ export class RoleComposer extends Composer<IBotContext> {
    */
   @RequirePermission("MANAGE_ROLES")
   async handlePingRole(ctx: CommandContext): Promise<void> {
-    const [_, roleName] = getCommandArgs(ctx);
+    const [_, roleName] = this.args.parse(ctx.message.text);
 
     if (!roleName) {
       await ctx.reply(this.text.get("roles.nameNotSpecified"));
@@ -332,7 +333,7 @@ export class RoleComposer extends Composer<IBotContext> {
    */
   @RequirePermission("MANAGE_ROLES")
   private async handleAddRole(ctx: CommandContext) {
-    const [_, roleName] = getCommandArgs(ctx);
+    const [_, roleName] = this.args.parse(ctx.message.text);
     if (!roleName) {
       await ctx.reply(this.text.get("roles.nameNotSpecified"));
       return;
@@ -363,7 +364,7 @@ export class RoleComposer extends Composer<IBotContext> {
    */
   @RequirePermission("MANAGE_ROLES")
   private async handleRemoveRole(ctx: CommandContext) {
-    const [_, roleName] = getCommandArgs(ctx);
+    const [_, roleName] = this.args.parse(ctx.message.text);
     if (!roleName) {
       await ctx.reply(this.text.get("roles.nameNotSpecified"));
       return;
@@ -389,7 +390,7 @@ export class RoleComposer extends Composer<IBotContext> {
   private async handleAssignRole(ctx: CommandContext) {
     const chatId = ctx.chat.id;
     const targetUser = ctx.message?.reply_to_message?.from;
-    const roleName = getCommandArgs(ctx)[1]; // e.g., /assign_role MODERATOR
+    const [_, roleName] = this.args.parse(ctx.message.text); // e.g., /assign_role MODERATOR
 
     if (!chatId || !targetUser || !roleName) {
       await ctx.reply(this.text.get("roles.assign.usage"));
@@ -421,7 +422,7 @@ export class RoleComposer extends Composer<IBotContext> {
   private async handleRevokeRole(ctx: CommandContext) {
     const chatId = ctx.chat.id;
     const targetUser = ctx.message.reply_to_message?.from;
-    const roleName = getCommandArgs(ctx)[1]; // e.g., /revoke_role MODERATOR
+    const [_, roleName] = this.args.parse(ctx.message.text); // e.g., /revoke_role MODERATOR
 
     if (!chatId || !targetUser || !roleName) {
       await ctx.reply(this.text.get("roles.revoke.usage"));

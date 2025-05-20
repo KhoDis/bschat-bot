@@ -30,6 +30,7 @@ import { GuessService } from "@/modules/musicGame/guess/guess.service";
 import { LeaderboardService } from "@/modules/musicGame/leaderboard/leaderboard.service";
 import { LeaderboardModule } from "@/modules/musicGame/leaderboard/leaderboard.module";
 import { MusicGameModule } from "@/modules/musicGame/music-game.module";
+import { ArgsService } from "@/modules/common/args.service";
 
 const container = new Container();
 
@@ -40,6 +41,7 @@ container
 
 // Bind services
 container.bind<ConfigService>(TYPES.ConfigService).to(ConfigService);
+container.bind<ArgsService>(TYPES.ArgsService).to(ArgsService);
 
 container.bind<CraftyService>(TYPES.CraftyService).to(CraftyService);
 container.bind<GuessService>(TYPES.GuessService).to(GuessService);

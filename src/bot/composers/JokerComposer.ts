@@ -4,7 +4,7 @@ import { MemberService } from "@/modules/common/member.service";
 import { TextService } from "@/modules/common/text.service";
 import { inject, injectable } from "inversify";
 import { CommandContext, TYPES } from "@/types";
-import getCommandArgs from "@/utils/getCommandArgs";
+import { ArgsService } from "@/modules/common/args.service";
 
 @injectable()
 export class JokerComposer extends Composer<IBotContext> {
@@ -46,6 +46,7 @@ export class JokerComposer extends Composer<IBotContext> {
   constructor(
     @inject(TYPES.MemberService) private readonly userService: MemberService,
     @inject(TYPES.TextService) private readonly text: TextService,
+    @inject(TYPES.ArgsService) private readonly args: ArgsService,
   ) {
     super();
     this.setupHandlers();
@@ -75,7 +76,7 @@ export class JokerComposer extends Composer<IBotContext> {
   }
 
   private async handleBanbs(ctx: CommandContext): Promise<void> {
-    const commandArgs = getCommandArgs(ctx);
+    const commandArgs = this.args.parse(ctx.message.text);
     if (commandArgs.length < 2) {
       await ctx.reply("Нужно указать пользователя");
       return;
@@ -114,9 +115,9 @@ export class JokerComposer extends Composer<IBotContext> {
   }
 
   private async handleRoast(ctx: CommandContext): Promise<void> {
-    const mention = getCommandArgs(ctx)[1] || "@неудачник";
+    const [, mention] = this.args.parse(ctx.message.text);
     const roast = this.roasts[Math.floor(Math.random() * this.roasts.length)];
-    await ctx.reply(`${mention}, ${roast}`);
+    await ctx.reply(`${mention || "@" + ctx.from.username}, ${roast}`);
   }
 
   private async handleRickroll(ctx: CommandContext): Promise<void> {

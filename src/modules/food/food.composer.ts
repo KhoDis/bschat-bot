@@ -8,6 +8,7 @@ import { FoodService } from "@/modules/food/food.service";
 import prisma from "@/prisma/client";
 import { RequirePermission } from "@/modules/permissions/require-permission.decorator";
 import { Prisma } from "@prisma/client";
+import { ArgsService } from "@/modules/common/args.service";
 
 const specialChars = [
   "_",
@@ -37,6 +38,7 @@ export class FoodComposer extends Composer<IBotContext> {
   constructor(
     @inject(TYPES.ConfigService) private config: ConfigService,
     @inject(TYPES.FoodService) private foodService: FoodService,
+    @inject(TYPES.ArgsService) private args: ArgsService,
   ) {
     super();
 
@@ -62,30 +64,9 @@ export class FoodComposer extends Composer<IBotContext> {
     this.command("listtriggers", (ctx) => this.handleListTriggers(ctx));
   }
 
-  private splitArgs(text: string): string[] {
-    const args: string[] = [];
-    let current = "";
-    let inQuotes = false;
-
-    for (const char of text.slice(1).trim()) {
-      if (char === '"') {
-        inQuotes = !inQuotes;
-      } else if (char === " " && !inQuotes) {
-        if (current) {
-          args.push(current);
-          current = "";
-        }
-      } else {
-        current += char;
-      }
-    }
-    if (current) args.push(current);
-    return args;
-  }
-
   @RequirePermission("MANAGE_FOOD")
   private async handleAddFood(ctx: CommandContext) {
-    const args = this.splitArgs(ctx.message.text);
+    const args = this.args.parse(ctx.message.text);
     if (args.length < 3) {
       await ctx.reply('Usage: /addfood "query" trigger1 trigger2 ...');
       return;
@@ -164,7 +145,7 @@ export class FoodComposer extends Composer<IBotContext> {
 
   @RequirePermission("MANAGE_FOOD")
   private async handleRenameFood(ctx: CommandContext) {
-    const args = this.splitArgs(ctx.message.text);
+    const args = this.args.parse(ctx.message.text);
     if (args.length < 3) {
       await ctx.reply('Usage: /renamefood "oldname" "newname"');
       return;
@@ -202,7 +183,7 @@ export class FoodComposer extends Composer<IBotContext> {
 
   @RequirePermission("MANAGE_FOOD")
   private async handleAddTrigger(ctx: CommandContext) {
-    const args = this.splitArgs(ctx.message.text);
+    const args = this.args.parse(ctx.message.text);
     if (args.length < 3) {
       await ctx.reply('Usage: /addtrigger "query" trigger1 trigger2 ...');
       return;
@@ -274,7 +255,7 @@ export class FoodComposer extends Composer<IBotContext> {
 
   @RequirePermission("MANAGE_FOOD")
   private async handleRemoveTrigger(ctx: CommandContext) {
-    const args = this.splitArgs(ctx.message.text);
+    const args = this.args.parse(ctx.message.text);
     if (args.length < 2) {
       await ctx.reply("Usage: /removetrigger trigger1 trigger2 ...");
       return;
@@ -316,7 +297,7 @@ export class FoodComposer extends Composer<IBotContext> {
 
   @RequirePermission("MANAGE_FOOD")
   private async handleRemoveFood(ctx: CommandContext) {
-    const args = this.splitArgs(ctx.message.text);
+    const args = this.args.parse(ctx.message.text);
     if (args.length < 2) {
       await ctx.reply('Usage: /removefood "query"');
       return;
@@ -359,7 +340,7 @@ export class FoodComposer extends Composer<IBotContext> {
   }
 
   private async handleListTriggers(ctx: CommandContext) {
-    const args = this.splitArgs(ctx.message.text);
+    const args = this.args.parse(ctx.message.text);
 
     if (args.length < 2) {
       // No category specified, show all categories with their triggers

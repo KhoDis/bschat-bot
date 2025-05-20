@@ -5,7 +5,7 @@ import { TYPES } from "@/types";
 import { RoundService } from "./round.service";
 import { RequirePermission } from "@/modules/permissions/require-permission.decorator";
 import { CommandContext } from "@/types";
-import getCommandArgs from "@/utils/getCommandArgs";
+import { ArgsService } from "@/modules/common/args.service";
 
 /**
  * RoundModule - Manages game rounds and hints
@@ -17,7 +17,10 @@ import getCommandArgs from "@/utils/getCommandArgs";
  */
 @injectable()
 export class RoundModule extends Composer<IBotContext> {
-  constructor(@inject(TYPES.RoundService) private roundService: RoundService) {
+  constructor(
+    @inject(TYPES.RoundService) private roundService: RoundService,
+    @inject(TYPES.ArgsService) private args: ArgsService,
+  ) {
     super();
 
     // Commands
@@ -33,11 +36,10 @@ export class RoundModule extends Composer<IBotContext> {
   private async handleNextRoundCommand(ctx: CommandContext): Promise<void> {
     if (!ctx.chat) return;
 
-    // Extract gameId from command if provided
-    const args = getCommandArgs(ctx);
-    const gameId = args[1] ? Number(args[1]) : undefined;
+    const [_, gameIdString] = this.args.parse(ctx.message.text);
+    const gameId = gameIdString ? Number(gameIdString) : undefined;
 
-    if (args[1] && isNaN(Number(args[1]))) {
+    if (gameId && isNaN(gameId)) {
       await ctx.reply("Некорректный ID игры.");
       return;
     }
