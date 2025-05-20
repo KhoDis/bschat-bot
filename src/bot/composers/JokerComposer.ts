@@ -1,7 +1,7 @@
 import { IBotContext } from "@/context/context.interface";
 import { Composer } from "telegraf";
-import { MemberService } from "../services/MemberService";
-import { TextService } from "@/bot/services/TextService";
+import { MemberService } from "@/modules/common/member.service";
+import { TextService } from "@/modules/common/text.service";
 import { inject, injectable } from "inversify";
 import { CommandContext, TYPES } from "@/types";
 import getCommandArgs from "@/utils/getCommandArgs";

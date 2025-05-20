@@ -1,8 +1,8 @@
 import { CallbackQueryContext, TYPES } from "@/types";
 import { inject, injectable } from "inversify";
-import { RoundService } from "@/bot/services/RoundService";
-import { GuessService } from "@/bot/services/GuessService";
-import { RequirePermission } from "@/bot/decorators/RequirePermission";
+import { RoundService } from "@/modules/musicGame/round.service";
+import { GuessService } from "@/modules/musicGame/guess.service";
+import { RequirePermission } from "@/modules/permissions/require-permission.decorator";
 import { MusicGameService } from "@/modules/musicGame/music-game.service";
 
 @injectable()

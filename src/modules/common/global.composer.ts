@@ -1,10 +1,10 @@
 import { IBotContext } from "@/context/context.interface";
 import { Composer, NarrowedContext } from "telegraf";
-import { LeaderboardService } from "../services/LeaderboardService";
+import { LeaderboardService } from "../musicGame/leaderboard.service";
 import { Update } from "telegraf/types";
 import { inject, injectable } from "inversify";
 import { CommandContext, TYPES } from "@/types";
-import { TextService } from "@/bot/services/TextService";
+import { TextService } from "@/modules/common/text.service";
 
 @injectable()
 export class GlobalComposer extends Composer<IBotContext> {
@@ -19,17 +19,9 @@ export class GlobalComposer extends Composer<IBotContext> {
   }
 
   private setupHandlers() {
-    this.command("show_leaderboards", this.handleShowLeaderboard.bind(this));
     this.command("chatid", this.handleChatId.bind(this));
     this.command("polls", this.handleShortPoll.bind(this));
     this.command("pollf", this.handleFullPoll.bind(this));
-  }
-
-  private async handleShowLeaderboard(ctx: CommandContext): Promise<void> {
-    const response = await this.leaderboardService.generateLeaderboard(
-      ctx.chat.id,
-    );
-    await ctx.reply(response ?? this.text.get("musicGame.noGame"));
   }
 
   private async handleChatId(

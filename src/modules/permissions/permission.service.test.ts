@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { PermissionService, PERMISSIONS } from "./PermissionService";
+import { PermissionService, PERMISSIONS } from "./permission.service";
 import prisma from "@/prisma/client";
 
 // Mock Prisma Client

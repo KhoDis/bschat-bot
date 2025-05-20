@@ -4,7 +4,7 @@ import {
 } from "@/bot/repositories/GameRepository";
 import { inject, injectable } from "inversify";
 import { CallbackQueryContext, CommandContext, TYPES } from "@/types";
-import { TextService } from "@/bot/services/TextService";
+import { TextService } from "@/modules/common/text.service";
 
 @injectable()
 export class MusicGameService {

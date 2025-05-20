@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { TextService, TextServiceError } from "./TextService";
+import { TextService, TextServiceError } from "./text.service";
 import i18next from "i18next";
 import I18NexFsBackend from "i18next-fs-backend";
 import path from "node:path";
