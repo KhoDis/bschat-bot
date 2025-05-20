@@ -28,7 +28,7 @@ export type RoundWithGuesses = Prisma.GameRoundGetPayload<{
 }>;
 
 @injectable()
-export class GameRepository {
+export class MusicGameRepository {
   async getGameById(id: number): Promise<GameWithData | null> {
     return prisma.game.findUnique({
       where: { id },

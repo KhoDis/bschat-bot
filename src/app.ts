@@ -5,8 +5,8 @@ import { IBotContext } from "./context/context.interface";
 import { GlobalComposer } from "./modules/common/global.composer";
 import { PrivateComposer } from "./bot/composers/PrivateComposer";
 import { JokerComposer } from "./bot/composers/JokerComposer";
-import { MusicGameComposer } from "@/modules/musicGame/music-game.composer";
-import { ParticipantComposer } from "@/modules/musicGame/participant.composer";
+import { MusicGameModule } from "@/modules/musicGame/music-game.module";
+import { MemberModule } from "@/modules/common/member.module";
 import { RoleComposer } from "@/modules/permissions/role.composer";
 import { CraftyComposer } from "@/modules/crafty/crafty.composer";
 import { container } from "@/container";
@@ -37,10 +37,10 @@ class Bot {
       .get<PrivateComposer>(TYPES.PrivateComposer)
       .middleware();
     const musicGameMiddleware = container
-      .get<MusicGameComposer>(TYPES.MusicGameComposer)
+      .get<MusicGameModule>(TYPES.MusicGameModule)
       .middleware();
     const participantMiddleware = container
-      .get<ParticipantComposer>(TYPES.ParticipantComposer)
+      .get<MemberModule>(TYPES.ParticipantComposer)
       .middleware();
     const globalMiddleware = container
       .get<GlobalComposer>(TYPES.GlobalComposer)

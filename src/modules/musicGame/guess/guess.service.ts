@@ -1,13 +1,19 @@
-import { Context } from "telegraf";
-import { GameRepository } from "@/bot/repositories/GameRepository";
 import { inject, injectable } from "inversify";
+import { Context } from "telegraf";
 import { TYPES } from "@/types";
+import { MusicGameRepository } from "@/modules/musicGame/music-game.repository";
 import { TextService } from "@/modules/common/text.service";
 
+/**
+ * GuessService - Core guess business logic
+ *
+ * Responsibilities:
+ * - Guess processing
+ */
 @injectable()
 export class GuessService {
   constructor(
-    @inject(TYPES.GameRepository) private gameRepository: GameRepository,
+    @inject(TYPES.GameRepository) private gameRepository: MusicGameRepository,
     @inject(TYPES.TextService) private text: TextService,
   ) {}
 
