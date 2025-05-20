@@ -32,7 +32,7 @@ type AnyMediaMessageContext = MessageContext<
 >;
 
 @injectable()
-export class PrivateComposer extends Composer<IBotContext> {
+export class MusicGameUploadModule extends Composer<IBotContext> {
   constructor(
     @inject(TYPES.MemberService) private readonly memberService: MemberService,
     @inject(TYPES.TextService) private readonly text: TextService,

@@ -7,7 +7,7 @@ import { CommandContext, TYPES } from "@/types";
 import { ArgsService } from "@/modules/common/args.service";
 
 @injectable()
-export class JokerComposer extends Composer<IBotContext> {
+export class JokerModule extends Composer<IBotContext> {
   private readonly roasts = [
     "Твой интеллект можно уместить на флешке 256 Кб.",
     "Если бы тупость светилась, ты был бы солнцем.",

@@ -32,7 +32,7 @@ const specialChars = [
 ];
 
 @injectable()
-export class FoodComposer extends Composer<IBotContext> {
+export class FoodModule extends Composer<IBotContext> {
   private unsplash: ReturnType<typeof createApi>;
 
   constructor(

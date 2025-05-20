@@ -4,7 +4,7 @@ import { IBotContext } from "@/context/context.interface";
 import { randomInt } from "crypto";
 
 @injectable()
-export class SorryComposer extends Composer<IBotContext> {
+export class SorryModule extends Composer<IBotContext> {
   private apologyCounter: Map<number, number> = new Map();
   private readonly STICKERS = [
     "CAACAgIAAxkBAAKluGf0Fnpz6OzwjIZJc9pMsd0zMUaEAALyagACR5aoSRoNRPHRrJ-_NgQ",

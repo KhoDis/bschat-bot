@@ -20,7 +20,7 @@ type CommandContext = NarrowedContext<
 >;
 
 @injectable()
-export class RoleComposer extends Composer<IBotContext> {
+export class RoleModule extends Composer<IBotContext> {
   constructor(
     @inject(TYPES.RoleService) private roleService: RoleService,
     @inject(TYPES.PermissionService)

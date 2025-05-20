@@ -7,7 +7,7 @@ import { TextService } from "@/modules/common/text.service";
 import { LeaderboardService } from "@/modules/musicGame/leaderboard/leaderboard.service";
 
 @injectable()
-export class GlobalComposer extends Composer<IBotContext> {
+export class GlobalModule extends Composer<IBotContext> {
   constructor(
     @inject(TYPES.LeaderboardService)
     private leaderboardService: LeaderboardService,
