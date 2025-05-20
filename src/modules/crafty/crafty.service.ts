@@ -1,6 +1,6 @@
 import axios, { AxiosError, AxiosInstance, AxiosResponse } from "axios";
 import { inject, injectable } from "inversify";
-import { ConfigService } from "@/config/config.service";
+import { ConfigService } from "@/modules/common/config.service";
 import { TYPES } from "@/types";
 
 export type GetRequest<TBody> = {

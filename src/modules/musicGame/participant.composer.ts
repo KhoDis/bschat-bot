@@ -1,9 +1,10 @@
 import { Composer } from "telegraf";
 import { IBotContext } from "@/context/context.interface";
-import { MemberService } from "@/bot/services/MemberService";
-import { TextService } from "@/bot/services/TextService";
+import { MemberService } from "@/modules/common/member.service";
+import { TextService } from "@/modules/common/text.service";
 import { inject, injectable } from "inversify";
 import { CommandContext, TYPES } from "@/types";
+import { LeaderboardService } from "@/modules/musicGame/leaderboard.service";
 
 // TODO: add @Group decorator (class-scoped or function-scoped)
 @injectable()
@@ -11,12 +12,22 @@ export class ParticipantComposer extends Composer<IBotContext> {
   constructor(
     @inject(TYPES.MemberService) private memberService: MemberService,
     @inject(TYPES.TextService) private text: TextService,
+    @inject(TYPES.LeaderboardService)
+    private leaderboardService: LeaderboardService,
   ) {
     super();
 
     this.command("ping_participants", this.handlePingParticipants.bind(this));
     this.command("check_music", this.handleCheckMusic.bind(this));
     this.command("joinbs", this.handleJoin.bind(this));
+    this.command("show_leaderboards", this.handleShowLeaderboard.bind(this));
+  }
+
+  private async handleShowLeaderboard(ctx: CommandContext): Promise<void> {
+    const response = await this.leaderboardService.generateLeaderboard(
+      ctx.chat.id,
+    );
+    await ctx.reply(response ?? this.text.get("musicGame.noGame"));
   }
 
   private async handleJoin(ctx: CommandContext): Promise<void> {

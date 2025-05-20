@@ -1,11 +1,11 @@
 import { inject, injectable } from "inversify";
-import { RequirePermission } from "@/bot/decorators/RequirePermission";
+import { RequirePermission } from "@/modules/permissions/require-permission.decorator";
 import { CommandContext, TYPES } from "@/types";
 import { Markup } from "telegraf";
-import { MemberService } from "@/bot/services/MemberService";
+import { MemberService } from "@/modules/common/member.service";
 import { MusicGameService } from "@/modules/musicGame/music-game.service";
-import { TextService } from "@/bot/services/TextService";
-import { RoundService } from "@/bot/services/RoundService";
+import { TextService } from "@/modules/common/text.service";
+import { RoundService } from "@/modules/musicGame/round.service";
 import getCommandArgs from "@/utils/getCommandArgs";
 
 @injectable()

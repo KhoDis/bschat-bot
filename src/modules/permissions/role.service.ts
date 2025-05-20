@@ -3,7 +3,7 @@ import {
   Permission,
   PERMISSIONS,
   PermissionService,
-} from "./PermissionService";
+} from "./permission.service";
 import { Role, User } from "@prisma/client";
 import { inject, injectable } from "inversify";
 import { TYPES } from "@/types";

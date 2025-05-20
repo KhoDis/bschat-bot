@@ -3,16 +3,16 @@ import {
   GameRepository,
   GameWithData,
   RoundWithGuesses,
-} from "../repositories/GameRepository";
+} from "@/bot/repositories/GameRepository";
 import { IBotContext } from "@/context/context.interface";
 import { Result } from "@/utils/Result";
 import { InlineKeyboardButton } from "telegraf/typings/core/types/typegram";
 import { Game, GameRound, User } from "@prisma/client";
 import * as tg from "telegraf/src/core/types/typegram";
-import { TextService } from "@/bot/services/TextService";
+import { TextService } from "@/modules/common/text.service";
 import { inject, injectable } from "inversify";
 import { CallbackQueryContext, CommandContext, TYPES } from "@/types";
-import { LeaderboardService } from "@/bot/services/LeaderboardService";
+import { LeaderboardService } from "@/modules/musicGame/leaderboard.service";
 
 @injectable()
 export class RoundService {

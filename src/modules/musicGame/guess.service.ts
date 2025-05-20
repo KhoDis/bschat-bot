@@ -1,8 +1,8 @@
 import { Context } from "telegraf";
-import { GameRepository } from "../repositories/GameRepository";
+import { GameRepository } from "@/bot/repositories/GameRepository";
 import { inject, injectable } from "inversify";
 import { TYPES } from "@/types";
-import { TextService } from "@/bot/services/TextService";
+import { TextService } from "@/modules/common/text.service";
 
 @injectable()
 export class GuessService {

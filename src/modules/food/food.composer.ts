@@ -2,11 +2,11 @@ import { IBotContext } from "@/context/context.interface";
 import { Composer } from "telegraf";
 import { inject, injectable } from "inversify";
 import { createApi } from "unsplash-js";
-import { ConfigService } from "@/config/config.service";
+import { ConfigService } from "@/modules/common/config.service";
 import { CommandContext, TYPES } from "@/types";
 import { FoodService } from "@/modules/food/food.service";
 import prisma from "@/prisma/client";
-import { RequirePermission } from "@/bot/decorators/RequirePermission";
+import { RequirePermission } from "@/modules/permissions/require-permission.decorator";
 import { Prisma } from "@prisma/client";
 
 const specialChars = [

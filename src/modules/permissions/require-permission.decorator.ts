@@ -1,8 +1,8 @@
-import { RoleService } from "@/bot/services/RoleService";
-import { TextService } from "@/bot/services/TextService";
+import { RoleService } from "@/modules/permissions/role.service";
+import { TextService } from "@/modules/common/text.service";
 import { IBotContext } from "@/context/context.interface";
 import { TYPES } from "@/types";
-import { Permission } from "@/bot/services/PermissionService";
+import { Permission } from "@/modules/permissions/permission.service";
 import { container } from "@/container";
 
 export function RequirePermission(permission: Permission) {

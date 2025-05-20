@@ -1,18 +1,18 @@
 import { Composer, NarrowedContext } from "telegraf";
 import { IBotContext } from "@/context/context.interface";
-import { RoleService } from "@/bot/services/RoleService";
+import { RoleService } from "@/modules/permissions/role.service";
 import { Message, Update } from "telegraf/types";
-import { MemberService } from "@/bot/services/MemberService";
+import { MemberService } from "@/modules/common/member.service";
 import {
   Permission,
   PERMISSIONS,
   PermissionService,
-} from "@/bot/services/PermissionService";
-import { TextService } from "@/bot/services/TextService";
+} from "@/modules/permissions/permission.service";
+import { TextService } from "@/modules/common/text.service";
 import { TYPES } from "@/types";
 import { inject, injectable } from "inversify";
 import getCommandArgs from "@/utils/getCommandArgs";
-import { RequirePermission } from "@/bot/decorators/RequirePermission";
+import { RequirePermission } from "@/modules/permissions/require-permission.decorator";
 
 type CommandContext = NarrowedContext<
   IBotContext,
