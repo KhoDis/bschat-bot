@@ -1,17 +1,33 @@
-import { GameRepository } from "@/bot/repositories/GameRepository";
-import { User } from "@prisma/client";
 import { inject, injectable } from "inversify";
+import { Context } from "telegraf";
 import { TYPES } from "@/types";
+import { MusicGameRepository } from "@/modules/musicGame/music-game.repository";
 import { TextService } from "@/modules/common/text.service";
+import { User } from "@prisma/client";
 
+/**
+ * LeaderboardService - Core leaderboard business logic
+ *
+ * Responsibilities:
+ * - Leaderboard processing
+ */
 @injectable()
 export class LeaderboardService {
   constructor(
-    @inject(TYPES.GameRepository) private gameRepository: GameRepository,
+    @inject(TYPES.GameRepository) private gameRepository: MusicGameRepository,
     @inject(TYPES.TextService) private text: TextService,
   ) {}
 
-  async generateLeaderboard(chatId: number): Promise<string | null> {
+  async showLeaderboard(ctx: Context, chatId: number) {
+    const leaderboard = await this.generateLeaderboard(chatId);
+    if (!leaderboard) {
+      await ctx.reply("Произошла ошибка при генерации лидерборда");
+      return;
+    }
+    await ctx.reply(leaderboard);
+  }
+
+  private async generateLeaderboard(chatId: number): Promise<string | null> {
     const game = await this.gameRepository.getCurrentGameByChatId(chatId);
     if (!game) {
       return null;

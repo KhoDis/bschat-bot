@@ -1,10 +1,10 @@
 import { IBotContext } from "@/context/context.interface";
 import { Composer, NarrowedContext } from "telegraf";
-import { LeaderboardService } from "../musicGame/leaderboard.service";
 import { Update } from "telegraf/types";
 import { inject, injectable } from "inversify";
 import { CommandContext, TYPES } from "@/types";
 import { TextService } from "@/modules/common/text.service";
+import { LeaderboardService } from "@/modules/musicGame/leaderboard/leaderboard.service";
 
 @injectable()
 export class GlobalComposer extends Composer<IBotContext> {

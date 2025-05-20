@@ -4,30 +4,17 @@ import { MemberService } from "@/modules/common/member.service";
 import { TextService } from "@/modules/common/text.service";
 import { inject, injectable } from "inversify";
 import { CommandContext, TYPES } from "@/types";
-import { LeaderboardService } from "@/modules/musicGame/leaderboard.service";
 
 // TODO: add @Group decorator (class-scoped or function-scoped)
 @injectable()
-export class ParticipantComposer extends Composer<IBotContext> {
+export class MemberModule extends Composer<IBotContext> {
   constructor(
     @inject(TYPES.MemberService) private memberService: MemberService,
     @inject(TYPES.TextService) private text: TextService,
-    @inject(TYPES.LeaderboardService)
-    private leaderboardService: LeaderboardService,
   ) {
     super();
 
-    this.command("ping_participants", this.handlePingParticipants.bind(this));
-    this.command("check_music", this.handleCheckMusic.bind(this));
     this.command("joinbs", this.handleJoin.bind(this));
-    this.command("show_leaderboards", this.handleShowLeaderboard.bind(this));
-  }
-
-  private async handleShowLeaderboard(ctx: CommandContext): Promise<void> {
-    const response = await this.leaderboardService.generateLeaderboard(
-      ctx.chat.id,
-    );
-    await ctx.reply(response ?? this.text.get("musicGame.noGame"));
   }
 
   private async handleJoin(ctx: CommandContext): Promise<void> {
@@ -64,44 +51,5 @@ export class ParticipantComposer extends Composer<IBotContext> {
     }
     await this.memberService.addMember(userId, chatId);
     await ctx.reply(this.text.get("member.joined", { name: userId }));
-  }
-
-  async handlePingParticipants(ctx: CommandContext): Promise<void> {
-    const users = await this.memberService.getSubmissionUsers(ctx.chat.id);
-
-    if (!users.length) {
-      await ctx.reply("musicGame.noPlayers");
-      return;
-    }
-
-    this.memberService.formatPingNames(users).forEach((batch) => {
-      ctx.replyWithMarkdown(batch);
-    });
-  }
-
-  private async handleCheckMusic(ctx: CommandContext): Promise<void> {
-    const submissionUsers = await this.memberService.getSubmissionUsers(
-      ctx.chat.id,
-    );
-
-    if (!submissionUsers.length) {
-      await ctx.reply("musicGame.noPlayers");
-      return;
-    }
-
-    const users = this.memberService
-      .formatPingNames(submissionUsers)
-      .join("\n");
-
-    await ctx.reply(
-      this.text.get("musicGame.listPlayers", {
-        playersCount: submissionUsers.length,
-        playersList: users,
-      }),
-      {
-        parse_mode: "Markdown",
-        disable_notification: true,
-      },
-    );
   }
 }
