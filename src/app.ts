@@ -2,15 +2,18 @@ import "reflect-metadata";
 import { Composer, session, Telegraf } from "telegraf";
 import { ConfigService } from "./modules/common/config.service";
 import { IBotContext } from "./context/context.interface";
-import { GlobalComposer } from "./modules/common/global.composer";
-import { PrivateComposer } from "./bot/composers/PrivateComposer";
-import { JokerComposer } from "./bot/composers/JokerComposer";
+import { GlobalModule } from "./modules/common/global.module";
+import { MusicGameUploadModule } from "./modules/musicGame/music-game-upload.module";
+import { JokerModule } from "./modules/joke/joker.module";
 import { MusicGameModule } from "@/modules/musicGame/music-game.module";
 import { MemberModule } from "@/modules/common/member.module";
-import { RoleComposer } from "@/modules/permissions/role.composer";
-import { CraftyComposer } from "@/modules/crafty/crafty.composer";
+import { RoleModule } from "@/modules/permissions/role.module";
+import { CraftyModule } from "@/modules/crafty/crafty.module";
 import { container } from "@/container";
 import { TYPES } from "@/types";
+import { TriggerModule } from "@/modules/joke/trigger.module";
+import { SorryModule } from "@/modules/joke/sorry.module";
+import { FoodModule } from "@/modules/food/food.module";
 import { TriggerComposer } from "@/modules/trigger/trigger.composer";
 import { SorryComposer } from "@/bot/composers/SorryComposer";
 import { FoodComposer } from "@/modules/food/food.composer";
@@ -31,10 +34,10 @@ class Bot {
     );
 
     const textMiddleware = container
-      .get<TriggerComposer>(TYPES.TextComposer)
+      .get<TriggerModule>(TYPES.TextComposer)
       .middleware();
-    const privateMiddleware = container
-      .get<PrivateComposer>(TYPES.PrivateComposer)
+    const musicGameUploadMiddleware = container
+      .get<MusicGameUploadModule>(TYPES.PrivateComposer)
       .middleware();
     const musicGameMiddleware = container
       .get<MusicGameModule>(TYPES.MusicGameModule)
@@ -43,22 +46,22 @@ class Bot {
       .get<MemberModule>(TYPES.ParticipantComposer)
       .middleware();
     const globalMiddleware = container
-      .get<GlobalComposer>(TYPES.GlobalComposer)
+      .get<GlobalModule>(TYPES.GlobalComposer)
       .middleware();
     const jokerMiddleware = container
-      .get<JokerComposer>(TYPES.JokerComposer)
+      .get<JokerModule>(TYPES.JokerComposer)
       .middleware();
     const roleMiddleware = container
-      .get<RoleComposer>(TYPES.RoleComposer)
+      .get<RoleModule>(TYPES.RoleComposer)
       .middleware();
     const craftyMiddleware = container
-      .get<CraftyComposer>(TYPES.CraftyComposer)
+      .get<CraftyModule>(TYPES.CraftyComposer)
       .middleware();
     const sorryMiddleware = container
-      .get<SorryComposer>(TYPES.SorryComposer)
+      .get<SorryModule>(TYPES.SorryComposer)
       .middleware();
     const foodMiddleware = container
-      .get<FoodComposer>(TYPES.FoodComposer)
+      .get<FoodModule>(TYPES.FoodComposer)
       .middleware();
     const llmMiddleware = container
       .get<LLMComposer>(TYPES.LLMComposer)
@@ -76,8 +79,9 @@ class Bot {
       if (!ctx.chat) {
         return next();
       }
+      // TODO: unclog the flow
       if (ctx.chat.type === "private") {
-        return privateMiddleware(ctx, next);
+        return musicGameUploadMiddleware(ctx, next);
       } else {
         return nonPrivateMiddleware(ctx, next);
       }

@@ -11,7 +11,7 @@ type ResponseParts = {
 };
 
 @injectable()
-export class TriggerComposer extends Composer<IBotContext> {
+export class TriggerModule extends Composer<IBotContext> {
   private responses: Record<string, ResponseParts> = {};
   private triggers: { pattern: RegExp; parts: string }[] = [];
   private messageCounts: Map<number, number> = new Map(); // Track message counts by chat ID

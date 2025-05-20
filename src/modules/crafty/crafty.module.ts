@@ -24,7 +24,7 @@ type CallbackContext = NarrowedContext<
 };
 
 @injectable()
-export class CraftyComposer extends Composer<IBotContext> {
+export class CraftyModule extends Composer<IBotContext> {
   constructor(
     @inject(TYPES.CraftyService) private craftyService: CraftyService,
     @inject(TYPES.RoleService) private roleService: RoleService,
