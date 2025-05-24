@@ -1,12 +1,9 @@
 import { inject, injectable } from "inversify";
 import { TYPES } from "@/types";
-import {
-  MusicGameRepository,
-  GameWithData,
-} from "@/modules/musicGame/music-game.repository";
+import { MusicGameRepository } from "@/modules/musicGame/music-game.repository";
 import { TextService } from "@/modules/common/text.service";
 import { MemberService } from "@/modules/common/member.service";
-import { CallbackQueryContext, CommandContext } from "@/types";
+import { CommandContext } from "@/types";
 import { Markup } from "telegraf";
 import { IBotContext } from "@/context/context.interface";
 
@@ -65,7 +62,7 @@ export class GameService {
       }
 
       // Create a new game with the submitted tracks
-      const game = await this.gameRepository.transferSubmissions(ctx.chat.id);
+      await this.gameRepository.transferSubmissions(ctx.chat.id);
       await ctx.reply(this.text.get("musicGame.gameStarted"));
       return;
     } catch (error) {
@@ -75,21 +72,21 @@ export class GameService {
     }
   }
 
-  // /**
-  //  * Ends the current active game
-  //  */
-  // async endGame(ctx: IBotContext): Promise<void> {
-  //   if (!ctx.chat) return;
-  //
-  //   const game = await this.gameRepository.getCurrentGameByChatId(ctx.chat.id);
-  //   if (!game) {
-  //     await ctx.reply("Нет активной игры для завершения.");
-  //     return;
-  //   }
-  //
-  //   await this.gameRepository.endGame(game.id);
-  //   await ctx.reply("Игра завершена!");
-  // }
+  /**
+   * Ends the current active game
+   */
+  async endGame(ctx: IBotContext): Promise<void> {
+    if (!ctx.chat) return;
+
+    const game = await this.gameRepository.getCurrentGameByChatId(ctx.chat.id);
+    if (!game) {
+      await ctx.reply("Нет активной игры для завершения.");
+      return;
+    }
+
+    await this.gameRepository.endGame(game.id);
+    await ctx.reply("Игра завершена!");
+  }
 
   /**
    * Lists all games for the current chat
