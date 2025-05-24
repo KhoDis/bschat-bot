@@ -35,16 +35,7 @@ export class RoundModule extends Composer<IBotContext> {
   @RequirePermission("MANAGE_MUSIC_GAME")
   private async handleNextRoundCommand(ctx: CommandContext): Promise<void> {
     if (!ctx.chat) return;
-
-    const [_, gameIdString] = this.args.parse(ctx.message.text);
-    const gameId = gameIdString ? Number(gameIdString) : undefined;
-
-    if (gameId && isNaN(gameId)) {
-      await ctx.reply("Некорректный ID игры.");
-      return;
-    }
-
-    await this.roundService.nextRound(ctx, gameId);
+    await this.roundService.nextRound(ctx);
   }
 
   /**

@@ -43,21 +43,6 @@ export class MusicGameRepository {
     });
   }
 
-  async deleteGame(id: number): Promise<void> {
-    // Remove guesses
-    await prisma.guess.deleteMany({
-      where: { round: { gameId: id } },
-    });
-    // Remove rounds
-    await prisma.gameRound.deleteMany({
-      where: { gameId: id },
-    });
-    // Remove game
-    await prisma.game.delete({
-      where: { id },
-    });
-  }
-
   async getCurrentGameByChatId(chatId: number): Promise<GameWithData | null> {
     const chat = await prisma.chat.findUnique({
       where: { id: chatId },
@@ -74,7 +59,7 @@ export class MusicGameRepository {
     return activeGame || null;
   }
 
-  async finishGame(gameId: number): Promise<void> {
+  async endGame(gameId: number): Promise<void> {
     await prisma.game.update({
       where: { id: gameId },
       data: {
@@ -90,6 +75,13 @@ export class MusicGameRepository {
   async getCurrentRound(chatId: number): Promise<RoundWithGuesses | null> {
     return prisma.gameRound.findFirst({
       where: { endedAt: null, game: { chatId } },
+      include: roundWithGuesses,
+    });
+  }
+
+  async getRoundById(roundId: number): Promise<RoundWithGuesses | null> {
+    return prisma.gameRound.findUnique({
+      where: { id: roundId },
       include: roundWithGuesses,
     });
   }

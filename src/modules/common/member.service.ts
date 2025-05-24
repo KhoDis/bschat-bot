@@ -164,9 +164,10 @@ export class MemberService {
   // only first 5 from list will receive notification
   formatPingNames(participants: User[]): string[] {
     const formattedNames: string[] = [];
+    const participantsCopy = [...participants];
 
-    while (participants.length > 0) {
-      const batch = participants.splice(0, 5);
+    while (participantsCopy.length > 0) {
+      const batch = participantsCopy.splice(0, 5);
       formattedNames.push(
         batch.map((p) => this.formatParticipantName(p)).join("\n"),
       );

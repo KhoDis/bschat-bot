@@ -50,7 +50,6 @@ container.bind<ConfigService>(TYPES.ConfigService).to(ConfigService);
 container.bind<ArgsService>(TYPES.ArgsService).to(ArgsService);
 
 container.bind<CraftyService>(TYPES.CraftyService).to(CraftyService);
-container.bind<GuessService>(TYPES.GuessService).to(GuessService);
 container
   .bind<PermissionService>(TYPES.PermissionService)
   .to(PermissionService);
