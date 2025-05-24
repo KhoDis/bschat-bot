@@ -7,9 +7,7 @@ import CraftyService from "@/modules/crafty/crafty.service";
 import { AxiosError } from "axios";
 import { TYPES } from "@/types";
 import { inject, injectable } from "inversify";
-import { ZazuService } from "@/bot/services/ZazuService";
-import { RequirePermission } from "@/modules/permissions/require-permission.decorator";
-import { ArgsService } from "@/modules/common/args.service";
+import { ZazuService } from "@/modules/joke/zazu.service";
 import { RequirePermission } from "@/modules/permissions/require-permission.decorator";
 import { ArgsService } from "@/modules/common/args.service";
 

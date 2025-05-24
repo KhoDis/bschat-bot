@@ -172,7 +172,9 @@ export class RoundService {
       return;
     }
 
-    const currentRound = await this.gameRepository.getCurrentRound(chatId);
+    const currentRound = await this.gameRepository.getRoundById(
+      game.currentRound,
+    );
     if (!currentRound) {
       await ctx.reply(this.text.get("rounds.noRound"));
       return;

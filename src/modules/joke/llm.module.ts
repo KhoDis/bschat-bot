@@ -2,14 +2,14 @@ import { Composer, NarrowedContext } from "telegraf";
 import { IBotContext } from "@/context/context.interface";
 import { inject, injectable } from "inversify";
 import { OpenAI } from "openai";
-import { ConfigService } from "@/config/config.service";
 import { CommandContext, TYPES } from "@/types";
 import { Message } from "telegraf/typings/core/types/typegram";
 import { ChatCompletionMessageParam } from "openai/resources/chat";
 import { Update } from "telegraf/types";
+import { ConfigService } from "@/modules/common/config.service";
 
 @injectable()
-export class LLMComposer extends Composer<IBotContext> {
+export class LlmModule extends Composer<IBotContext> {
   private openai: OpenAI;
   private availableModel = "nousresearch/deephermes-3-mistral-24b-preview:free";
   private conversationHistory = new Map<

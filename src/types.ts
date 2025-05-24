@@ -24,7 +24,6 @@ export const TYPES = {
   RoleService: Symbol.for("RoleService"),
   TextService: Symbol.for("TextService"),
   MemberService: Symbol.for("MemberService"),
-  FoodService: Symbol.for("FoodService"),
   ZazuService: Symbol.for("ZazuService"),
 
   CraftyComposer: Symbol.for("CraftyComposer"),
@@ -33,26 +32,14 @@ export const TYPES = {
   ParticipantComposer: Symbol.for("ParticipantComposer"),
   PrivateComposer: Symbol.for("PrivateComposer"),
   RoleComposer: Symbol.for("RoleComposer"),
+
   TextComposer: Symbol.for("TextComposer"),
   SorryComposer: Symbol.for("SorryComposer"),
-  FoodComposer: Symbol.for("FoodComposer"),
   LLMComposer: Symbol.for("LLMComposer"),
 
   // ---
-
-  MusicGameModule: Symbol.for("MusicGameModule"),
-
-  GameService: Symbol.for("GameService"),
-  GameModule: Symbol.for("GameModule"),
-
-  RoundService: Symbol.for("RoundService"),
-  RoundModule: Symbol.for("RoundModule"),
-
-  GuessService: Symbol.for("GuessService"),
-  GuessModule: Symbol.for("GuessModule"),
-
-  LeaderboardService: Symbol.for("LeaderboardService"),
-  LeaderboardModule: Symbol.for("LeaderboardModule"),
+  FoodComposer: Symbol.for("FoodComposer"),
+  FoodService: Symbol.for("FoodService"),
 
   // ---
 

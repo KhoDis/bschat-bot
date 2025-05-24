@@ -14,14 +14,7 @@ import { TYPES } from "@/types";
 import { TriggerModule } from "@/modules/joke/trigger.module";
 import { SorryModule } from "@/modules/joke/sorry.module";
 import { FoodModule } from "@/modules/food/food.module";
-import { TriggerComposer } from "@/modules/trigger/trigger.composer";
-import { SorryComposer } from "@/bot/composers/SorryComposer";
-import { FoodComposer } from "@/modules/food/food.composer";
-import { FoodComposer } from "@/bot/composers/FoodComposer";
-import { LLMComposer } from "@/bot/composers/LLMComposer";
-import { TriggerModule } from "@/modules/joke/trigger.module";
-import { SorryModule } from "@/modules/joke/sorry.module";
-import { FoodModule } from "@/modules/food/food.module";
+import { LlmModule } from "@/modules/joke/llm.module";
 
 class Bot {
   bot: Telegraf<IBotContext>;
@@ -67,7 +60,7 @@ class Bot {
       .get<FoodModule>(TYPES.FoodComposer)
       .middleware();
     const llmMiddleware = container
-      .get<LLMComposer>(TYPES.LLMComposer)
+      .get<LlmModule>(TYPES.LLMComposer)
       .middleware();
 
     // Combine non-private middlewares into a single middleware

@@ -6,9 +6,7 @@ import { MemberService } from "@/modules/common/member.service";
 import { TextService } from "@/modules/common/text.service";
 import { inject, injectable } from "inversify";
 import { CallbackQueryContext, CommandContext, TYPES } from "@/types";
-import { callbackData } from "@/utils/filters";
-import { ZazuService } from "@/bot/services/ZazuService";
-import { dataAction } from "@/utils/filters";
+import { ZazuService } from "@/modules/joke/zazu.service";
 import { dataAction } from "@/utils/filters";
 
 type MessageContext<T extends Message = Message> = NarrowedContext<
