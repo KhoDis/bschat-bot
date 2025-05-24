@@ -10,6 +10,8 @@ import { inject, injectable } from "inversify";
 import { ZazuService } from "@/bot/services/ZazuService";
 import { RequirePermission } from "@/modules/permissions/require-permission.decorator";
 import { ArgsService } from "@/modules/common/args.service";
+import { RequirePermission } from "@/modules/permissions/require-permission.decorator";
+import { ArgsService } from "@/modules/common/args.service";
 
 type CommandContext = NarrowedContext<
   IBotContext,

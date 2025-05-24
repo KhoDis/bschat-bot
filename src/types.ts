@@ -53,6 +53,22 @@ export const TYPES = {
 
   LeaderboardService: Symbol.for("LeaderboardService"),
   LeaderboardModule: Symbol.for("LeaderboardModule"),
+
+  // ---
+
+  MusicGameModule: Symbol.for("MusicGameModule"),
+
+  GameService: Symbol.for("GameService"),
+  GameModule: Symbol.for("GameModule"),
+
+  RoundService: Symbol.for("RoundService"),
+  RoundModule: Symbol.for("RoundModule"),
+
+  GuessService: Symbol.for("GuessService"),
+  GuessModule: Symbol.for("GuessModule"),
+
+  LeaderboardService: Symbol.for("LeaderboardService"),
+  LeaderboardModule: Symbol.for("LeaderboardModule"),
 };
 
 export type Types = (typeof TYPES)[keyof typeof TYPES];

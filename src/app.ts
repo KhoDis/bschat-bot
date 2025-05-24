@@ -19,6 +19,9 @@ import { SorryComposer } from "@/bot/composers/SorryComposer";
 import { FoodComposer } from "@/modules/food/food.composer";
 import { FoodComposer } from "@/bot/composers/FoodComposer";
 import { LLMComposer } from "@/bot/composers/LLMComposer";
+import { TriggerModule } from "@/modules/joke/trigger.module";
+import { SorryModule } from "@/modules/joke/sorry.module";
+import { FoodModule } from "@/modules/food/food.module";
 
 class Bot {
   bot: Telegraf<IBotContext>;
