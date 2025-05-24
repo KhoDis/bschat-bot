@@ -17,14 +17,11 @@ export const TYPES = {
   GameRepository: Symbol.for("GameRepository"),
 
   ConfigService: Symbol.for("ConfigService"),
+  ArgsService: Symbol.for("ArgsService"),
 
   CraftyService: Symbol.for("CraftyService"),
-  GuessService: Symbol.for("GuessService"),
-  LeaderboardService: Symbol.for("LeaderboardService"),
-  MusicGameService: Symbol.for("MusicGameService"),
   PermissionService: Symbol.for("PermissionService"),
   RoleService: Symbol.for("RoleService"),
-  RoundService: Symbol.for("RoundService"),
   TextService: Symbol.for("TextService"),
   MemberService: Symbol.for("MemberService"),
   FoodService: Symbol.for("FoodService"),
@@ -33,7 +30,6 @@ export const TYPES = {
   CraftyComposer: Symbol.for("CraftyComposer"),
   GlobalComposer: Symbol.for("GlobalComposer"),
   JokerComposer: Symbol.for("JokerComposer"),
-  MusicGameComposer: Symbol.for("MusicGameComposer"),
   ParticipantComposer: Symbol.for("ParticipantComposer"),
   PrivateComposer: Symbol.for("PrivateComposer"),
   RoleComposer: Symbol.for("RoleComposer"),
@@ -41,6 +37,38 @@ export const TYPES = {
   SorryComposer: Symbol.for("SorryComposer"),
   FoodComposer: Symbol.for("FoodComposer"),
   LLMComposer: Symbol.for("LLMComposer"),
+
+  // ---
+
+  MusicGameModule: Symbol.for("MusicGameModule"),
+
+  GameService: Symbol.for("GameService"),
+  GameModule: Symbol.for("GameModule"),
+
+  RoundService: Symbol.for("RoundService"),
+  RoundModule: Symbol.for("RoundModule"),
+
+  GuessService: Symbol.for("GuessService"),
+  GuessModule: Symbol.for("GuessModule"),
+
+  LeaderboardService: Symbol.for("LeaderboardService"),
+  LeaderboardModule: Symbol.for("LeaderboardModule"),
+
+  // ---
+
+  MusicGameModule: Symbol.for("MusicGameModule"),
+
+  GameService: Symbol.for("GameService"),
+  GameModule: Symbol.for("GameModule"),
+
+  RoundService: Symbol.for("RoundService"),
+  RoundModule: Symbol.for("RoundModule"),
+
+  GuessService: Symbol.for("GuessService"),
+  GuessModule: Symbol.for("GuessModule"),
+
+  LeaderboardService: Symbol.for("LeaderboardService"),
+  LeaderboardModule: Symbol.for("LeaderboardModule"),
 };
 
 export type Types = (typeof TYPES)[keyof typeof TYPES];
