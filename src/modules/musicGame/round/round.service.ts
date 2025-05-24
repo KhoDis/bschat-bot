@@ -41,6 +41,7 @@ export class RoundService {
   ): Promise<void> {
     await ctx.reply(this.text.get("rounds.noMoreRounds"));
     await this.leaderboardService.showLeaderboard(ctx, chatId);
+    await this.gameService.endGame(ctx);
   }
 
   /**
@@ -57,7 +58,9 @@ export class RoundService {
       return;
     }
 
-    const currentRound = await this.gameRepository.getCurrentRound(chatId);
+    const currentRound = await this.gameRepository.getRoundById(
+      game.currentRound,
+    );
     if (!currentRound) {
       await this.handleGameEnd(ctx, chatId);
       return;
@@ -146,10 +149,8 @@ export class RoundService {
   /**
    * Advances to the next round
    */
-  async nextRound(ctx: CommandContext, gameId?: number) {
-    const game = gameId
-      ? await this.gameRepository.getGameById(gameId)
-      : await this.gameService.getCurrentGame(ctx.chat.id);
+  async nextRound(ctx: CommandContext) {
+    const game = await this.gameService.getCurrentGame(ctx.chat.id);
 
     if (!game) {
       await ctx.reply(this.text.get("musicGame.noGame"));
