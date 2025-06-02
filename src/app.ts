@@ -11,7 +11,6 @@ import { RoleModule } from "@/modules/permissions/role.module";
 import { CraftyModule } from "@/modules/crafty/crafty.module";
 import { container } from "@/container";
 import { TYPES } from "@/types";
-import { TriggerModule } from "@/modules/joke/trigger.module";
 import { SorryModule } from "@/modules/joke/sorry.module";
 import { FoodModule } from "@/modules/food/food.module";
 import { LlmModule } from "@/modules/joke/llm.module";
@@ -29,9 +28,9 @@ class Bot {
       }),
     );
 
-    const textMiddleware = container
-      .get<TriggerModule>(TYPES.TextComposer)
-      .middleware();
+    // const textMiddleware = container
+    //   .get<TriggerModule>(TYPES.TextComposer)
+    //   .middleware();
     const musicGameUploadMiddleware = container
       .get<MusicGameUploadModule>(TYPES.PrivateComposer)
       .middleware();
@@ -86,7 +85,7 @@ class Bot {
     this.bot.use(llmMiddleware);
     this.bot.use(globalMiddleware);
     this.bot.use(jokerMiddleware);
-    this.bot.use(textMiddleware);
+    // this.bot.use(textMiddleware);
     this.bot.use(sorryMiddleware);
     this.bot.use(foodMiddleware);
   }

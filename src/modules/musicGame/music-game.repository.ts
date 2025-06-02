@@ -72,13 +72,6 @@ export class MusicGameRepository {
     });
   }
 
-  async getCurrentRound(chatId: number): Promise<RoundWithGuesses | null> {
-    return prisma.gameRound.findFirst({
-      where: { endedAt: null, game: { chatId } },
-      include: roundWithGuesses,
-    });
-  }
-
   async getRoundById(roundId: number): Promise<RoundWithGuesses | null> {
     return prisma.gameRound.findUnique({
       where: { id: roundId },
