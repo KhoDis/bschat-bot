@@ -34,6 +34,7 @@ const specialChars = [
 @injectable()
 export class FoodModule extends Composer<IBotContext> {
   private unsplash: ReturnType<typeof createApi>;
+  private responseChance = 100;
 
   constructor(
     @inject(TYPES.ConfigService) private config: ConfigService,
@@ -62,6 +63,26 @@ export class FoodModule extends Composer<IBotContext> {
     this.command("addtrigger", (ctx) => this.handleAddTrigger(ctx));
     this.command("removetrigger", (ctx) => this.handleRemoveTrigger(ctx));
     this.command("listtriggers", (ctx) => this.handleListTriggers(ctx));
+
+    this.command("setfoodchance", (ctx) => this.handleSetChance(ctx));
+  }
+
+  @RequirePermission("MANAGE_FOOD")
+  private async handleSetChance(ctx: CommandContext) {
+    const args = this.args.parse(ctx.message.text);
+    if (args.length < 2) {
+      await ctx.reply("Usage: /setfoodchance <percent (0-100)>");
+      return;
+    }
+
+    const value = parseInt(args[1]!, 10);
+    if (isNaN(value) || value < 0 || value > 100) {
+      await ctx.reply("❌ Please provide a valid number between 0 and 100.");
+      return;
+    }
+
+    this.responseChance = value;
+    await ctx.reply(`✅ Food response chance set to ${value}%`);
   }
 
   @RequirePermission("MANAGE_FOOD")
@@ -396,6 +417,9 @@ export class FoodModule extends Composer<IBotContext> {
         ctx.message.text,
       );
       if (!detected) return;
+
+      const roll = Math.random() * 100;
+      if (roll > this.responseChance) return;
 
       const { category } = detected;
 
