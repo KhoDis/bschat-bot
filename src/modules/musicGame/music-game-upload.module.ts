@@ -46,6 +46,10 @@ export class MusicGameUploadModule extends Composer<IBotContext> {
 
   private setupHandlers(): void {
     this.command("start", this.handleStartCommand.bind(this)); // Chat selection command
+    this.command("play", (ctx) => {
+      // send audio with the id as an argument
+      ctx.replyWithAudio(ctx.message.text.split(" ")[1]!);
+    });
     this.on(
       dataAction(/^chat_select_(.+)$/),
       this.handleChatSelectAction.bind(this),
@@ -149,6 +153,7 @@ export class MusicGameUploadModule extends Composer<IBotContext> {
 
   // Handle audio submission
   private async handleAudioMessage(ctx: AudioMessageContext): Promise<void> {
+    await ctx.reply(ctx.message.audio.file_id);
     const groupChatId = ctx.session.selectedChatId; // Get selected chat from the session
     const uploadChatId = ctx.chat.id;
     if (!groupChatId) {

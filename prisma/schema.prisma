@@ -82,6 +82,7 @@ model Chat {
 model Game {
   id           Int         @id @default(autoincrement())
   createdAt    DateTime    @default(now())
+  // TODO: rename to gameSequence
   currentRound Int         @default(0)
   rounds       GameRound[]
   chatId       BigInt
@@ -96,6 +97,7 @@ model GameRound {
   createdAt DateTime @default(now())
 
   // Game
+  // TODO: rename to gameSequence
   roundIndex    Int
   infoMessageId BigInt? // Message ID of the info message
   startedAt     DateTime? // When the round started

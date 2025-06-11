@@ -72,9 +72,23 @@ export class MusicGameRepository {
     });
   }
 
-  async getRoundById(roundId: number): Promise<RoundWithGuesses | null> {
+  async getRoundByDatabaseId(
+    roundId: number,
+  ): Promise<RoundWithGuesses | null> {
     return prisma.gameRound.findUnique({
       where: { id: roundId },
+      include: roundWithGuesses,
+    });
+  }
+
+  async getRoundBySequence(gameId: number, gameSequence: number) {
+    return prisma.gameRound.findUnique({
+      where: {
+        gameId_roundIndex: {
+          gameId: gameId,
+          roundIndex: gameSequence,
+        },
+      },
       include: roundWithGuesses,
     });
   }

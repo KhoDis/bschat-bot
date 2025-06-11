@@ -58,16 +58,17 @@ export class RoundService {
       return;
     }
 
-    const currentRound = await this.gameRepository.getRoundById(
+    const gameSequence = await this.gameRepository.getRoundBySequence(
+      game.id,
       game.currentRound,
     );
-    if (!currentRound) {
+    if (!gameSequence) {
       await this.handleGameEnd(ctx, chatId);
       return;
     }
 
     const participants = await this.gameRepository.getParticipants(game.id);
-    await this.playRound(ctx, participants, currentRound);
+    await this.playRound(ctx, participants, gameSequence);
   }
 
   /**
@@ -84,6 +85,7 @@ export class RoundService {
       callback_data: `guess:${currentRound.id}_${user.id}`,
     }));
 
+    console.log("currentRound", currentRound);
     await ctx.replyWithAudio(currentRound.musicFileId, {
       caption: this.text.get("rounds.playRound"),
       reply_markup: { inline_keyboard: this.chunkButtons(buttons, 3) },
@@ -172,16 +174,17 @@ export class RoundService {
       return;
     }
 
-    const currentRound = await this.gameRepository.getRoundById(
+    const gameSequence = await this.gameRepository.getRoundBySequence(
+      game.id,
       game.currentRound,
     );
-    if (!currentRound) {
+    if (!gameSequence) {
       await ctx.reply(this.text.get("rounds.noRound"));
       return;
     }
 
     const participants = await this.gameRepository.getParticipants(game.id);
-    await this.playRound(ctx, participants, currentRound);
+    await this.playRound(ctx, participants, gameSequence);
   }
 
   /**
