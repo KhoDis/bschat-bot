@@ -108,13 +108,19 @@ export class MusicGameRepository {
     if (!chat) {
       throw new Error("Chat not found");
     }
+
+    // Get all submissions and filter out nulls
     const submissions = chat.members
       .map((member) => member.musicSubmission)
       .filter((submission) => submission !== null);
+
+    // Shuffle the submissions array
+    const shuffledSubmissions = this.shuffleArray([...submissions]);
+
     const game = await prisma.game.create({
       data: {
         rounds: {
-          create: submissions.map((track, index) => ({
+          create: shuffledSubmissions.map((track, index) => ({
             roundIndex: index,
             musicFileId: track.fileId,
             hintChatId: track.uploadChatId,
@@ -144,6 +150,18 @@ export class MusicGameRepository {
       },
     });
     return game;
+  }
+
+  shuffleArray<T>(array: T[]): T[] {
+    if (array.length < 2) {
+      return [...array];
+    }
+    const newArray = [...array];
+    for (let i = newArray.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [newArray[i], newArray[j]] = [newArray[j]!, newArray[i]!];
+    }
+    return newArray;
   }
 
   async updateGameRound(
