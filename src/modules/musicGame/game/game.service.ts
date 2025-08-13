@@ -33,7 +33,7 @@ export class GameService {
       Markup.button.callback("Начать игру", "game:start"),
     ]);
 
-    await ctx.reply(this.text.get("musicGuess.welcome"), {
+    await ctx.reply(this.text.get("musicGame.welcome"), {
       reply_markup: keyboard.reply_markup,
     });
 
