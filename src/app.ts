@@ -14,6 +14,7 @@ import { TYPES } from "@/types";
 import { SorryModule } from "@/modules/joke/sorry.module";
 import { FoodModule } from "@/modules/food/food.module";
 import { LlmModule } from "@/modules/joke/llm.module";
+import { SchedulerService } from "@/modules/musicGame/scheduler/scheduler.service";
 
 class Bot {
   bot: Telegraf<IBotContext>;
@@ -61,6 +62,7 @@ class Bot {
     const llmMiddleware = container
       .get<LlmModule>(TYPES.LLMComposer)
       .middleware();
+    const scheduler = container.get<SchedulerService>(TYPES.SchedulerService);
 
     // Combine non-private middlewares into a single middleware
     const nonPrivateMiddleware = Composer.compose([
@@ -88,6 +90,13 @@ class Bot {
     // this.bot.use(textMiddleware);
     this.bot.use(sorryMiddleware);
     this.bot.use(foodMiddleware);
+
+    // Start background scheduler
+    try {
+      scheduler.start?.();
+    } catch (error) {
+      console.error("Failed to start scheduler:", error);
+    }
   }
 
   init() {

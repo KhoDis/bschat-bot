@@ -84,6 +84,8 @@ model Game {
   createdAt    DateTime    @default(now())
   // TODO: rename to gameSequence
   currentRound Int         @default(0)
+  status       GameStatus  @default(LOBBY)
+  config       Json?
   rounds       GameRound[]
   chatId       BigInt
   chat         Chat        @relation("ChatToGames", fields: [chatId], references: [id]) // One-to-many relation with Chat
@@ -103,6 +105,7 @@ model GameRound {
   startedAt     DateTime? // When the round started
   hintShownAt   DateTime? // When the hint was revealed
   endedAt       DateTime? // When the round ended
+  status        RoundStatus @default(PENDING)
 
   // Copied from MusicSubmission
   hintChatId    BigInt? // Telegram chat ID which the hint was sent
@@ -151,4 +154,17 @@ model FoodTrigger {
   trigger    String       @unique
   categoryId Int
   category   FoodCategory @relation("CategoryToTriggers", fields: [categoryId], references: [id], onDelete: Cascade)
+}
+
+enum GameStatus {
+  LOBBY
+  ACTIVE
+  COMPLETED
+}
+
+enum RoundStatus {
+  PENDING
+  PLAYING
+  HINT_SHOWN
+  COMPLETED
 }

@@ -56,6 +56,9 @@ export const TYPES = {
 
   LeaderboardService: Symbol.for("LeaderboardService"),
   LeaderboardModule: Symbol.for("LeaderboardModule"),
+  // Scheduler / Events
+  SchedulerService: Symbol.for("SchedulerService"),
+  EventBus: Symbol.for("EventBus"),
 };
 
 export type Types = (typeof TYPES)[keyof typeof TYPES];

@@ -12,6 +12,7 @@ import { InlineKeyboardButton } from "telegraf/typings/core/types/typegram";
 import { User } from "@prisma/client";
 import * as tg from "telegraf/src/core/types/typegram";
 import { LeaderboardService } from "@/modules/musicGame/leaderboard/leaderboard.service";
+import { SchedulerService } from "@/modules/musicGame/scheduler/scheduler.service";
 
 /**
  * RoundService - Core round logic
@@ -30,6 +31,7 @@ export class RoundService {
     @inject(TYPES.LeaderboardService)
     private leaderboardService: LeaderboardService,
     @inject(TYPES.GameService) private gameService: GameService,
+    @inject(TYPES.SchedulerService) private scheduler: SchedulerService,
   ) {}
 
   /**
@@ -69,6 +71,23 @@ export class RoundService {
 
     const participants = await this.gameRepository.getParticipants(game.id);
     await this.playRound(ctx, participants, gameSequence);
+
+    // Schedule hint from config (in-memory)
+    try {
+      const config = (game as any).config as { hintDelaySec?: number } | null;
+      if (config?.hintDelaySec && ctx.chat) {
+        const key = `hint:${gameSequence.id}`;
+        this.scheduler.scheduleOnce(
+          key,
+          new Date(Date.now() + config.hintDelaySec * 1000),
+          async () => {
+            await this.showHint(ctx as any, Number(game.chatId));
+          },
+        );
+      }
+    } catch (error) {
+      console.error("Failed to schedule round events:", error);
+    }
   }
 
   /**

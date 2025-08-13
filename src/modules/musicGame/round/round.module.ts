@@ -27,6 +27,8 @@ export class RoundModule extends Composer<IBotContext> {
     this.command("next_round", this.handleNextRoundCommand.bind(this));
     this.command("show_hint", this.handleShowHintCommand.bind(this));
     this.command("play_current", this.handlePlayCurrentCommand.bind(this));
+
+    // TODO: add admin inline buttons for: Hint Now, Replay, Skip, Reveal
   }
 
   /**

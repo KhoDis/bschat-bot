@@ -29,6 +29,7 @@ import { GameModule } from "@/modules/musicGame/game/game.module";
 import { GuessModule } from "@/modules/musicGame/guess/guess.module";
 import { RoundModule } from "@/modules/musicGame/round/round.module";
 import { LlmModule } from "@/modules/joke/llm.module";
+import { SchedulerService } from "@/modules/musicGame/scheduler/scheduler.service";
 
 const container = new Container();
 
@@ -89,5 +90,11 @@ container
 container
   .bind<LeaderboardService>(TYPES.LeaderboardService)
   .to(LeaderboardService);
+
+// Scheduler
+container
+  .bind<SchedulerService>(TYPES.SchedulerService)
+  .to(SchedulerService)
+  .inSingletonScope();
 
 export { container };
