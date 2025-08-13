@@ -6,6 +6,7 @@ import { GameModule } from "./game/game.module";
 import { RoundModule } from "./round/round.module";
 import { GuessModule } from "./guess/guess.module";
 import { LeaderboardModule } from "./leaderboard/leaderboard.module";
+import { LobbyModule } from "./lobby/lobby.module";
 
 /**
  * MusicGameModule - Main entry point for the music guessing game
@@ -19,6 +20,7 @@ import { LeaderboardModule } from "./leaderboard/leaderboard.module";
 @injectable()
 export class MusicGameModule extends Composer<IBotContext> {
   constructor(
+    @inject(TYPES.LobbyModule) lobbyModule: LobbyModule,
     @inject(TYPES.GameModule) gameModule: GameModule,
     @inject(TYPES.RoundModule) roundModule: RoundModule,
     @inject(TYPES.GuessModule) guessModule: GuessModule,
@@ -27,6 +29,7 @@ export class MusicGameModule extends Composer<IBotContext> {
     super();
 
     // Register all submodules
+    this.use(lobbyModule);
     this.use(gameModule);
     this.use(roundModule);
     this.use(guessModule);

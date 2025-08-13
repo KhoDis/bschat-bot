@@ -125,6 +125,18 @@ export class RoundService {
 
     const info = await this.formatRoundInfo(round);
 
+    // Admin controls
+    const controls = [
+      [
+        { text: "💡 Hint Now", callback_data: `round:hint:${round.id}` },
+        { text: "🔁 Replay", callback_data: `round:replay:${round.id}` },
+      ],
+      [
+        { text: "⏭️ Skip", callback_data: `round:skip:${round.id}` },
+        { text: "🏁 Reveal", callback_data: `round:reveal:${round.id}` },
+      ],
+    ];
+
     if (round.infoMessageId) {
       try {
         await ctx.telegram.editMessageText(
@@ -132,7 +144,7 @@ export class RoundService {
           Number(round.infoMessageId),
           undefined,
           info,
-          { parse_mode: "HTML" },
+          { parse_mode: "HTML", reply_markup: { inline_keyboard: controls } },
         );
       } catch (error) {
         console.error("Failed to edit message, sending new one:", error);
@@ -151,7 +163,20 @@ export class RoundService {
     round: RoundWithGuesses,
     info: string,
   ) {
-    const message = await ctx.reply(info, { parse_mode: "HTML" });
+    const controls = [
+      [
+        { text: "💡 Hint Now", callback_data: `round:hint:${round.id}` },
+        { text: "🔁 Replay", callback_data: `round:replay:${round.id}` },
+      ],
+      [
+        { text: "⏭️ Skip", callback_data: `round:skip:${round.id}` },
+        { text: "🏁 Reveal", callback_data: `round:reveal:${round.id}` },
+      ],
+    ];
+    const message = await ctx.reply(info, {
+      parse_mode: "HTML",
+      reply_markup: { inline_keyboard: controls },
+    });
     await this.gameRepository.updateRoundMessageInfo(
       round.id,
       message.message_id,

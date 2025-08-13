@@ -175,6 +175,19 @@ export class MusicGameRepository {
     });
   }
 
+  async updateGameConfig(
+    gameId: number,
+    data: { status?: string; config?: any },
+  ): Promise<void> {
+    await prisma.game.update({
+      where: { id: gameId },
+      data: {
+        status: data.status as any,
+        config: data.config as any,
+      },
+    });
+  }
+
   async showHint(roundId: number): Promise<void> {
     await prisma.gameRound.update({
       where: { id: roundId },

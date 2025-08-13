@@ -30,6 +30,8 @@ import { GuessModule } from "@/modules/musicGame/guess/guess.module";
 import { RoundModule } from "@/modules/musicGame/round/round.module";
 import { LlmModule } from "@/modules/joke/llm.module";
 import { SchedulerService } from "@/modules/musicGame/scheduler/scheduler.service";
+import { LobbyModule } from "@/modules/musicGame/lobby/lobby.module";
+import { LobbyService } from "@/modules/musicGame/lobby/lobby.service";
 
 const container = new Container();
 
@@ -95,6 +97,13 @@ container
 container
   .bind<SchedulerService>(TYPES.SchedulerService)
   .to(SchedulerService)
+  .inSingletonScope();
+
+// Lobby
+container.bind<LobbyModule>(TYPES.LobbyModule).to(LobbyModule);
+container
+  .bind<LobbyService>(TYPES.LobbyService)
+  .to(LobbyService)
   .inSingletonScope();
 
 export { container };

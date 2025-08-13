@@ -89,6 +89,45 @@ export class GameService {
   }
 
   /**
+   * Starts a game using a provided config (from lobby)
+   */
+  async startGameWithConfig(
+    ctx: IBotContext,
+    config: Record<string, unknown>,
+  ): Promise<void> {
+    if (!ctx.chat) return;
+
+    try {
+      const activeGame = await this.gameRepository.getCurrentGameByChatId(
+        ctx.chat.id,
+      );
+      if (activeGame) {
+        await ctx.reply("Уже есть активная игра. Продолжаем её.");
+        return;
+      }
+
+      const users = await this.memberService.getSubmissionUsers(ctx.chat.id);
+      if (!users.length) {
+        await ctx.reply(this.text.get("musicGame.noTracks"));
+        return;
+      }
+
+      // Create a new game and persist config + set ACTIVE
+      const game = await this.gameRepository.transferSubmissions(ctx.chat.id);
+      await this.gameRepository.updateGameConfig(game.id, {
+        status: "ACTIVE",
+        config,
+      } as any);
+
+      await ctx.reply(this.text.get("musicGame.gameStarted"));
+      await this.roundService.processRound(ctx as any, Number(game.chatId));
+    } catch (error) {
+      console.error("Error starting game with config:", error);
+      await ctx.reply("Произошла ошибка при запуске игры");
+    }
+  }
+
+  /**
    * Ends the current active game
    */
   async endGame(ctx: IBotContext): Promise<void> {

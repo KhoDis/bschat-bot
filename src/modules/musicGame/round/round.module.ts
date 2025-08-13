@@ -29,6 +29,10 @@ export class RoundModule extends Composer<IBotContext> {
     this.command("play_current", this.handlePlayCurrentCommand.bind(this));
 
     // TODO: add admin inline buttons for: Hint Now, Replay, Skip, Reveal
+    this.action(
+      /^round:(hint|replay|skip|reveal):(.+)$/,
+      this.handleRoundAction.bind(this),
+    );
   }
 
   /**
@@ -55,5 +59,29 @@ export class RoundModule extends Composer<IBotContext> {
   private async handlePlayCurrentCommand(ctx: CommandContext): Promise<void> {
     if (!ctx.chat) return;
     await this.roundService.playCurrentRound(ctx, ctx.chat.id);
+  }
+
+  private async handleRoundAction(ctx: IBotContext): Promise<void> {
+    if (!ctx.chat) return;
+    const data = (ctx.callbackQuery as any)?.data as string;
+    const [, action, id] = data.split(":");
+    const roundId = Number(id);
+    if (Number.isNaN(roundId)) return;
+    await ctx.answerCbQuery();
+    switch (action) {
+      case "hint":
+        await this.roundService.showHint(ctx, ctx.chat.id);
+        break;
+      case "replay":
+        await this.roundService.playCurrentRound(ctx, ctx.chat.id);
+        break;
+      case "skip":
+        await this.handleNextRoundCommand(ctx as any);
+        break;
+      case "reveal":
+        // Reveal = show hint + possibly auto-advance later; for now, show hint
+        await this.roundService.showHint(ctx, ctx.chat.id);
+        break;
+    }
   }
 }
