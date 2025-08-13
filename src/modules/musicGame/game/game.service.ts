@@ -63,6 +63,13 @@ export class GameService {
         return;
       }
 
+      // Ensure there are submissions to create a game from
+      const users = await this.memberService.getSubmissionUsers(ctx.chat.id);
+      if (!users.length) {
+        await ctx.reply(this.text.get("musicGame.noTracks"));
+        return;
+      }
+
       // Create a new game with the submitted tracks
       const game = await this.gameRepository.transferSubmissions(ctx.chat.id);
       await ctx.reply(this.text.get("musicGame.gameStarted"));

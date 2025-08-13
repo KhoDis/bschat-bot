@@ -80,7 +80,7 @@ export class GameModule extends Composer<IBotContext> {
 
     switch (actionData) {
       case "start":
-        await this.gameService.startGame(ctx); // TODO: doesn't initiate round
+        await this.gameService.startGame(ctx);
         break;
       // case "end":
       //   await this.gameService.endGame(ctx);
