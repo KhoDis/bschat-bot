@@ -6,6 +6,7 @@ import { MemberService } from "@/modules/common/member.service";
 import { CommandContext } from "@/types";
 import { Markup } from "telegraf";
 import { IBotContext } from "@/context/context.interface";
+import { RoundService } from "@/modules/musicGame/round/round.service";
 
 /**
  * GameService - Core game business logic
@@ -21,6 +22,7 @@ export class GameService {
     @inject(TYPES.GameRepository) private gameRepository: MusicGameRepository,
     @inject(TYPES.TextService) private text: TextService,
     @inject(TYPES.MemberService) private memberService: MemberService,
+    @inject(TYPES.RoundService) private roundService: RoundService,
   ) {}
 
   /**
@@ -35,8 +37,8 @@ export class GameService {
       reply_markup: keyboard.reply_markup,
     });
 
-    // Notify all participants
-    const users = await this.memberService.getSubmissionUsers(ctx.from.id);
+    // Notify all participants in the current chat
+    const users = await this.memberService.getSubmissionUsers(ctx.chat.id);
     this.memberService.formatPingNames(users).forEach((batch) => {
       ctx.reply(batch, {
         parse_mode: "Markdown",
@@ -62,8 +64,15 @@ export class GameService {
       }
 
       // Create a new game with the submitted tracks
-      await this.gameRepository.transferSubmissions(ctx.chat.id);
+      const game = await this.gameRepository.transferSubmissions(ctx.chat.id);
       await ctx.reply(this.text.get("musicGame.gameStarted"));
+
+      // Immediately start the first round
+      try {
+        await this.roundService.processRound(ctx as any, Number(game.chatId));
+      } catch (err) {
+        console.error("Failed to auto-start first round:", err);
+      }
       return;
     } catch (error) {
       console.error("Error starting game:", error);

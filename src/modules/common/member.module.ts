@@ -24,7 +24,7 @@ export class MemberModule extends Composer<IBotContext> {
     let firstName = ctx.from.first_name;
 
     if (ctx.chat.type === "private") {
-      await ctx.reply("member.groupOnly");
+      await ctx.reply(this.text.get("roles.chatOnly"));
       return;
     }
 
