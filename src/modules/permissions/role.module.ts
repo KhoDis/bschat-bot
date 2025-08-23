@@ -278,6 +278,13 @@ export class RoleModule extends Composer<IBotContext> {
   async handleResetAdmin(ctx: CommandContext): Promise<void> {
     // Check if the user is a main admin using Telegraf api
     if (await this.isAdmin(ctx.chat.id, ctx.from.id, ctx)) {
+      // Ensure user exists in database
+      await this.userService.upsertUser({
+        id: ctx.from.id,
+        username: ctx.from.username || null,
+        firstName: ctx.from.first_name,
+      });
+
       // Add "admin" role if it doesn't exist
       const role = await this.upsertAdminRole(ctx);
 
@@ -398,6 +405,13 @@ export class RoleModule extends Composer<IBotContext> {
     }
 
     try {
+      // Ensure target user exists in database
+      await this.userService.upsertUser({
+        id: targetUser.id,
+        username: targetUser.username || null,
+        firstName: targetUser.first_name,
+      });
+
       await this.roleService.assignRole(targetUser.id, chatId, roleName);
       await ctx.reply(
         this.text.get("roles.assign.success", {
@@ -430,6 +444,13 @@ export class RoleModule extends Composer<IBotContext> {
     }
 
     try {
+      // Ensure target user exists in database
+      await this.userService.upsertUser({
+        id: targetUser.id,
+        username: targetUser.username || null,
+        firstName: targetUser.first_name,
+      });
+
       await this.roleService.revokeRole(targetUser.id, chatId, roleName);
       await ctx.reply(
         this.text.get("roles.revoke.success", {
@@ -461,6 +482,13 @@ export class RoleModule extends Composer<IBotContext> {
     }
 
     try {
+      // Ensure target user exists in database
+      await this.userService.upsertUser({
+        id: targetUser.id,
+        username: targetUser.username || null,
+        firstName: targetUser.first_name,
+      });
+
       const roles = await this.roleService.getUserRoles(
         BigInt(targetUser.id),
         BigInt(chatId),
@@ -506,6 +534,13 @@ export class RoleModule extends Composer<IBotContext> {
     }
 
     try {
+      // Ensure target user exists in database
+      await this.userService.upsertUser({
+        id: targetUser.id,
+        username: targetUser.username || null,
+        firstName: targetUser.first_name,
+      });
+
       const permissions = await this.roleService.listPermissions(
         BigInt(targetUser.id),
         BigInt(chatId),
