@@ -44,6 +44,8 @@ export const TYPES = {
   // ---
 
   MusicGameModule: Symbol.for("MusicGameModule"),
+  MusicGameService: Symbol.for("MusicGameService"),
+  MusicGameConsolidatedModule: Symbol.for("MusicGameConsolidatedModule"),
 
   GameService: Symbol.for("GameService"),
   GameStateService: Symbol.for("GameStateService"),

@@ -15,6 +15,7 @@ import { SorryModule } from "@/modules/joke/sorry.module";
 import { FoodModule } from "@/modules/food/food.module";
 import { LlmModule } from "@/modules/joke/llm.module";
 import { SchedulerService } from "@/modules/musicGame/scheduler/scheduler.service";
+import { MusicGameConsolidatedModule } from "@/modules/musicGame/music-game-consolidated.module";
 
 class Bot {
   bot: Telegraf<IBotContext>;
@@ -34,6 +35,9 @@ class Bot {
     //   .middleware();
     const musicGameUploadMiddleware = container
       .get<MusicGameUploadModule>(TYPES.PrivateComposer)
+      .middleware();
+    const musicGameConsolidatedMiddleware = container
+      .get<MusicGameConsolidatedModule>(TYPES.MusicGameConsolidatedModule)
       .middleware();
     const musicGameMiddleware = container
       .get<MusicGameModule>(TYPES.MusicGameModule)
@@ -63,12 +67,14 @@ class Bot {
       .get<LlmModule>(TYPES.LLMComposer)
       .middleware();
     const scheduler = container.get<SchedulerService>(TYPES.SchedulerService);
+    this.bot.use(roleMiddleware);
+    this.bot.use(musicGameConsolidatedMiddleware);
 
     // Combine non-private middlewares into a single middleware
     const nonPrivateMiddleware = Composer.compose([
       musicGameMiddleware,
       participantMiddleware,
-      roleMiddleware,
+      // roleMiddleware,
       craftyMiddleware,
     ]);
 

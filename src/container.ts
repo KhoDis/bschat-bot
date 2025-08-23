@@ -19,6 +19,8 @@ import { FoodModule } from "@/modules/food/food.module";
 import { ZazuService } from "@/modules/joke/zazu.service";
 import { LeaderboardModule } from "@/modules/musicGame/leaderboard/leaderboard.module";
 import { MusicGameModule } from "@/modules/musicGame/music-game.module";
+import { MusicGameService } from "@/modules/musicGame/music-game.service";
+import { MusicGameConsolidatedModule } from "@/modules/musicGame/music-game-consolidated.module";
 import { LeaderboardService } from "@/modules/musicGame/leaderboard/leaderboard.service";
 import { ArgsService } from "@/modules/common/args.service";
 import { RoundService } from "@/modules/musicGame/round/round.service";
@@ -71,6 +73,10 @@ container.bind<CraftyService>(TYPES.CraftyService).to(CraftyService);
 
 // Game
 container.bind<MusicGameModule>(TYPES.MusicGameModule).to(MusicGameModule);
+container.bind<MusicGameService>(TYPES.MusicGameService).to(MusicGameService);
+container
+  .bind<MusicGameConsolidatedModule>(TYPES.MusicGameConsolidatedModule)
+  .to(MusicGameConsolidatedModule);
 container
   .bind<MusicGameRepository>(TYPES.GameRepository)
   .to(MusicGameRepository);
