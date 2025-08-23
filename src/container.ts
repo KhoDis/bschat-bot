@@ -24,6 +24,7 @@ import { ArgsService } from "@/modules/common/args.service";
 import { RoundService } from "@/modules/musicGame/round/round.service";
 import { GuessService } from "@/modules/musicGame/guess/guess.service";
 import { GameService } from "@/modules/musicGame/game/game.service";
+import { GameStateService } from "@/modules/musicGame/game/game-state.service";
 import { FoodService } from "@/modules/food/food.service";
 import { GameModule } from "@/modules/musicGame/game/game.module";
 import { GuessModule } from "@/modules/musicGame/guess/guess.module";
@@ -79,6 +80,7 @@ container
 
 container.bind<GameModule>(TYPES.GameModule).to(GameModule);
 container.bind<GameService>(TYPES.GameService).to(GameService);
+container.bind<GameStateService>(TYPES.GameStateService).to(GameStateService);
 
 container.bind<RoundModule>(TYPES.RoundModule).to(RoundModule);
 container.bind<RoundService>(TYPES.RoundService).to(RoundService);

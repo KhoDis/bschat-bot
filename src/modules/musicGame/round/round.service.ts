@@ -6,7 +6,7 @@ import {
   RoundWithGuesses,
 } from "@/modules/musicGame/music-game.repository";
 import { TextService } from "@/modules/common/text.service";
-import { GameService } from "@/modules/musicGame/game/game.service";
+import { GameStateService } from "@/modules/musicGame/game/game-state.service";
 import { CallbackQueryContext, CommandContext } from "@/types";
 import { InlineKeyboardButton } from "telegraf/typings/core/types/typegram";
 import { User } from "@prisma/client";
@@ -30,7 +30,7 @@ export class RoundService {
     @inject(TYPES.TextService) private text: TextService,
     @inject(TYPES.LeaderboardService)
     private leaderboardService: LeaderboardService,
-    @inject(TYPES.GameService) private gameService: GameService,
+    @inject(TYPES.GameStateService) private gameStateService: GameStateService,
     @inject(TYPES.SchedulerService) private scheduler: SchedulerService,
   ) {}
 
@@ -43,7 +43,7 @@ export class RoundService {
   ): Promise<void> {
     await ctx.reply(this.text.get("rounds.noMoreRounds"));
     await this.leaderboardService.showLeaderboard(ctx, chatId);
-    await this.gameService.endGame(ctx);
+    await this.gameStateService.endGame(chatId);
   }
 
   /**
@@ -53,7 +53,7 @@ export class RoundService {
     ctx: CallbackQueryContext | CommandContext,
     chatId: number,
   ) {
-    const game = await this.gameService.getCurrentGame(chatId);
+    const game = await this.gameStateService.getCurrentGame(chatId);
 
     if (!game) {
       await ctx.reply(this.text.get("musicGame.noGame"));
@@ -196,7 +196,7 @@ export class RoundService {
    * Advances to the next round
    */
   async nextRound(ctx: CommandContext) {
-    const game = await this.gameService.getCurrentGame(ctx.chat.id);
+    const game = await this.gameStateService.getCurrentGame(ctx.chat.id);
 
     if (!game) {
       await ctx.reply(this.text.get("musicGame.noGame"));
@@ -212,7 +212,7 @@ export class RoundService {
    * Plays the current round's music track again
    */
   async playCurrentRound(ctx: Context, chatId: number) {
-    const game = await this.gameService.getCurrentGame(chatId);
+    const game = await this.gameStateService.getCurrentGame(chatId);
     if (!game) {
       await ctx.reply(this.text.get("musicGame.noGame"));
       return;
@@ -235,7 +235,7 @@ export class RoundService {
    * Shows a hint for the current round
    */
   async showHint(ctx: Context, chatId: number) {
-    const game = await this.gameService.getCurrentGame(chatId);
+    const game = await this.gameStateService.getCurrentGame(chatId);
     if (!game) {
       await ctx.reply(this.text.get("musicGame.noGame"));
       return;

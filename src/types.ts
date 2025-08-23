@@ -46,6 +46,7 @@ export const TYPES = {
   MusicGameModule: Symbol.for("MusicGameModule"),
 
   GameService: Symbol.for("GameService"),
+  GameStateService: Symbol.for("GameStateService"),
   GameModule: Symbol.for("GameModule"),
 
   RoundService: Symbol.for("RoundService"),

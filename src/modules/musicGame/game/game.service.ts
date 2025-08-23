@@ -7,14 +7,16 @@ import { CommandContext } from "@/types";
 import { Markup } from "telegraf";
 import { IBotContext } from "@/context/context.interface";
 import { RoundService } from "@/modules/musicGame/round/round.service";
+import { GameStateService } from "@/modules/musicGame/game/game-state.service";
 
 /**
  * GameService - Core game business logic
  *
  * Responsibilities:
- * - Game initialization
- * - Game status management
- * - Game data operations
+ * - Game initialization and setup
+ * - Game flow control
+ * - User interaction handling
+ * - Business logic coordination
  */
 @injectable()
 export class GameService {
@@ -23,6 +25,7 @@ export class GameService {
     @inject(TYPES.TextService) private text: TextService,
     @inject(TYPES.MemberService) private memberService: MemberService,
     @inject(TYPES.RoundService) private roundService: RoundService,
+    @inject(TYPES.GameStateService) private gameStateService: GameStateService,
   ) {}
 
   /**
@@ -38,7 +41,7 @@ export class GameService {
     });
 
     // Notify all participants in the current chat
-    const users = await this.memberService.getSubmissionUsers(ctx.chat.id);
+    const users = await this.gameStateService.getSubmissionUsers(ctx.chat.id);
     this.memberService.formatPingNames(users).forEach((batch) => {
       ctx.reply(batch, {
         parse_mode: "Markdown",
@@ -54,7 +57,7 @@ export class GameService {
 
     try {
       // Check if there's already an active game
-      const activeGame = await this.gameRepository.getCurrentGameByChatId(
+      const activeGame = await this.gameStateService.getCurrentGame(
         ctx.chat.id,
       );
 
@@ -64,8 +67,7 @@ export class GameService {
       }
 
       // Ensure there are submissions to create a game from
-      const users = await this.memberService.getSubmissionUsers(ctx.chat.id);
-      if (!users.length) {
+      if (!(await this.gameStateService.hasSubmissions(ctx.chat.id))) {
         await ctx.reply(this.text.get("musicGame.noTracks"));
         return;
       }
@@ -98,7 +100,7 @@ export class GameService {
     if (!ctx.chat) return;
 
     try {
-      const activeGame = await this.gameRepository.getCurrentGameByChatId(
+      const activeGame = await this.gameStateService.getCurrentGame(
         ctx.chat.id,
       );
       if (activeGame) {
@@ -106,8 +108,7 @@ export class GameService {
         return;
       }
 
-      const users = await this.memberService.getSubmissionUsers(ctx.chat.id);
-      if (!users.length) {
+      if (!(await this.gameStateService.hasSubmissions(ctx.chat.id))) {
         await ctx.reply(this.text.get("musicGame.noTracks"));
         return;
       }
@@ -128,26 +129,10 @@ export class GameService {
   }
 
   /**
-   * Ends the current active game
-   */
-  async endGame(ctx: IBotContext): Promise<void> {
-    if (!ctx.chat) return;
-
-    const game = await this.gameRepository.getCurrentGameByChatId(ctx.chat.id);
-    if (!game) {
-      await ctx.reply("Нет активной игры для завершения.");
-      return;
-    }
-
-    await this.gameRepository.endGame(game.id);
-    await ctx.reply("Игра завершена!");
-  }
-
-  /**
    * Lists all games for the current chat
    */
   async listGames(ctx: CommandContext): Promise<void> {
-    const games = await this.gameRepository.getGamesOfChat(ctx.chat.id);
+    const games = await this.gameStateService.getGamesOfChat(ctx.chat.id);
 
     if (!games.length) {
       await ctx.reply("Нет сохранённых игр.");
@@ -168,7 +153,7 @@ export class GameService {
    * Pings all participants in the current game
    */
   async pingPlayers(ctx: CommandContext): Promise<void> {
-    const users = await this.memberService.getSubmissionUsers(ctx.chat.id);
+    const users = await this.gameStateService.getSubmissionUsers(ctx.chat.id);
 
     if (!users.length) {
       await ctx.reply("musicGame.noPlayers");
@@ -187,7 +172,7 @@ export class GameService {
    * List all players in the current game
    */
   async listPlayers(ctx: CommandContext): Promise<void> {
-    const submissionUsers = await this.memberService.getSubmissionUsers(
+    const submissionUsers = await this.gameStateService.getSubmissionUsers(
       ctx.chat.id,
     );
 
@@ -216,7 +201,7 @@ export class GameService {
    * Shows information about the current active game
    */
   async showActiveGameInfo(ctx: CommandContext): Promise<void> {
-    const game = await this.gameRepository.getCurrentGameByChatId(ctx.chat.id);
+    const game = await this.gameStateService.getCurrentGame(ctx.chat.id);
 
     if (!game) {
       await ctx.reply(`Активная игра для чата ${ctx.chat.id} не найдена`);
@@ -236,17 +221,30 @@ export class GameService {
   }
 
   /**
+   * Ends the current active game
+   */
+  async endGame(ctx: IBotContext): Promise<void> {
+    if (!ctx.chat) return;
+
+    try {
+      await this.gameStateService.endGame(ctx.chat.id);
+      await ctx.reply("Игра завершена!");
+    } catch (error) {
+      await ctx.reply("Нет активной игры для завершения.");
+    }
+  }
+
+  /**
    * Checks if a game is currently active in the chat
    */
   async isGameActive(chatId: number): Promise<boolean> {
-    const game = await this.gameRepository.getCurrentGameByChatId(chatId);
-    return !!game;
+    return this.gameStateService.isGameActive(chatId);
   }
 
   /**
    * Gets the current active game for a chat
    */
   async getCurrentGame(chatId: number) {
-    return this.gameRepository.getCurrentGameByChatId(chatId);
+    return this.gameStateService.getCurrentGame(chatId);
   }
 }
