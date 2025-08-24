@@ -17,24 +17,12 @@ import { TriggerModule } from "@/modules/joke/trigger.module";
 import { SorryModule } from "@/modules/joke/sorry.module";
 import { FoodModule } from "@/modules/food/food.module";
 import { ZazuService } from "@/modules/joke/zazu.service";
-import { LeaderboardModule } from "@/modules/musicGame/leaderboard/leaderboard.module";
-import { MusicGameModule } from "@/modules/musicGame/music-game.module";
 import { MusicGameService } from "@/modules/musicGame/music-game.service";
-import { MusicGameConsolidatedModule } from "@/modules/musicGame/music-game-consolidated.module";
-import { LeaderboardService } from "@/modules/musicGame/leaderboard/leaderboard.service";
+import { MusicGameModule } from "@/modules/musicGame/music-game.module";
 import { ArgsService } from "@/modules/common/args.service";
-import { RoundService } from "@/modules/musicGame/round/round.service";
-import { GuessService } from "@/modules/musicGame/guess/guess.service";
-import { GameService } from "@/modules/musicGame/game/game.service";
-import { GameStateService } from "@/modules/musicGame/game/game-state.service";
 import { FoodService } from "@/modules/food/food.service";
-import { GameModule } from "@/modules/musicGame/game/game.module";
-import { GuessModule } from "@/modules/musicGame/guess/guess.module";
-import { RoundModule } from "@/modules/musicGame/round/round.module";
 import { LlmModule } from "@/modules/joke/llm.module";
 import { SchedulerService } from "@/modules/musicGame/scheduler/scheduler.service";
-import { LobbyModule } from "@/modules/musicGame/lobby/lobby.module";
-import { LobbyService } from "@/modules/musicGame/lobby/lobby.service";
 
 const container = new Container();
 
@@ -72,11 +60,10 @@ container.bind<CraftyModule>(TYPES.CraftyComposer).to(CraftyModule);
 container.bind<CraftyService>(TYPES.CraftyService).to(CraftyService);
 
 // Game
-container.bind<MusicGameModule>(TYPES.MusicGameModule).to(MusicGameModule);
 container.bind<MusicGameService>(TYPES.MusicGameService).to(MusicGameService);
 container
-  .bind<MusicGameConsolidatedModule>(TYPES.MusicGameConsolidatedModule)
-  .to(MusicGameConsolidatedModule);
+  .bind<MusicGameModule>(TYPES.MusicGameConsolidatedModule)
+  .to(MusicGameModule);
 container
   .bind<MusicGameRepository>(TYPES.GameRepository)
   .to(MusicGameRepository);
@@ -84,34 +71,10 @@ container
   .bind<MusicGameUploadModule>(TYPES.PrivateComposer)
   .to(MusicGameUploadModule);
 
-container.bind<GameModule>(TYPES.GameModule).to(GameModule);
-container.bind<GameService>(TYPES.GameService).to(GameService);
-container.bind<GameStateService>(TYPES.GameStateService).to(GameStateService);
-
-container.bind<RoundModule>(TYPES.RoundModule).to(RoundModule);
-container.bind<RoundService>(TYPES.RoundService).to(RoundService);
-
-container.bind<GuessModule>(TYPES.GuessModule).to(GuessModule);
-container.bind<GuessService>(TYPES.GuessService).to(GuessService);
-
-container
-  .bind<LeaderboardModule>(TYPES.LeaderboardModule)
-  .to(LeaderboardModule);
-container
-  .bind<LeaderboardService>(TYPES.LeaderboardService)
-  .to(LeaderboardService);
-
-// Scheduler
+// Scheduler (keeping for now - may be integrated later)
 container
   .bind<SchedulerService>(TYPES.SchedulerService)
   .to(SchedulerService)
-  .inSingletonScope();
-
-// Lobby
-container.bind<LobbyModule>(TYPES.LobbyModule).to(LobbyModule);
-container
-  .bind<LobbyService>(TYPES.LobbyService)
-  .to(LobbyService)
   .inSingletonScope();
 
 export { container };

@@ -9,6 +9,8 @@ import { IBotContext } from "@/context/context.interface";
 import { Context } from "telegraf";
 import { User } from "@prisma/client";
 import { InlineKeyboardButton } from "telegraf/typings/core/types/typegram";
+import { SchedulerService } from "@/modules/musicGame/scheduler/scheduler.service";
+import { GameConfig } from "@/modules/musicGame/config/game-config";
 
 /**
  * MusicGameService - Single service handling the entire music guessing game
@@ -29,6 +31,7 @@ export class MusicGameService {
     @inject(TYPES.GameRepository) private gameRepository: MusicGameRepository,
     @inject(TYPES.TextService) private text: TextService,
     @inject(TYPES.MemberService) private memberService: MemberService,
+    @inject(TYPES.SchedulerService) private scheduler: SchedulerService,
   ) {}
 
   // ==================== GAME LIFECYCLE ====================
@@ -94,7 +97,7 @@ export class MusicGameService {
    */
   async startGameWithConfig(
     ctx: IBotContext,
-    config: Record<string, unknown>,
+    config: GameConfig,
   ): Promise<void> {
     if (!ctx.chat) return;
 
@@ -174,15 +177,35 @@ export class MusicGameService {
     const participants = await this.gameRepository.getParticipants(game.id);
     await this.playRound(ctx, participants, gameSequence);
 
-    // Schedule hint from config
+    // Schedule round events based on config
     try {
-      const config = (game as any).config as { hintDelaySec?: number } | null;
+      const config = (game as any).config as {
+        hintDelaySec?: number;
+        advanceDelaySec?: number;
+        autoAdvance?: boolean;
+      } | null;
+
       if (config?.hintDelaySec && ctx.chat) {
-        const key = `hint:${gameSequence.id}`;
-        // Note: We'll need to implement a simple scheduler or use the existing one
-        setTimeout(async () => {
-          await this.showHint(ctx, chatId);
-        }, config.hintDelaySec * 1000);
+        const hintKey = `hint:${gameSequence.id}`;
+        this.scheduler.scheduleOnce(
+          hintKey,
+          new Date(Date.now() + config.hintDelaySec * 1000),
+          async () => {
+            await this.showHint(ctx, chatId);
+          },
+        );
+      }
+
+      // Schedule round advancement if auto-advance is enabled
+      if (config?.autoAdvance && config?.advanceDelaySec && ctx.chat) {
+        const advanceKey = `advance:${gameSequence.id}`;
+        this.scheduler.scheduleOnce(
+          advanceKey,
+          new Date(Date.now() + config.advanceDelaySec * 1000),
+          async () => {
+            await this.advanceToNextRound(ctx, game.id);
+          },
+        );
       }
     } catch (error) {
       console.error("Failed to schedule round events:", error);
@@ -215,39 +238,56 @@ export class MusicGameService {
       }
 
       // Check if user already guessed
+      const guessingUserId = ctx.from!.id;
       const existingGuess = await this.gameRepository.findGuess(
         roundId,
-        ctx.from!.id,
+        guessingUserId,
       );
       if (existingGuess) {
-        await ctx.answerCbQuery("Вы уже угадывали в этом раунде!");
+        await ctx.answerCbQuery(this.text.get("guessing.alreadyGuessed"));
         return;
       }
 
-      // Calculate points based on correctness
-      const isCorrect = guessedUserId === Number(round.userId);
-      const points = this.calculatePoints(isCorrect, game.currentRound);
+      // Process the guess with time-based scoring
+      const roundStartTime = round.createdAt.getTime();
+      const currentTime = Date.now();
+      const timeElapsed = (currentTime - roundStartTime) / 1000; // seconds
+
+      const isLateGuess = round.roundIndex < game.currentRound;
+      const isCorrect = Number(round.userId) === guessedUserId;
+      const isSelfGuess = guessingUserId === guessedUserId;
+      const points = this.calculatePointsTimeBased(
+        isCorrect,
+        timeElapsed,
+        !!round.hintShownAt,
+        isSelfGuess,
+        game.currentRound,
+      );
 
       // Save the guess
       await this.gameRepository.createGuess({
         roundId,
-        userId: ctx.from!.id,
+        userId: guessingUserId,
         guessedId: guessedUserId,
         isCorrect,
         points,
-        isLateGuess: false,
+        isLateGuess,
       });
 
       // Update round info
       await this.updateRoundInfo(ctx, roundId);
 
       // Check if all players have guessed
-      const allGuessed = await this.checkAllPlayersGuessed(roundId);
-      if (allGuessed) {
-        await this.advanceToNextRound(ctx, game.id);
-      }
+      // const allGuessed = await this.checkAllPlayersGuessed(roundId);
+      // if (allGuessed) {
+      //   await this.advanceToNextRound(ctx, game.id);
+      // }
 
-      await ctx.answerCbQuery();
+      await ctx.answerCbQuery(
+        isCorrect
+          ? this.text.get("guessing.correctGuess", { points })
+          : this.text.get("guessing.wrongGuess"),
+      );
     } catch (error) {
       console.error("Error processing guess:", error);
       await ctx.answerCbQuery("Произошла ошибка при обработке ответа.");
@@ -306,6 +346,64 @@ export class MusicGameService {
     await this.startRound(ctx as any, Number(game.chatId));
   }
 
+  /**
+   * Replays the current round's music
+   */
+  async replayCurrentRound(ctx: Context, chatId: number): Promise<void> {
+    const game = await this.gameRepository.getCurrentGameByChatId(chatId);
+    if (!game) {
+      await ctx.reply(this.text.get("musicGame.noGame"));
+      return;
+    }
+
+    const gameSequence = await this.gameRepository.getRoundBySequence(
+      game.id,
+      game.currentRound,
+    );
+    if (!gameSequence) {
+      await ctx.reply(this.text.get("rounds.noRound"));
+      return;
+    }
+
+    const participants = await this.gameRepository.getParticipants(game.id);
+    await this.playRound(ctx, participants, gameSequence);
+  }
+
+  /**
+   * Skips the current round and advances to the next
+   */
+  async skipCurrentRound(ctx: Context, chatId: number): Promise<void> {
+    const game = await this.gameRepository.getCurrentGameByChatId(chatId);
+    if (!game) {
+      await ctx.reply(this.text.get("musicGame.noGame"));
+      return;
+    }
+
+    await ctx.reply("⏭️ Раунд пропущен!");
+    await this.advanceToNextRound(ctx, game.id);
+  }
+
+  /**
+   * Reveals the answer for the current round
+   */
+  async revealCurrentRound(ctx: Context, chatId: number): Promise<void> {
+    const game = await this.gameRepository.getCurrentGameByChatId(chatId);
+    if (!game) {
+      await ctx.reply(this.text.get("musicGame.noGame"));
+      return;
+    }
+
+    const round = game.rounds.find((r) => r.roundIndex === game.currentRound);
+    if (!round) {
+      await ctx.reply(this.text.get("rounds.noCurrentRound"));
+      return;
+    }
+
+    const participants = await this.gameRepository.getParticipants(game.id);
+    const correctUser = participants.find((u) => u.id === round.userId);
+    await ctx.reply(`🏁 Правильный ответ: ${correctUser?.name || "Unknown"}!`);
+  }
+
   // ==================== GAME STATE & INFO ====================
 
   /**
@@ -332,7 +430,13 @@ export class MusicGameService {
   /**
    * Shows information about the current active game
    */
-  async showActiveGameInfo(ctx: CommandContext): Promise<void> {
+  async showActiveGameInfo(
+    ctx: CallbackQueryContext | CommandContext,
+  ): Promise<void> {
+    if (!ctx.chat) {
+      await ctx.reply("Чат не найден");
+      return;
+    }
     const game = await this.gameRepository.getCurrentGameByChatId(ctx.chat.id);
 
     if (!game) {
@@ -372,6 +476,91 @@ export class MusicGameService {
       participants: participants.length,
       currentRoundData: currentRound,
     };
+  }
+
+  /**
+   * List all players in the current game
+   */
+  async listPlayers(ctx: CommandContext): Promise<void> {
+    const submissionUsers = await this.memberService.getSubmissionUsers(
+      ctx.chat.id,
+    );
+
+    if (!submissionUsers.length) {
+      await ctx.reply("musicGame.noPlayers");
+      return;
+    }
+
+    const users = this.memberService
+      .formatPingNames(submissionUsers)
+      .join("\n");
+
+    await ctx.reply(
+      this.text.get("musicGame.listPlayers", {
+        playersCount: submissionUsers.length,
+        playersList: users,
+      }),
+      {
+        parse_mode: "Markdown",
+        disable_notification: true,
+      },
+    );
+  }
+
+  /**
+   * Ping all players in the current game
+   */
+  async pingPlayers(ctx: CommandContext): Promise<void> {
+    const users = await this.memberService.getSubmissionUsers(ctx.chat.id);
+
+    if (!users.length) {
+      await ctx.reply("musicGame.noPlayers");
+      return;
+    }
+
+    this.memberService.formatPingNames(users).forEach((batch) => {
+      ctx.reply(batch, {
+        parse_mode: "Markdown",
+        disable_notification: false,
+      });
+    });
+  }
+
+  /**
+   * Get game statistics
+   */
+  async getGameStats(ctx: CommandContext): Promise<void> {
+    const game = await this.gameRepository.getCurrentGameByChatId(ctx.chat.id);
+    if (!game) {
+      await ctx.reply("Нет активной игры для получения статистики.");
+      return;
+    }
+
+    const userStats = await this.calculateUserStats(game.id);
+    const trackDifficulty = await this.calculateTrackDifficulty(game.id);
+
+    const statsText = [
+      "📊 Статистика игры:",
+      `🎯 Текущий раунд: ${game.currentRound + 1}/${game.rounds.length}`,
+      `👥 Участников: ${userStats.size}`,
+      "",
+      "🏆 Топ игроков:",
+      ...Array.from(userStats.entries())
+        .sort(([, a], [, b]) => b.totalPoints - a.totalPoints)
+        .slice(0, 3)
+        .map(
+          ([userId, stats], index) =>
+            `${index + 1}. ${stats.totalPoints} очков (🎯 ${stats.correct}, ❌ ${stats.incorrect})`,
+        ),
+      "",
+      "🎵 Сложность треков:",
+      ...trackDifficulty
+        .sort((a, b) => b.correctGuesses - a.correctGuesses)
+        .slice(0, 3)
+        .map((item) => `${item.player}: ${item.correctGuesses} угадано`),
+    ].join("\n");
+
+    await ctx.reply(statsText);
   }
 
   // ==================== PRIVATE HELPER METHODS ====================
@@ -501,22 +690,52 @@ export class MusicGameService {
   }
 
   private async showLeaderboard(ctx: Context, chatId: number): Promise<void> {
+    const leaderboard = await this.generateLeaderboard(chatId);
+    if (!leaderboard) {
+      await ctx.reply("Произошла ошибка при генерации лидерборда");
+      return;
+    }
+    await ctx.reply(leaderboard);
+  }
+
+  private async generateLeaderboard(chatId: number): Promise<string | null> {
     const game = await this.gameRepository.getCurrentGameByChatId(chatId);
-    if (!game) return;
+    if (!game) {
+      return null;
+    }
 
-    const participants = await this.gameRepository.getParticipants(game.id);
+    const userStats = await this.calculateUserStats(game.id);
 
-    const leaderboard = participants
-      .map((user: any) => {
-        return `${user.name}: 0 очков`; // Simplified for now
-      })
-      .sort((a: string, b: string) => {
-        const scoreA = parseInt(a.match(/(\d+)/)?.[1] || "0");
-        const scoreB = parseInt(b.match(/(\d+)/)?.[1] || "0");
-        return scoreB - scoreA;
-      });
+    const getUserByIdMap = new Map<number, User>();
+    for (const round of game.rounds) {
+      getUserByIdMap.set(Number(round.userId), round.user);
+    }
 
-    await ctx.reply(`🏆 Итоговая таблица:\n\n${leaderboard.join("\n")}`);
+    const sortedLeaderboard = [...userStats.entries()]
+      .sort(([, a], [, b]) => b.totalPoints - a.totalPoints)
+      .map(
+        ([userId, stats], index) =>
+          `${index + 1}. ${getUserByIdMap.get(userId)?.name || "Unknown"} — 🏆 ${
+            stats.totalPoints
+          } очков (🎯 ${stats.correct} угадано, ❌ ${stats.incorrect} не угадано)`,
+      );
+
+    const trackDifficulty = await this.calculateTrackDifficulty(game.id);
+    const sortedTrackDifficulty = trackDifficulty
+      .sort((a, b) => b.correctGuesses - a.correctGuesses)
+      .map(
+        (item) =>
+          `${item.index + 1}. ${item.player} — 🎯 ${item.correctGuesses}`,
+      );
+
+    const mostPoints = (await Promise.all(sortedLeaderboard)).join("\n");
+
+    return [
+      this.text.get("leaderboard.mostPoints"),
+      mostPoints,
+      this.text.get("leaderboard.leastGuessed"),
+      sortedTrackDifficulty.join("\n"),
+    ].join("\n\n");
   }
 
   private async checkAllPlayersGuessed(roundId: number): Promise<boolean> {
@@ -536,6 +755,103 @@ export class MusicGameService {
 
     // Simple scoring: more points for later rounds
     return Math.max(1, 10 - roundNumber);
+  }
+
+  private calculatePointsTimeBased(
+    isCorrect: boolean,
+    timeElapsed: number,
+    hintShown: boolean,
+    isSelfGuess: boolean,
+    roundNumber: number,
+  ): number {
+    if (isSelfGuess) return 0;
+    if (!isCorrect) return -2;
+
+    // Base points for correct guess
+    let basePoints = 4;
+
+    // Bonus for early guesses (first 30 seconds)
+    if (timeElapsed <= 30) {
+      basePoints += 2;
+    }
+    // Penalty for late guesses (after 2 minutes)
+    else if (timeElapsed > 120) {
+      basePoints -= 1;
+    }
+
+    // Penalty if hint was shown
+    if (hintShown) {
+      basePoints -= 1;
+    }
+
+    // Bonus for later rounds (harder rounds)
+    const roundBonus = Math.min(roundNumber, 3);
+    basePoints += roundBonus;
+
+    return Math.max(1, basePoints); // Minimum 1 point
+  }
+
+  private calculatePointsAdvanced(
+    isCorrect: boolean,
+    isLateGuess: boolean,
+    hintShown: boolean,
+    isSelfGuess: boolean,
+  ): number {
+    if (isSelfGuess) return 0;
+    if (!isCorrect) return -2;
+    if (isLateGuess) return 1;
+    return hintShown ? 2 : 4;
+  }
+
+  private async calculateUserStats(gameId: number) {
+    const game = await this.gameRepository.getGameById(gameId);
+    if (!game) throw new Error("Game not found");
+
+    const userStats = new Map<
+      number,
+      {
+        correct: number;
+        incorrect: number;
+        totalPoints: number;
+      }
+    >();
+
+    // Logic for calculating user stats
+    for (const round of game.rounds) {
+      for (const guess of round.guesses) {
+        const stats = userStats.get(Number(guess.userId)) || {
+          correct: 0,
+          incorrect: 0,
+          totalPoints: 0,
+        };
+        if (round.userId === guess.guessedId) {
+          stats.correct++;
+          stats.totalPoints += guess.points;
+        } else {
+          stats.incorrect++;
+        }
+        userStats.set(Number(guess.userId), stats);
+      }
+    }
+
+    return userStats;
+  }
+
+  private async calculateTrackDifficulty(gameId: number) {
+    const game = await this.gameRepository.getGameById(gameId);
+    if (!game) throw new Error("Game not found");
+
+    // Logic for calculating track difficulty
+    return game.rounds.map((round) => {
+      const correctGuesses = round.guesses.filter(
+        (g) => g.guessedId === round.userId,
+      ).length;
+      return {
+        player: round.user.name || "Unknown",
+        correctGuesses,
+        index: round.roundIndex,
+      };
+    });
   }
 
   private getPointsWord(points: number): string {

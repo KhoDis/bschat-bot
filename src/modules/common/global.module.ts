@@ -4,15 +4,10 @@ import { Update } from "telegraf/types";
 import { inject, injectable } from "inversify";
 import { CommandContext, TYPES } from "@/types";
 import { TextService } from "@/modules/common/text.service";
-import { LeaderboardService } from "@/modules/musicGame/leaderboard/leaderboard.service";
 
 @injectable()
 export class GlobalModule extends Composer<IBotContext> {
-  constructor(
-    @inject(TYPES.LeaderboardService)
-    private leaderboardService: LeaderboardService,
-    @inject(TYPES.TextService) private text: TextService,
-  ) {
+  constructor(@inject(TYPES.TextService) private text: TextService) {
     super();
 
     this.setupHandlers();

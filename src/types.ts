@@ -43,29 +43,12 @@ export const TYPES = {
 
   // ---
 
-  MusicGameModule: Symbol.for("MusicGameModule"),
   MusicGameService: Symbol.for("MusicGameService"),
   MusicGameConsolidatedModule: Symbol.for("MusicGameConsolidatedModule"),
 
-  GameService: Symbol.for("GameService"),
-  GameStateService: Symbol.for("GameStateService"),
-  GameModule: Symbol.for("GameModule"),
-
-  RoundService: Symbol.for("RoundService"),
-  RoundModule: Symbol.for("RoundModule"),
-
-  GuessService: Symbol.for("GuessService"),
-  GuessModule: Symbol.for("GuessModule"),
-
-  LeaderboardService: Symbol.for("LeaderboardService"),
-  LeaderboardModule: Symbol.for("LeaderboardModule"),
   // Scheduler / Events
   SchedulerService: Symbol.for("SchedulerService"),
   EventBus: Symbol.for("EventBus"),
-
-  // Lobby
-  LobbyModule: Symbol.for("LobbyModule"),
-  LobbyService: Symbol.for("LobbyService"),
 };
 
 export type Types = (typeof TYPES)[keyof typeof TYPES];

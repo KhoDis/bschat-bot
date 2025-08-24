@@ -1,6 +1,7 @@
 import { Guess, Prisma, User } from "@prisma/client";
 import prisma from "../../prisma/client";
 import { injectable } from "inversify";
+import { GameConfig } from "@/modules/musicGame/config/game-config";
 
 const roundWithGuesses = Prisma.validator<Prisma.GameRoundInclude>()({
   guesses: {
@@ -177,7 +178,7 @@ export class MusicGameRepository {
 
   async updateGameConfig(
     gameId: number,
-    data: { status?: string; config?: any },
+    data: { status?: string; config?: GameConfig },
   ): Promise<void> {
     await prisma.game.update({
       where: { id: gameId },

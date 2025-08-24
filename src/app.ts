@@ -5,7 +5,6 @@ import { IBotContext } from "./context/context.interface";
 import { GlobalModule } from "./modules/common/global.module";
 import { MusicGameUploadModule } from "./modules/musicGame/music-game-upload.module";
 import { JokerModule } from "./modules/joke/joker.module";
-import { MusicGameModule } from "@/modules/musicGame/music-game.module";
 import { MemberModule } from "@/modules/common/member.module";
 import { RoleModule } from "@/modules/permissions/role.module";
 import { CraftyModule } from "@/modules/crafty/crafty.module";
@@ -15,7 +14,7 @@ import { SorryModule } from "@/modules/joke/sorry.module";
 import { FoodModule } from "@/modules/food/food.module";
 import { LlmModule } from "@/modules/joke/llm.module";
 import { SchedulerService } from "@/modules/musicGame/scheduler/scheduler.service";
-import { MusicGameConsolidatedModule } from "@/modules/musicGame/music-game-consolidated.module";
+import { MusicGameModule } from "@/modules/musicGame/music-game.module";
 
 class Bot {
   bot: Telegraf<IBotContext>;
@@ -37,10 +36,7 @@ class Bot {
       .get<MusicGameUploadModule>(TYPES.PrivateComposer)
       .middleware();
     const musicGameConsolidatedMiddleware = container
-      .get<MusicGameConsolidatedModule>(TYPES.MusicGameConsolidatedModule)
-      .middleware();
-    const musicGameMiddleware = container
-      .get<MusicGameModule>(TYPES.MusicGameModule)
+      .get<MusicGameModule>(TYPES.MusicGameConsolidatedModule)
       .middleware();
     const participantMiddleware = container
       .get<MemberModule>(TYPES.ParticipantComposer)
@@ -67,14 +63,12 @@ class Bot {
       .get<LlmModule>(TYPES.LLMComposer)
       .middleware();
     const scheduler = container.get<SchedulerService>(TYPES.SchedulerService);
-    this.bot.use(roleMiddleware);
-    this.bot.use(musicGameConsolidatedMiddleware);
 
     // Combine non-private middlewares into a single middleware
     const nonPrivateMiddleware = Composer.compose([
-      musicGameMiddleware,
+      musicGameConsolidatedMiddleware,
       participantMiddleware,
-      // roleMiddleware,
+      roleMiddleware,
       craftyMiddleware,
     ]);
 

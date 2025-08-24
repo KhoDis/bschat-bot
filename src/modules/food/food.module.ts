@@ -49,7 +49,6 @@ export class FoodModule extends Composer<IBotContext> {
 
     this.setupCommands();
     this.setupFoodListener();
-    this.foodService.initializeStemMap().then((r) => console.log(r));
   }
 
   private setupCommands() {
