@@ -13,6 +13,7 @@ import { SchedulerService } from '@/modules/musicGame/scheduler/scheduler.servic
 import { GameConfig } from '@/modules/musicGame/config/game-config';
 import { UiRenderer } from '@/modules/musicGame/ui.renderer';
 import { ActionCodec } from '@/modules/musicGame/action.codec';
+import { GuessService } from '@/modules/musicGame/guess.service';
 
 /**
  * MusicGameService - Single service handling the entire music guessing game
@@ -36,6 +37,7 @@ export class MusicGameService {
     @inject(TYPES.SchedulerService) private scheduler: SchedulerService,
     @inject(TYPES.UiRenderer) private ui: UiRenderer,
     @inject(TYPES.ActionCodec) private codec: ActionCodec,
+    @inject(TYPES.GuessService) private guessService: GuessService,
   ) {}
 
   // ==================== GAME LIFECYCLE ====================
@@ -213,51 +215,25 @@ export class MusicGameService {
     if (!ctx.chat) return;
 
     try {
-      const round = await this.gameRepository.findRoundById(roundId);
-      if (!round) {
+      const guessingUserId = ctx.from!.id;
+      const result = await this.guessService.processGuess({
+        chatId: ctx.chat.id,
+        roundId,
+        guessingUserId,
+      });
+
+      if (result === 'NO_ROUND') {
         await ctx.reply(this.text.get('rounds.notFound'));
         return;
       }
-
-      const game = await this.gameRepository.getCurrentGameByChatId(ctx.chat.id);
-      if (!game) {
+      if (result === 'NO_GAME') {
         await ctx.reply(this.text.get('musicGame.notFound'));
         return;
       }
-
-      // Check if user already guessed
-      const guessingUserId = ctx.from!.id;
-      const existingGuess = await this.gameRepository.findGuess(roundId, guessingUserId);
-      if (existingGuess) {
+      if (result === 'ALREADY_GUESSED') {
         await ctx.answerCbQuery(this.text.get('guessing.alreadyGuessed'));
         return;
       }
-
-      // Process the guess with time-based scoring
-      const roundStartTime = round.createdAt.getTime();
-      const currentTime = Date.now();
-      const timeElapsed = (currentTime - roundStartTime) / 1000; // seconds
-
-      const isLateGuess = round.roundIndex < game.currentRound;
-      const isCorrect = Number(round.userId) === guessedUserId;
-      const isSelfGuess = guessingUserId === guessedUserId;
-      const points = this.calculatePointsTimeBased(
-        isCorrect,
-        timeElapsed,
-        !!round.hintShownAt,
-        isSelfGuess,
-        game.currentRound,
-      );
-
-      // Save the guess
-      await this.gameRepository.createGuess({
-        roundId,
-        userId: guessingUserId,
-        guessedId: guessedUserId,
-        isCorrect,
-        points,
-        isLateGuess,
-      });
 
       // Update round info
       await this.updateRoundInfo(ctx, roundId);
@@ -269,8 +245,8 @@ export class MusicGameService {
       // }
 
       await ctx.answerCbQuery(
-        isCorrect
-          ? this.text.get('guessing.correctGuess', { points })
+        result.isCorrect
+          ? this.text.get('guessing.correctGuess', { points: result.points })
           : this.text.get('guessing.wrongGuess'),
       );
     } catch (error) {

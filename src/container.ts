@@ -26,6 +26,7 @@ import { LlmModule } from '@/modules/joke/llm.module';
 import { SchedulerService } from '@/modules/musicGame/scheduler/scheduler.service';
 import { UiRenderer } from '@/modules/musicGame/ui.renderer';
 import { ActionCodec } from '@/modules/musicGame/action.codec';
+import { GuessService } from '@/modules/musicGame/guess.service';
 
 const container = new Container();
 
@@ -68,6 +69,7 @@ container.bind<MusicGameRepository>(TYPES.GameRepository).to(MusicGameRepository
 container.bind<MusicGameUploadModule>(TYPES.PrivateComposer).to(MusicGameUploadModule);
 container.bind<UiRenderer>(TYPES.UiRenderer).to(UiRenderer).inSingletonScope();
 container.bind<ActionCodec>(TYPES.ActionCodec).to(ActionCodec).inSingletonScope();
+container.bind<GuessService>(TYPES.GuessService).to(GuessService);
 
 // Scheduler (keeping for now - may be integrated later)
 container.bind<SchedulerService>(TYPES.SchedulerService).to(SchedulerService).inSingletonScope();

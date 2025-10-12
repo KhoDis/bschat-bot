@@ -48,6 +48,7 @@ export const TYPES = {
   MusicGameConsolidatedModule: Symbol.for('MusicGameConsolidatedModule'),
   UiRenderer: Symbol.for('UiRenderer'),
   ActionCodec: Symbol.for('ActionCodec'),
+  GuessService: Symbol.for('GuessService'),
 
   // Scheduler / Events
   SchedulerService: Symbol.for('SchedulerService'),
