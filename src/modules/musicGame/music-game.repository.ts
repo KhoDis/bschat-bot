@@ -1,4 +1,4 @@
-import { Guess, Prisma, User } from "@prisma/client";
+import { Guess, Prisma, User, GameStatus } from "@prisma/client";
 import prisma from "../../prisma/client";
 import { injectable } from "inversify";
 import { GameConfig } from "@/modules/musicGame/config/game-config";
@@ -179,14 +179,18 @@ export class MusicGameRepository {
 
   async updateGameConfig(
     gameId: number,
-    data: { status?: string; config?: GameConfig },
+    data: { status?: GameStatus; config?: GameConfig },
   ): Promise<void> {
+    const updateData: Prisma.GameUpdateInput = {};
+    if (data.status !== undefined) {
+      updateData.status = data.status;
+    }
+    if (data.config !== undefined) {
+      updateData.config = data.config as unknown as Prisma.InputJsonValue;
+    }
     await prisma.game.update({
       where: { id: gameId },
-      data: {
-        status: data.status as any,
-        config: data.config as any,
-      },
+      data: updateData,
     });
   }
 
