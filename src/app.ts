@@ -21,6 +21,13 @@ class Bot {
 
   constructor() {
     const configService = container.get<ConfigService>(TYPES.ConfigService);
+    // Validate required environment variables before initializing bot
+    try {
+      configService.require(["BOT_TOKEN", "DATABASE_URL"]);
+    } catch (e) {
+      console.error(e instanceof Error ? e.message : e);
+      process.exit(1);
+    }
 
     this.bot = new Telegraf<IBotContext>(configService.get("BOT_TOKEN"));
     this.bot.use(
