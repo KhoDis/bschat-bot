@@ -10,6 +10,7 @@ import prisma from '@/prisma/client';
 import { RequirePermission } from '@/modules/permissions/require-permission.decorator';
 import { Prisma } from '@prisma/client';
 import { ArgsService } from '@/modules/common/args.service';
+import { FoodRepository } from '@/modules/food/food.repository';
 
 const specialChars = [
   '_',
@@ -42,6 +43,7 @@ export class FoodModule extends Composer<IBotContext> {
     @inject(TYPES.FoodService) private foodService: FoodService,
     @inject(TYPES.ArgsService) private args: ArgsService,
     @inject(TYPES.TextService) private text: TextService,
+    @inject(TYPES.FoodRepository) private foodRepo: FoodRepository,
   ) {
     super();
 
@@ -356,7 +358,7 @@ export class FoodModule extends Composer<IBotContext> {
   }
 
   private async handleListFood(ctx: IBotContext) {
-    const categories = await prisma.foodCategory.findMany();
+    const categories = await this.foodRepo.listCategories();
     if (!categories.length) {
       await ctx.reply(this.text.get('food.list.none'));
       return;
@@ -371,9 +373,7 @@ export class FoodModule extends Composer<IBotContext> {
 
     if (args.length < 2) {
       // No category specified, show all categories with their triggers
-      const categories = await prisma.foodCategory.findMany({
-        include: { triggers: true },
-      });
+      const categories = await this.foodRepo.listCategoriesWithTriggers();
 
       if (!categories.length) {
         await ctx.reply(this.text.get('food.triggers.none'));
@@ -395,10 +395,7 @@ export class FoodModule extends Composer<IBotContext> {
         return;
       }
 
-      const category = await prisma.foodCategory.findFirst({
-        where: { query },
-        include: { triggers: true },
-      });
+      const category = await this.foodRepo.findCategoryWithTriggersByQuery(query);
 
       if (!category) {
         await ctx.reply(this.text.get('food.categoryNotFound', { query }));

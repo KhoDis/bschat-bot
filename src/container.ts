@@ -16,6 +16,7 @@ import { CraftyModule } from '@/modules/crafty/crafty.module';
 import { TriggerModule } from '@/modules/joke/trigger.module';
 import { SorryModule } from '@/modules/joke/sorry.module';
 import { FoodModule } from '@/modules/food/food.module';
+import { FoodRepository } from '@/modules/food/food.repository';
 import { ZazuService } from '@/modules/joke/zazu.service';
 import { MusicGameService } from '@/modules/musicGame/music-game.service';
 import { MusicGameModule } from '@/modules/musicGame/music-game.module';
@@ -47,6 +48,7 @@ container.bind<JokerModule>(TYPES.JokerComposer).to(JokerModule);
 // Food
 container.bind<FoodModule>(TYPES.FoodComposer).to(FoodModule);
 container.bind<FoodService>(TYPES.FoodService).to(FoodService);
+container.bind<FoodRepository>(TYPES.FoodRepository).to(FoodRepository);
 
 // Roles
 container.bind<RoleModule>(TYPES.RoleComposer).to(RoleModule);

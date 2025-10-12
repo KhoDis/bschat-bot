@@ -40,6 +40,7 @@ export const TYPES = {
   // ---
   FoodComposer: Symbol.for('FoodComposer'),
   FoodService: Symbol.for('FoodService'),
+  FoodRepository: Symbol.for('FoodRepository'),
 
   // ---
 
