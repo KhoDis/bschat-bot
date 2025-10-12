@@ -32,6 +32,8 @@
     "ended": "Игра завершена!",
     "notFound": "Игра не найдена.",
     "noSaved": "Нет сохранённых игр.",
+    "savedList": "Список игр:\n{{gamesList}}",
+    "activeInfo": "{{info}}",
     "activeNotFound": "Активная игра для чата {{chatId}} не найдена"
   },
   "rounds": {
@@ -71,7 +73,8 @@
     ],
     "notFound": "Раунд не найден.",
     "noRound": "Раунд не найден.",
-    "skipped": "⏭️ Раунд пропущен!"
+    "skipped": "⏭️ Раунд пропущен!",
+    "reveal": "🏁 Правильный ответ: {{player}}!"
   },
   "user": {
     "notFound": [

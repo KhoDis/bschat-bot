@@ -361,7 +361,7 @@ export class MusicGameService {
       return;
     }
 
-    await ctx.reply('⏭️ Раунд пропущен!');
+    await ctx.reply(this.text.get('rounds.skipped'));
     await this.advanceToNextRound(ctx, game.id);
   }
 
@@ -383,7 +383,9 @@ export class MusicGameService {
 
     const participants = await this.gameRepository.getParticipants(game.id);
     const correctUser = participants.find((u) => u.id === round.userId);
-    await ctx.reply(`🏁 Правильный ответ: ${correctUser?.name || 'Unknown'}!`);
+    await ctx.reply(
+      this.text.get('rounds.reveal', { player: correctUser?.name || 'Unknown' } as any),
+    );
   }
 
   // ==================== GAME STATE & INFO ====================
@@ -395,7 +397,7 @@ export class MusicGameService {
     const games = await this.gameRepository.getGamesOfChat(ctx.chat.id);
 
     if (!games.length) {
-      await ctx.reply('Нет сохранённых игр.');
+      await ctx.reply(this.text.get('musicGame.noSaved'));
       return;
     }
 
@@ -406,7 +408,7 @@ export class MusicGameService {
       })
       .join('\n');
 
-    await ctx.reply(`Список игр:\n${gamesList}`);
+    await ctx.reply(this.text.get('musicGame.savedList', { gamesList } as any));
   }
 
   /**
@@ -414,13 +416,13 @@ export class MusicGameService {
    */
   async showActiveGameInfo(ctx: CallbackQueryContext | CommandContext): Promise<void> {
     if (!ctx.chat) {
-      await ctx.reply('Чат не найден');
+      await ctx.reply(this.text.get('chat.notFound'));
       return;
     }
     const game = await this.gameRepository.getCurrentGameByChatId(ctx.chat.id);
 
     if (!game) {
-      await ctx.reply(`Активная игра для чата ${ctx.chat.id} не найдена`);
+      await ctx.reply(this.text.get('musicGame.activeNotFound', { chatId: ctx.chat.id } as any));
       return;
     }
 
@@ -433,7 +435,7 @@ export class MusicGameService {
       `Всего раундов: ${game.rounds.length}`,
     ];
 
-    await ctx.reply(gameInfo.join('\n'));
+    await ctx.reply(this.text.get('musicGame.activeInfo', { info: gameInfo.join('\n') } as any));
   }
 
   /**
@@ -463,7 +465,7 @@ export class MusicGameService {
     const submissionUsers = await this.memberService.getSubmissionUsers(ctx.chat.id);
 
     if (!submissionUsers.length) {
-      await ctx.reply('musicGame.noPlayers');
+      await ctx.reply(this.text.get('musicGame.noPlayers'));
       return;
     }
 
@@ -488,7 +490,7 @@ export class MusicGameService {
     const users = await this.memberService.getSubmissionUsers(ctx.chat.id);
 
     if (!users.length) {
-      await ctx.reply('musicGame.noPlayers');
+      await ctx.reply(this.text.get('musicGame.noPlayers'));
       return;
     }
 
@@ -506,7 +508,7 @@ export class MusicGameService {
   async getGameStats(ctx: CommandContext): Promise<void> {
     const game = await this.gameRepository.getCurrentGameByChatId(ctx.chat.id);
     if (!game) {
-      await ctx.reply('Нет активной игры для получения статистики.');
+      await ctx.reply(this.text.get('musicGame.noActive'));
       return;
     }
 
@@ -534,7 +536,7 @@ export class MusicGameService {
         .map((item) => `${item.player}: ${item.correctGuesses} угадано`),
     ].join('\n');
 
-    await ctx.reply(statsText);
+    await ctx.reply(this.text.get('musicGame.stats', { stats: statsText } as any));
   }
 
   // ==================== PRIVATE HELPER METHODS ====================
@@ -562,7 +564,7 @@ export class MusicGameService {
   private async sendRoundInfo(ctx: Context, roundId: number): Promise<void> {
     const round = await this.gameRepository.findRoundById(roundId);
     if (!round) {
-      await ctx.reply('Раунд не найден: ' + roundId);
+      await ctx.reply(this.text.get('rounds.notFound'));
       return;
     }
 
@@ -632,7 +634,7 @@ export class MusicGameService {
   private async showLeaderboard(ctx: Context, chatId: number): Promise<void> {
     const leaderboard = await this.generateLeaderboard(chatId);
     if (!leaderboard) {
-      await ctx.reply('Произошла ошибка при генерации лидерборда');
+      await ctx.reply(this.text.get('leaderboard.error'));
       return;
     }
     await ctx.reply(leaderboard);
