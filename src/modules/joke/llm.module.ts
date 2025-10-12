@@ -20,6 +20,8 @@ export class LlmModule extends Composer<IBotContext> {
       timeout?: NodeJS.Timeout;
     }
   >();
+  private maxConversationsPerChat = 30;
+  private maxMessagesPerConversation = 20;
 
   constructor(
     @inject(TYPES.ConfigService) private readonly configService: ConfigService,
@@ -89,6 +91,12 @@ export class LlmModule extends Composer<IBotContext> {
         ] as ChatCompletionMessageParam[],
         botMessageIds: [] as number[],
       };
+      // Trim conversation length if needed
+      if (conversation.messages.length > this.maxMessagesPerConversation) {
+        conversation.messages = conversation.messages.slice(
+          -this.maxMessagesPerConversation,
+        );
+      }
 
       // Get response from LLM
       const completion = await this.openai.chat.completions.create({
@@ -112,6 +120,7 @@ export class LlmModule extends Composer<IBotContext> {
 
       // Store conversation history
       this.conversationHistory.set(chatId, conversation);
+      this.enforceChatConversationLimit(chatId);
 
       // Clean up old conversations periodically
       this.scheduleConversationCleanup(chatId);
@@ -139,6 +148,13 @@ export class LlmModule extends Composer<IBotContext> {
         content: text,
       });
 
+      // Trim conversation length if needed
+      if (conversation.messages.length > this.maxMessagesPerConversation) {
+        conversation.messages = conversation.messages.slice(
+          -this.maxMessagesPerConversation,
+        );
+      }
+
       // Get response from LLM with full conversation history
       const completion = await this.openai.chat.completions.create({
         model: this.availableModel,
@@ -161,6 +177,7 @@ export class LlmModule extends Composer<IBotContext> {
 
       // Update conversation in storage
       this.conversationHistory.set(chatId, conversation);
+      this.enforceChatConversationLimit(chatId);
 
       // Reset conversation cleanup timer
       this.scheduleConversationCleanup(chatId);
@@ -192,6 +209,19 @@ export class LlmModule extends Composer<IBotContext> {
         ...conversation,
         timeout,
       });
+    }
+  }
+
+  private enforceChatConversationLimit(chatId: number) {
+    const conversation = this.conversationHistory.get(chatId);
+    if (!conversation) return;
+    // No multiple threads per chat currently, but keep for future: map could hold multiple
+    // messages arrays; as a guard, ensure we don't keep excessive bot message ids
+    if (conversation.botMessageIds.length > this.maxMessagesPerConversation) {
+      conversation.botMessageIds = conversation.botMessageIds.slice(
+        -this.maxMessagesPerConversation,
+      );
+      this.conversationHistory.set(chatId, conversation);
     }
   }
 }

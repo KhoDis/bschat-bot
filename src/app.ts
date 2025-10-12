@@ -15,9 +15,11 @@ import { FoodModule } from "@/modules/food/food.module";
 import { LlmModule } from "@/modules/joke/llm.module";
 import { SchedulerService } from "@/modules/musicGame/scheduler/scheduler.service";
 import { MusicGameModule } from "@/modules/musicGame/music-game.module";
+import prisma from "@/prisma/client";
 
 class Bot {
   bot: Telegraf<IBotContext>;
+  private scheduler?: SchedulerService;
 
   constructor() {
     const configService = container.get<ConfigService>(TYPES.ConfigService);
@@ -70,6 +72,7 @@ class Bot {
       .get<LlmModule>(TYPES.LLMComposer)
       .middleware();
     const scheduler = container.get<SchedulerService>(TYPES.SchedulerService);
+    this.scheduler = scheduler;
 
     // Combine non-private middlewares into a single middleware
     const nonPrivateMiddleware = Composer.compose([
@@ -123,3 +126,17 @@ class Bot {
 const bot = new Bot();
 
 bot.init();
+
+// Graceful shutdown
+const shutdown = async (signal: string) => {
+  try {
+    console.info(`Received ${signal}, shutting down...`);
+    await prisma.$disconnect().catch(() => undefined);
+    bot.bot.stop(signal);
+  } finally {
+    process.exit(0);
+  }
+};
+
+process.once("SIGINT", () => shutdown("SIGINT"));
+process.once("SIGTERM", () => shutdown("SIGTERM"));

@@ -1,7 +1,7 @@
 {
   "name": "bschat-bot",
   "version": "1.0.0",
-  "main": "bot.js",
+  "main": "dist/src/app.js",
   "scripts": {
     "build": "tsc && tsc-alias",
     "start": "node ./dist/src/app.js",
@@ -17,7 +17,6 @@
     "@types/mustache": "^4.2.5",
     "@vitest/coverage-istanbul": "^3.0.6",
     "axios": "^1.8.4",
-    "crypto": "^1.0.1",
     "dotenv": "^16.4.5",
     "i18next": "^24.2.2",
     "i18next-fs-backend": "^2.6.0",

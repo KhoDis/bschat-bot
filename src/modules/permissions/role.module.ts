@@ -257,7 +257,7 @@ export class RoleModule extends Composer<IBotContext> {
         .getChatMember(chatId, userId)
         .then((user) => {
           // Then check if user is admin (or creator)
-          resolve(user.status == "creator");
+          resolve(user.status === "creator" || user.status === "administrator");
         })
         .catch((error) => {
           reject(error);
