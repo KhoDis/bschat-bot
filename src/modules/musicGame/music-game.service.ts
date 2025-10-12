@@ -69,7 +69,7 @@ export class MusicGameService {
         ctx.chat.id,
       );
       if (activeGame) {
-        await ctx.reply("Уже есть активная игра. Продолжаем её.");
+        await ctx.reply(this.text.get("musicGame.activeExists"));
         return;
       }
 
@@ -88,7 +88,7 @@ export class MusicGameService {
       await this.startRound(ctx, Number(game.chatId));
     } catch (error) {
       console.error("Error starting game:", error);
-      await ctx.reply("Произошла ошибка при запуске игры");
+      await ctx.reply(this.text.get("musicGame.startError"));
     }
   }
 
@@ -106,7 +106,7 @@ export class MusicGameService {
         ctx.chat.id,
       );
       if (activeGame) {
-        await ctx.reply("Уже есть активная игра. Продолжаем её.");
+        await ctx.reply(this.text.get("musicGame.activeExists"));
         return;
       }
 
@@ -127,7 +127,7 @@ export class MusicGameService {
       await this.startRound(ctx, Number(game.chatId));
     } catch (error) {
       console.error("Error starting game with config:", error);
-      await ctx.reply("Произошла ошибка при запуске игры");
+      await ctx.reply(this.text.get("musicGame.startError"));
     }
   }
 
@@ -142,14 +142,14 @@ export class MusicGameService {
         ctx.chat.id,
       );
       if (!game) {
-        await ctx.reply("Нет активной игры для завершения.");
+        await ctx.reply(this.text.get("musicGame.noActive"));
         return;
       }
 
       await this.gameRepository.endGame(game.id);
-      await ctx.reply("Игра завершена!");
+      await ctx.reply(this.text.get("musicGame.ended"));
     } catch (error) {
-      await ctx.reply("Нет активной игры для завершения.");
+      await ctx.reply(this.text.get("musicGame.noActive"));
     }
   }
 
@@ -225,7 +225,7 @@ export class MusicGameService {
     try {
       const round = await this.gameRepository.findRoundById(roundId);
       if (!round) {
-        await ctx.reply("Раунд не найден.");
+        await ctx.reply(this.text.get("rounds.notFound"));
         return;
       }
 
@@ -233,7 +233,7 @@ export class MusicGameService {
         ctx.chat.id,
       );
       if (!game) {
-        await ctx.reply("Игра не найдена.");
+        await ctx.reply(this.text.get("musicGame.notFound"));
         return;
       }
 
@@ -290,7 +290,7 @@ export class MusicGameService {
       );
     } catch (error) {
       console.error("Error processing guess:", error);
-      await ctx.answerCbQuery("Произошла ошибка при обработке ответа.");
+      await ctx.answerCbQuery(this.text.get("guessing.error"));
     }
   }
 
