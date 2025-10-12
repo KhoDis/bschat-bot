@@ -2,7 +2,7 @@ import { injectable } from 'inversify';
 
 @injectable()
 export class ActionCodec {
-  encode(action: string, ...args: (string | number)[]): string {
+  encode(action: string, ...args: (string | number | bigint)[]): string {
     return [action, ...args.map(String)].join(':');
   }
 

@@ -21,12 +21,12 @@ export class UiRenderer {
   roundControls(roundId: number) {
     const controls: InlineKeyboardButton[][] = [
       [
-        { text: '💡 Hint Now', callback_data: `round:hint:${roundId}` },
-        { text: '🔁 Replay', callback_data: `round:replay:${roundId}` },
+        { text: '💡 Hint Now', callback_data: `round_hint:${roundId}` },
+        { text: '🔁 Replay', callback_data: `round_replay:${roundId}` },
       ],
       [
-        { text: '⏭️ Skip', callback_data: `round:skip:${roundId}` },
-        { text: '🏁 Reveal', callback_data: `round:reveal:${roundId}` },
+        { text: '⏭️ Skip', callback_data: `round_skip:${roundId}` },
+        { text: '🏁 Reveal', callback_data: `round_reveal:${roundId}` },
       ],
     ];
     return controls;

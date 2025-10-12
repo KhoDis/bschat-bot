@@ -12,6 +12,7 @@ import { InlineKeyboardButton } from 'telegraf/typings/core/types/typegram';
 import { SchedulerService } from '@/modules/musicGame/scheduler/scheduler.service';
 import { GameConfig } from '@/modules/musicGame/config/game-config';
 import { UiRenderer } from '@/modules/musicGame/ui.renderer';
+import { ActionCodec } from '@/modules/musicGame/action.codec';
 
 /**
  * MusicGameService - Single service handling the entire music guessing game
@@ -34,6 +35,7 @@ export class MusicGameService {
     @inject(TYPES.MemberService) private memberService: MemberService,
     @inject(TYPES.SchedulerService) private scheduler: SchedulerService,
     @inject(TYPES.UiRenderer) private ui: UiRenderer,
+    @inject(TYPES.ActionCodec) private codec: ActionCodec,
   ) {}
 
   // ==================== GAME LIFECYCLE ====================
@@ -546,7 +548,7 @@ export class MusicGameService {
   private async playRound(ctx: Context, participants: User[], currentRound: any): Promise<void> {
     const buttons = participants.map((user) => ({
       text: user.name,
-      callback_data: `guess:${currentRound.id}_${user.id}`,
+      callback_data: this.codec.encode('guess', currentRound.id, user.id),
     }));
 
     await ctx.replyWithAudio(currentRound.musicFileId, {

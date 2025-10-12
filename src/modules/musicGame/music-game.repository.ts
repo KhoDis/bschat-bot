@@ -270,7 +270,7 @@ export class MusicGameRepository {
   async updateRoundMessageInfo(roundId: number, messageId: number) {
     await prisma.gameRound.update({
       where: { id: roundId },
-      data: { infoMessageId: messageId },
+      data: { infoMessageId: BigInt(messageId) },
     });
   }
 
