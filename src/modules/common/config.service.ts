@@ -1,30 +1,27 @@
-import { config, DotenvParseOutput } from "dotenv";
+import { config } from "dotenv";
 import { injectable } from "inversify";
 
 @injectable()
 export class ConfigService {
-  private readonly config: DotenvParseOutput;
-
   constructor() {
-    const { error, parsed } = config();
-
-    if (error) {
-      throw new Error("Could not find .env file");
+    // Load .env if present; ignore absence in production environments
+    try {
+      config();
+    } catch {
+      // noop: treat .env as optional
     }
-    if (!parsed) {
-      throw new Error("File .env is empty");
-    }
-
-    this.config = parsed;
   }
 
   get(key: string): string {
-    const res = this.config[key];
-
-    if (!res) {
-      throw new Error(`Key ${key} not found in .env file`);
+    const value = process.env[key];
+    if (value === undefined || value === "") {
+      throw new Error(`Environment variable ${key} is required`);
     }
+    return value;
+  }
 
-    return res;
+  getOptional(key: string): string | undefined {
+    const value = process.env[key];
+    return value === undefined || value === "" ? undefined : value;
   }
 }
