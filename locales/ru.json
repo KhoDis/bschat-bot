@@ -141,6 +141,57 @@
       "\n\nГерои нашего времени:"
     ]
   },
+  "food": {
+    "error": "❌ Ошибка: {{error}}",
+    "setchance": {
+      "usage": "Использование: /setfoodchance <percent (0-100)>",
+      "invalid": "❌ Введите число от 0 до 100.",
+      "success": "✅ Вероятность ответа на еду установлена в {{value}}%"
+    },
+    "add": {
+      "usage": "Использование: /addfood \"query\" trigger1 trigger2 ...",
+      "success": "✅ Добавлено \"{{query}}\" с триггерами: {{triggers}}",
+      "transfer": "⚠️ Триггер \"{{trigger}}\" перенесён из \"{{from}}\""
+    },
+    "rename": {
+      "usage": "Использование: /renamefood \"oldname\" \"newname\"",
+      "success": "✅ Переименовано \"{{oldName}}\" в \"{{newName}}\""
+    },
+    "remove": {
+      "usage": "Использование: /removefood \"query\"",
+      "success": "✅ Удалено \"{{query}}\""
+    },
+    "categoryNotFound": "❌ Категория \"{{query}}\" не найдена!",
+    "list": {
+      "none": "Категории еды не найдены.",
+      "header": "📜 Категории еды:\n\n{{list}}\n\nИспользуйте /listtriggers \"category\" чтобы увидеть триггеры."
+    },
+    "trigger": {
+      "add": {
+        "usage": "Использование: /addtrigger \"query\" trigger1 trigger2 ...",
+        "allExist": "❌ Все триггеры уже существуют для \"{{query}}\"",
+        "success": "✅ Добавлено {{count}} триггер(ов) к \"{{query}}\": {{triggers}}",
+        "skipped": "⚠️ Пропущено {{count}} дубликатов: {{duplicates}}"
+      },
+      "remove": {
+        "usage": "Использование: /removetrigger trigger1 trigger2 ...",
+        "none": "❌ Не найдено триггеров для удаления!",
+        "success": "✅ Удалено {{count}} триггер(ов)"
+      },
+      "usage": "Использование: /listtriggers \"category\"",
+      "none": "Категории не найдены.",
+      "all": {
+        "header": "📜 Все категории и триггеры:\n\n{{list}}"
+      },
+      "category": {
+        "none": "У категории \"{{query}}\" нет триггеров.",
+        "header": "📜 Триггеры для \"{{query}}\":\n\n{{triggersList}}"
+      }
+    },
+    "unsplash": {
+      "error": "Не удалось найти фото... Попробуй другой запрос! 😅\n\n{{error}}"
+    }
+  },
   "fuckMusic": [
     "/fuck_{{username}} — вот это ты, да, именно ты. Горжусь твоей самокритичностью!",
     "Ого! Кто-то сегодня встал не с той ноги? Или это твоё обычное состояние, {{username}}?",

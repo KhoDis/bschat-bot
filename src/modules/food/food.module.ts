@@ -3,6 +3,7 @@ import { Composer } from "telegraf";
 import { inject, injectable } from "inversify";
 import { createApi } from "unsplash-js";
 import { ConfigService } from "@/modules/common/config.service";
+import { TextService } from "@/modules/common/text.service";
 import { CommandContext, TYPES } from "@/types";
 import { FoodService } from "@/modules/food/food.service";
 import prisma from "@/prisma/client";
@@ -40,6 +41,7 @@ export class FoodModule extends Composer<IBotContext> {
     @inject(TYPES.ConfigService) private config: ConfigService,
     @inject(TYPES.FoodService) private foodService: FoodService,
     @inject(TYPES.ArgsService) private args: ArgsService,
+    @inject(TYPES.TextService) private text: TextService,
   ) {
     super();
 
@@ -70,25 +72,25 @@ export class FoodModule extends Composer<IBotContext> {
   private async handleSetChance(ctx: CommandContext) {
     const args = this.args.parse(ctx.message.text);
     if (args.length < 2) {
-      await ctx.reply("Usage: /setfoodchance <percent (0-100)>");
+      await ctx.reply(this.text.get("food.setchance.usage"));
       return;
     }
 
     const value = parseInt(args[1]!, 10);
     if (isNaN(value) || value < 0 || value > 100) {
-      await ctx.reply("❌ Please provide a valid number between 0 and 100.");
+      await ctx.reply(this.text.get("food.setchance.invalid"));
       return;
     }
 
     this.responseChance = value;
-    await ctx.reply(`✅ Food response chance set to ${value}%`);
+    await ctx.reply(this.text.get("food.setchance.success", { value }));
   }
 
   @RequirePermission("MANAGE_FOOD")
   private async handleAddFood(ctx: CommandContext) {
     const args = this.args.parse(ctx.message.text);
     if (args.length < 3) {
-      await ctx.reply('Usage: /addfood "query" trigger1 trigger2 ...');
+      await ctx.reply(this.text.get("food.add.usage"));
       return;
     }
 
@@ -96,7 +98,7 @@ export class FoodModule extends Composer<IBotContext> {
     const triggers = args.slice(2);
 
     if (!query || triggers.length === 0) {
-      await ctx.reply('Usage: /addfood "query" trigger1 trigger2 ...');
+      await ctx.reply(this.text.get("food.add.usage"));
       return;
     }
 
@@ -145,18 +147,26 @@ export class FoodModule extends Composer<IBotContext> {
 
       await this.foodService.initializeStemMap();
 
-      let message = `✅ Added "${query}" with triggers: ${triggers.join(", ")}`;
+      const added = this.text.get("food.add.success", {
+        query,
+        triggers: triggers.join(", "),
+      });
       if (transfers.length > 0) {
-        const transferMessages = transfers.map(
-          (t) => `\n⚠️ Trigger "${t.trigger}" was transferred from "${t.from}"`,
-        );
-        message += `\n\n${transferMessages.join("")}`;
+        const transferMessages = transfers
+          .map((t) =>
+            this.text.get("food.add.transfer", {
+              trigger: t.trigger,
+              from: t.from,
+            }),
+          )
+          .join("\n");
+        await ctx.reply(`${added}\n\n${transferMessages}`);
+      } else {
+        await ctx.reply(added);
       }
-
-      await ctx.reply(message);
     } catch (error) {
       if (error instanceof Error) {
-        await ctx.reply(`❌ Error: ${error.message}`);
+        await ctx.reply(this.text.get("food.error", { error: error.message }));
         return;
       }
       throw error;
@@ -167,7 +177,7 @@ export class FoodModule extends Composer<IBotContext> {
   private async handleRenameFood(ctx: CommandContext) {
     const args = this.args.parse(ctx.message.text);
     if (args.length < 3) {
-      await ctx.reply('Usage: /renamefood "oldname" "newname"');
+      await ctx.reply(this.text.get("food.rename.usage"));
       return;
     }
 
@@ -175,7 +185,7 @@ export class FoodModule extends Composer<IBotContext> {
     const newName = args[2];
 
     if (!oldName || !newName) {
-      await ctx.reply('Usage: /renamefood "oldname" "newname"');
+      await ctx.reply(this.text.get("food.rename.usage"));
       return;
     }
 
@@ -186,15 +196,19 @@ export class FoodModule extends Composer<IBotContext> {
       });
 
       await this.foodService.initializeStemMap();
-      await ctx.reply(`✅ Renamed "${oldName}" to "${newName}"`);
+      await ctx.reply(
+        this.text.get("food.rename.success", { oldName, newName }),
+      );
     } catch (error) {
       if (
         error instanceof Prisma.PrismaClientKnownRequestError &&
         error.code === "P2025"
       ) {
-        await ctx.reply(`❌ Category "${oldName}" not found!`);
+        await ctx.reply(
+          this.text.get("food.categoryNotFound", { query: oldName }),
+        );
       } else if (error instanceof Error) {
-        await ctx.reply(`❌ Error: ${error.message}`);
+        await ctx.reply(this.text.get("food.error", { error: error.message }));
       } else {
         throw error;
       }
@@ -205,7 +219,7 @@ export class FoodModule extends Composer<IBotContext> {
   private async handleAddTrigger(ctx: CommandContext) {
     const args = this.args.parse(ctx.message.text);
     if (args.length < 3) {
-      await ctx.reply('Usage: /addtrigger "query" trigger1 trigger2 ...');
+      await ctx.reply(this.text.get("food.trigger.add.usage"));
       return;
     }
 
@@ -213,7 +227,7 @@ export class FoodModule extends Composer<IBotContext> {
     const newTriggers = args.slice(2);
 
     if (!query || newTriggers.length === 0) {
-      await ctx.reply('Usage: /addtrigger "query" trigger1 trigger2 ...');
+      await ctx.reply(this.text.get("food.trigger.add.usage"));
       return;
     }
 
@@ -224,7 +238,7 @@ export class FoodModule extends Composer<IBotContext> {
       });
 
       if (!category) {
-        await ctx.reply(`❌ Category "${query}" not found!`);
+        await ctx.reply(this.text.get("food.categoryNotFound", { query }));
         return;
       }
 
@@ -243,7 +257,7 @@ export class FoodModule extends Composer<IBotContext> {
       );
 
       if (triggersToAdd.length === 0) {
-        await ctx.reply(`❌ All triggers already exist for "${query}"`);
+        await ctx.reply(this.text.get("food.trigger.add.allExist", { query }));
         return;
       }
 
@@ -257,15 +271,23 @@ export class FoodModule extends Composer<IBotContext> {
 
       await this.foodService.initializeStemMap();
 
-      let message = `✅ Added ${triggersToAdd.length} trigger(s) to "${query}": ${triggersToAdd.join(", ")}`;
+      const addedMsg = this.text.get("food.trigger.add.success", {
+        count: triggersToAdd.length,
+        query,
+        triggers: triggersToAdd.join(", "),
+      });
       if (duplicates.length > 0) {
-        message += `\n⚠️ Skipped ${duplicates.length} duplicate(s): ${duplicates.join(", ")}`;
+        const skipped = this.text.get("food.trigger.add.skipped", {
+          count: duplicates.length,
+          duplicates: duplicates.join(", "),
+        });
+        await ctx.reply(`${addedMsg}\n${skipped}`);
+      } else {
+        await ctx.reply(addedMsg);
       }
-
-      await ctx.reply(message);
     } catch (error) {
       if (error instanceof Error) {
-        await ctx.reply(`❌ Error: ${error.message}`);
+        await ctx.reply(this.text.get("food.error", { error: error.message }));
         return;
       }
 
@@ -277,14 +299,14 @@ export class FoodModule extends Composer<IBotContext> {
   private async handleRemoveTrigger(ctx: CommandContext) {
     const args = this.args.parse(ctx.message.text);
     if (args.length < 2) {
-      await ctx.reply("Usage: /removetrigger trigger1 trigger2 ...");
+      await ctx.reply(this.text.get("food.trigger.remove.usage"));
       return;
     }
 
     const triggersToRemove = args.slice(1);
 
     if (triggersToRemove.length === 0) {
-      await ctx.reply("Usage: /removetrigger trigger1 trigger2 ...");
+      await ctx.reply(this.text.get("food.trigger.remove.usage"));
       return;
     }
 
@@ -301,13 +323,15 @@ export class FoodModule extends Composer<IBotContext> {
       await this.foodService.initializeStemMap();
 
       if (result.count === 0) {
-        await ctx.reply("❌ No triggers found to remove!");
+        await ctx.reply(this.text.get("food.trigger.remove.none"));
       } else {
-        await ctx.reply(`✅ Removed ${result.count} trigger(s)`);
+        await ctx.reply(
+          this.text.get("food.trigger.remove.success", { count: result.count }),
+        );
       }
     } catch (error) {
       if (error instanceof Error) {
-        await ctx.reply(`❌ Error: ${error.message}`);
+        await ctx.reply(this.text.get("food.error", { error: error.message }));
         return;
       }
 
@@ -319,14 +343,14 @@ export class FoodModule extends Composer<IBotContext> {
   private async handleRemoveFood(ctx: CommandContext) {
     const args = this.args.parse(ctx.message.text);
     if (args.length < 2) {
-      await ctx.reply('Usage: /removefood "query"');
+      await ctx.reply(this.text.get("food.remove.usage"));
       return;
     }
 
     const query = args[1];
 
     if (!query) {
-      await ctx.reply('Usage: /removefood "query"');
+      await ctx.reply(this.text.get("food.remove.usage"));
       return;
     }
 
@@ -335,10 +359,10 @@ export class FoodModule extends Composer<IBotContext> {
         where: { query },
       });
       await this.foodService.initializeStemMap();
-      await ctx.reply(`✅ Removed "${query}"`);
+      await ctx.reply(this.text.get("food.remove.success", { query }));
     } catch (error) {
       if (error instanceof Error) {
-        await ctx.reply(`❌ Error: ${error.message}`);
+        await ctx.reply(this.text.get("food.error", { error: error.message }));
         return;
       }
 
@@ -349,14 +373,12 @@ export class FoodModule extends Composer<IBotContext> {
   private async handleListFood(ctx: IBotContext) {
     const categories = await prisma.foodCategory.findMany();
     if (!categories.length) {
-      await ctx.reply("No food categories found.");
+      await ctx.reply(this.text.get("food.list.none"));
       return;
     }
 
     const list = categories.map((c) => `• ${c.query}`).join("\n");
-    await ctx.reply(
-      `📜 Food Categories:\n\n${list}\n\nUse /listtriggers "category" to see triggers for a specific category.`,
-    );
+    await ctx.reply(this.text.get("food.list.header", { list }));
   }
 
   private async handleListTriggers(ctx: CommandContext) {
@@ -369,7 +391,7 @@ export class FoodModule extends Composer<IBotContext> {
       });
 
       if (!categories.length) {
-        await ctx.reply("No categories found.");
+        await ctx.reply(this.text.get("food.triggers.none"));
         return;
       }
 
@@ -378,13 +400,13 @@ export class FoodModule extends Composer<IBotContext> {
           return `• ${c.query}: ${c.triggers.map((t) => t.trigger).join(", ")}`;
         })
         .join("\n");
-      await ctx.reply(`📜 All Categories with Triggers:\n\n${list}`);
+      await ctx.reply(this.text.get("food.triggers.all.header", { list }));
     } else {
       // Show triggers for specific category
       const query = args[1];
 
       if (!query) {
-        await ctx.reply('Usage: /listtriggers "category"');
+        await ctx.reply(this.text.get("food.triggers.usage"));
         return;
       }
 
@@ -394,17 +416,24 @@ export class FoodModule extends Composer<IBotContext> {
       });
 
       if (!category) {
-        await ctx.reply(`❌ Category "${query}" not found!`);
+        await ctx.reply(this.text.get("food.categoryNotFound", { query }));
         return;
       }
 
       if (!category.triggers.length) {
-        await ctx.reply(`Category "${query}" has no triggers.`);
+        await ctx.reply(
+          this.text.get("food.triggers.category.none", { query }),
+        );
         return;
       }
 
       const triggersList = category.triggers.map((t) => t.trigger).join(", ");
-      await ctx.reply(`📜 Triggers for "${query}":\n\n${triggersList}`);
+      await ctx.reply(
+        this.text.get("food.triggers.category.header", {
+          query,
+          triggersList,
+        }),
+      );
     }
   }
 
@@ -432,7 +461,7 @@ export class FoodModule extends Composer<IBotContext> {
         });
       } catch (error) {
         await ctx.reply(
-          `Не удалось найти фото... Попробуй другой запрос! 😅\n\n${error}`,
+          this.text.get("food.unsplash.error", { error: String(error) }),
         );
       }
 
