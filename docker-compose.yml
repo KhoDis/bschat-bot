@@ -3,9 +3,9 @@ services:
     image: postgres:latest
     restart: always
     environment:
-      POSTGRES_DB: bschat
-      POSTGRES_USER: bschat_user
-      POSTGRES_PASSWORD: bschat_password
+      POSTGRES_DB: ${POSTGRES_DB:-bschat}
+      POSTGRES_USER: ${POSTGRES_USER:-bschat_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-bschat_password}
     networks:
       - bschat-net
     ports:
@@ -16,11 +16,16 @@ services:
   bot:
     depends_on:
       - db
-    env_file:
-      - .env
     image: ghcr.io/khodis/prod-bschat-bot:latest
-    volumes:
-      - ./.env:/app/.env
+    environment:
+      # Required by app startup (validated at runtime)
+      BOT_TOKEN: ${BOT_TOKEN}
+      DATABASE_URL: ${DATABASE_URL}
+      # Optional integrations
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
+      CRAFTY_BASE_URL: ${CRAFTY_BASE_URL}
+      CRAFTY_API_KEY: ${CRAFTY_API_KEY}
+      GROUP_CHAT_ID: ${GROUP_CHAT_ID}
     networks:
       - bschat-net
     restart: always

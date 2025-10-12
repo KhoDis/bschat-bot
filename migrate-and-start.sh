@@ -1,3 +1,9 @@
 #!/bin/sh
-DATABASE_URL="postgresql://bschat_user:bschat_password@db:5432/bschat" npx prisma migrate deploy
-DATABASE_URL="postgresql://bschat_user:bschat_password@db:5432/bschat" npm run start
+
+if [ -z "$DATABASE_URL" ]; then
+  echo "DATABASE_URL is not set"
+  exit 1
+fi
+
+npx prisma migrate deploy
+npm run start
