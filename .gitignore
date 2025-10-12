@@ -1,7 +1,33 @@
-node_modules
-# Keep environment variables out of version control
+# Dependencies
+node_modules/
+
+# Build output
+/dist/
+
+# Env
 .env
-/dist
-prisma/*.db
-.idea
-coverage
+.env.local
+.env.*.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Editor
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Prisma
+prisma/.env
+
+# Coverage
+coverage/
+
+# Misc
+*.tsbuildinfo
