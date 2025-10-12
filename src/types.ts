@@ -50,6 +50,7 @@ export const TYPES = {
   ActionCodec: Symbol.for('ActionCodec'),
   GuessService: Symbol.for('GuessService'),
   RoundOrchestrator: Symbol.for('RoundOrchestrator'),
+  GameLifecycle: Symbol.for('GameLifecycle'),
 
   // Scheduler / Events
   SchedulerService: Symbol.for('SchedulerService'),

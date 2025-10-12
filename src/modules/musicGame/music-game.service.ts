@@ -14,6 +14,7 @@ import { GameConfig } from '@/modules/musicGame/config/game-config';
 import { UiRenderer } from '@/modules/musicGame/ui.renderer';
 import { ActionCodec } from '@/modules/musicGame/action.codec';
 import { GuessService } from '@/modules/musicGame/guess.service';
+import { GameLifecycleService } from '@/modules/musicGame/game-lifecycle.service';
 import { RoundOrchestratorService } from '@/modules/musicGame/round-orchestrator.service';
 
 /**
@@ -40,6 +41,7 @@ export class MusicGameService {
     @inject(TYPES.ActionCodec) private codec: ActionCodec,
     @inject(TYPES.GuessService) private guessService: GuessService,
     @inject(TYPES.RoundOrchestrator) private roundOrchestrator: RoundOrchestratorService,
+    @inject(TYPES.GameLifecycle) private lifecycle: GameLifecycleService,
   ) {}
 
   // ==================== GAME LIFECYCLE ====================
@@ -68,32 +70,21 @@ export class MusicGameService {
    */
   async startGame(ctx: IBotContext): Promise<void> {
     if (!ctx.chat) return;
-
-    try {
-      // Check if there's already an active game
-      const activeGame = await this.gameRepository.getCurrentGameByChatId(ctx.chat.id);
-      if (activeGame) {
-        await ctx.reply(this.text.get('musicGame.activeExists'));
-        return;
-      }
-
-      // Ensure there are submissions to create a game from
-      const users = await this.memberService.getSubmissionUsers(ctx.chat.id);
-      if (!users.length) {
-        await ctx.reply(this.text.get('musicGame.noTracks'));
-        return;
-      }
-
-      // Create a new game with the submitted tracks
-      const game = await this.gameRepository.transferSubmissions(ctx.chat.id);
-      await ctx.reply(this.text.get('musicGame.gameStarted'));
-
-      // Immediately start the first round
-      await this.startRound(ctx, Number(game.chatId));
-    } catch (error) {
-      console.error('Error starting game:', error);
-      await ctx.reply(this.text.get('musicGame.startError'));
+    const result = await this.lifecycle.start(ctx);
+    if (result === 'ALREADY_ACTIVE') {
+      await ctx.reply(this.text.get('musicGame.activeExists'));
+      return;
     }
+    if (result === 'NO_TRACKS') {
+      await ctx.reply(this.text.get('musicGame.noTracks'));
+      return;
+    }
+    if (result === 'ERROR') {
+      await ctx.reply(this.text.get('musicGame.startError'));
+      return;
+    }
+    await ctx.reply(this.text.get('musicGame.gameStarted'));
+    await this.startRound(ctx, result.chatId);
   }
 
   /**
@@ -101,33 +92,21 @@ export class MusicGameService {
    */
   async startGameWithConfig(ctx: IBotContext, config: GameConfig): Promise<void> {
     if (!ctx.chat) return;
-
-    try {
-      const activeGame = await this.gameRepository.getCurrentGameByChatId(ctx.chat.id);
-      if (activeGame) {
-        await ctx.reply(this.text.get('musicGame.activeExists'));
-        return;
-      }
-
-      const users = await this.memberService.getSubmissionUsers(ctx.chat.id);
-      if (!users.length) {
-        await ctx.reply(this.text.get('musicGame.noTracks'));
-        return;
-      }
-
-      // Create a new game and persist config + set ACTIVE
-      const game = await this.gameRepository.transferSubmissions(ctx.chat.id);
-      await this.gameRepository.updateGameConfig(game.id, {
-        status: 'ACTIVE',
-        config,
-      } as any);
-
-      await ctx.reply(this.text.get('musicGame.gameStarted'));
-      await this.startRound(ctx, Number(game.chatId));
-    } catch (error) {
-      console.error('Error starting game with config:', error);
-      await ctx.reply(this.text.get('musicGame.startError'));
+    const result = await this.lifecycle.startWithConfig(ctx, config);
+    if (result === 'ALREADY_ACTIVE') {
+      await ctx.reply(this.text.get('musicGame.activeExists'));
+      return;
     }
+    if (result === 'NO_TRACKS') {
+      await ctx.reply(this.text.get('musicGame.noTracks'));
+      return;
+    }
+    if (result === 'ERROR') {
+      await ctx.reply(this.text.get('musicGame.startError'));
+      return;
+    }
+    await ctx.reply(this.text.get('musicGame.gameStarted'));
+    await this.startRound(ctx, result.chatId);
   }
 
   /**
@@ -135,19 +114,12 @@ export class MusicGameService {
    */
   async endGame(ctx: IBotContext): Promise<void> {
     if (!ctx.chat) return;
-
-    try {
-      const game = await this.gameRepository.getCurrentGameByChatId(ctx.chat.id);
-      if (!game) {
-        await ctx.reply(this.text.get('musicGame.noActive'));
-        return;
-      }
-
-      await this.gameRepository.endGame(game.id);
-      await ctx.reply(this.text.get('musicGame.ended'));
-    } catch (error) {
+    const result = await this.lifecycle.end(ctx);
+    if (result === 'NO_ACTIVE') {
       await ctx.reply(this.text.get('musicGame.noActive'));
+      return;
     }
+    await ctx.reply(this.text.get('musicGame.ended'));
   }
 
   // ==================== ROUND MANAGEMENT ====================
