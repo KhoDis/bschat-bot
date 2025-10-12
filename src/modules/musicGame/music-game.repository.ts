@@ -46,7 +46,7 @@ export class MusicGameRepository {
 
   async getCurrentGameByChatId(chatId: number): Promise<GameWithData | null> {
     const chat = await prisma.chat.findUnique({
-      where: { id: chatId },
+      where: { id: BigInt(chatId) },
       include: {
         activeGame: {
           include: gameWithData,
@@ -96,7 +96,7 @@ export class MusicGameRepository {
 
   async transferSubmissions(chatId: number): Promise<GameWithData> {
     const chat = await prisma.chat.findUnique({
-      where: { id: chatId },
+      where: { id: BigInt(chatId) },
       include: {
         members: {
           include: {
@@ -124,19 +124,19 @@ export class MusicGameRepository {
           create: shuffledSubmissions.map((track, index) => ({
             roundIndex: index,
             musicFileId: track.fileId,
-            hintChatId: track.uploadChatId,
+            hintChatId: BigInt(track.uploadChatId),
             hintMessageId: track.uploadHintMessageId,
-            userId: track.memberUserId,
+            userId: BigInt(track.memberUserId),
           })),
         },
-        chatId,
+        chatId: BigInt(chatId),
       },
       include: gameWithData,
     });
 
     // Add game as active game in the chat
     await prisma.chat.update({
-      where: { id: chatId },
+      where: { id: BigInt(chatId) },
       data: {
         activeGameId: game.id,
       },
@@ -145,9 +145,10 @@ export class MusicGameRepository {
     // Remove the member's music submission
     await prisma.musicSubmission.deleteMany({
       where: {
-        memberUserId: {
-          in: submissions.map((submission) => submission.memberUserId),
-        },
+        OR: submissions.map((submission) => ({
+          memberUserId: submission.memberUserId,
+          memberChatId: BigInt(chatId),
+        })),
       },
     });
     return game;
@@ -276,7 +277,7 @@ export class MusicGameRepository {
 
   async getGamesOfChat(chatId: number): Promise<GameWithData[]> {
     return prisma.game.findMany({
-      where: { chatId },
+      where: { chatId: BigInt(chatId) },
       orderBy: {
         createdAt: "desc",
       },

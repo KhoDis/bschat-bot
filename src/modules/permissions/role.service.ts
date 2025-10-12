@@ -57,18 +57,18 @@ export class RoleService {
     roleName: string,
   ): Promise<void> {
     const role = await prisma.role.findUnique({
-      where: { name_chatId: { name: roleName, chatId } },
+      where: { name_chatId: { name: roleName, chatId: BigInt(chatId) } },
     });
 
     if (!role) return;
 
     const userRole = await prisma.userRole.findUnique({
-      where: { userId_roleId: { userId, roleId: role.id } },
+      where: { userId_roleId: { userId: BigInt(userId), roleId: role.id } },
     });
 
     if (userRole) {
       await prisma.userRole.delete({
-        where: { userId_roleId: { userId, roleId: role.id } },
+        where: { userId_roleId: { userId: BigInt(userId), roleId: role.id } },
       });
     }
 
@@ -101,13 +101,13 @@ export class RoleService {
     roleName: string,
   ): Promise<void> {
     const role = await prisma.role.findUnique({
-      where: { name_chatId: { name: roleName, chatId } },
+      where: { name_chatId: { name: roleName, chatId: BigInt(chatId) } },
     });
 
     if (!role) return;
 
     await prisma.userRole.deleteMany({
-      where: { userId, roleId: role.id },
+      where: { userId: BigInt(userId), roleId: role.id },
     });
   }
 
@@ -185,7 +185,7 @@ export class RoleService {
       where: {
         role: {
           name: roleName,
-          chatId: chatId,
+          chatId: BigInt(chatId),
         },
       },
       include: {

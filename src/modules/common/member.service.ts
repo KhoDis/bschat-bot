@@ -19,9 +19,9 @@ export class MemberService {
       .replace(/[\u0300-\u036f]/g, "");
 
     return prisma.user.upsert({
-      where: { id: userData.id },
+      where: { id: BigInt(userData.id) },
       create: {
-        id: userData.id,
+        id: BigInt(userData.id),
         tag: userData.username || null,
         name: normalizedName,
       },
@@ -34,9 +34,9 @@ export class MemberService {
 
   async upsertChat(chatData: { id: number; title: string }) {
     return prisma.chat.upsert({
-      where: { id: chatData.id },
+      where: { id: BigInt(chatData.id) },
       create: {
-        id: chatData.id,
+        id: BigInt(chatData.id),
         title: chatData.title,
       },
       update: {
@@ -48,8 +48,8 @@ export class MemberService {
   async addMember(userId: number, chatId: number): Promise<void> {
     await prisma.member.create({
       data: {
-        userId: userId,
-        chatId: chatId,
+        userId: BigInt(userId),
+        chatId: BigInt(chatId),
       },
     });
   }
@@ -57,7 +57,7 @@ export class MemberService {
   async getSubmissionUsers(chatId: number): Promise<User[]> {
     const submissions = await prisma.musicSubmission.findMany({
       where: {
-        memberChatId: chatId,
+        memberChatId: BigInt(chatId),
       },
       include: {
         member: {
@@ -80,34 +80,34 @@ export class MemberService {
     await prisma.musicSubmission.update({
       where: {
         memberUserId_memberChatId: {
-          memberUserId,
-          memberChatId,
+          memberUserId: BigInt(memberUserId),
+          memberChatId: BigInt(memberChatId),
         },
       },
       data: {
-        uploadHintMessageId: hintMessageId,
-        uploadChatId: hintChatId,
+        uploadHintMessageId: BigInt(hintMessageId),
+        uploadChatId: BigInt(hintChatId),
       },
     });
   }
 
   async getUsersByChatId(chatId: number): Promise<User[]> {
     return prisma.user.findMany({
-      where: { members: { some: { chatId: chatId } } },
+      where: { members: { some: { chatId: BigInt(chatId) } } },
     });
   }
 
   async getChatsByUserId(userId: number): Promise<Chat[]> {
     return prisma.chat.findMany({
-      where: { members: { some: { userId: userId } } },
+      where: { members: { some: { userId: BigInt(userId) } } },
     });
   }
 
   async existsMember(userId: number, chatId: number): Promise<boolean> {
     const member = await prisma.member.findFirst({
       where: {
-        userId: userId,
-        chatId: chatId,
+        userId: BigInt(userId),
+        chatId: BigInt(chatId),
       },
     });
     return member !== null;
@@ -120,8 +120,8 @@ export class MemberService {
     return prisma.musicSubmission.findUnique({
       where: {
         memberUserId_memberChatId: {
-          memberUserId: userId,
-          memberChatId: chatId,
+          memberUserId: BigInt(userId),
+          memberChatId: BigInt(chatId),
         },
       },
     });
@@ -142,16 +142,19 @@ export class MemberService {
     await prisma.musicSubmission.upsert({
       where: {
         memberUserId_memberChatId: {
-          memberUserId: submission.userId,
-          memberChatId: submission.chatId,
+          memberUserId: BigInt(submission.userId),
+          memberChatId: BigInt(submission.chatId),
         },
       },
       create: {
-        memberUserId: submission.userId,
-        memberChatId: submission.chatId,
+        memberUserId: BigInt(submission.userId),
+        memberChatId: BigInt(submission.chatId),
         fileId: submission.fileId,
-        uploadChatId: upload.uploadChatId,
-        uploadHintMessageId: upload.uploadHintMessageId || null,
+        uploadChatId: BigInt(upload.uploadChatId),
+        uploadHintMessageId:
+          upload.uploadHintMessageId !== undefined
+            ? BigInt(upload.uploadHintMessageId)
+            : null,
       },
       update: {
         fileId: submission.fileId,
@@ -178,7 +181,7 @@ export class MemberService {
 
   private formatParticipantName(user: User): string {
     const formattedUser = this.getFormattedUser(user);
-    return `[${formattedUser}](tg://user?id=${user.id})`;
+    return `[${formattedUser}](tg://user?id=${Number(user.id)})`;
   }
 
   private getFormattedUser(user: User) {
