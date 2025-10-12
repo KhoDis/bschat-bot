@@ -1,25 +1,19 @@
-import { Composer, Context, NarrowedContext } from "telegraf";
-import { IBotContext } from "@/context/context.interface";
-import { RoleService } from "@/modules/permissions/role.service";
-import { Message, Update } from "telegraf/types";
-import { TextService } from "@/modules/common/text.service";
-import CraftyService from "@/modules/crafty/crafty.service";
-import { AxiosError } from "axios";
-import { TYPES } from "@/types";
-import { inject, injectable } from "inversify";
-import { ZazuService } from "@/modules/joke/zazu.service";
-import { RequirePermission } from "@/modules/permissions/require-permission.decorator";
-import { ArgsService } from "@/modules/common/args.service";
+import { Composer, Context, NarrowedContext } from 'telegraf';
+import { IBotContext } from '@/context/context.interface';
+import { RoleService } from '@/modules/permissions/role.service';
+import { Message, Update } from 'telegraf/types';
+import { TextService } from '@/modules/common/text.service';
+import CraftyService from '@/modules/crafty/crafty.service';
+import { AxiosError } from 'axios';
+import { TYPES } from '@/types';
+import { inject, injectable } from 'inversify';
+import { ZazuService } from '@/modules/joke/zazu.service';
+import { RequirePermission } from '@/modules/permissions/require-permission.decorator';
+import { ArgsService } from '@/modules/common/args.service';
 
-type CommandContext = NarrowedContext<
-  IBotContext,
-  Update.MessageUpdate<Message.TextMessage>
->;
+type CommandContext = NarrowedContext<IBotContext, Update.MessageUpdate<Message.TextMessage>>;
 
-type CallbackContext = NarrowedContext<
-  IBotContext,
-  Update.CallbackQueryUpdate
-> & {
+type CallbackContext = NarrowedContext<IBotContext, Update.CallbackQueryUpdate> & {
   match: RegExpExecArray;
 };
 
@@ -35,29 +29,29 @@ export class CraftyModule extends Composer<IBotContext> {
     super();
 
     // Register commands
-    this.command("server_list", this.handleServerList.bind(this));
-    this.command("get_schemas", this.handleGetSchemas.bind(this));
-    this.command("get_schema", this.handleGetSchema.bind(this));
+    this.command('server_list', this.handleServerList.bind(this));
+    this.command('get_schemas', this.handleGetSchemas.bind(this));
+    this.command('get_schema', this.handleGetSchema.bind(this));
 
     this.action(/^crafty:(.+?):(.+)$/, this.handleServerAction.bind(this));
   }
 
-  @RequirePermission("MANAGE_CRAFTY")
+  @RequirePermission('MANAGE_CRAFTY')
   private async handleServerAction(ctx: CallbackContext) {
     const [_fullMatch, action, serverId] = ctx.match;
 
     if (!action) {
-      await ctx.answerCbQuery("Не указан action");
+      await ctx.answerCbQuery('Не указан action');
       return;
     }
 
     if (!serverId) {
-      await ctx.answerCbQuery("Не указан serverId");
+      await ctx.answerCbQuery('Не указан serverId');
       return;
     }
 
     try {
-      if (action === "start_server") {
+      if (action === 'start_server') {
         await this.zazuService.sendMinecraftReaction(ctx);
         await ctx.answerCbQuery(`Ожидайте...`);
         const started = await this.craftyService.startServer(serverId);
@@ -66,7 +60,7 @@ export class CraftyModule extends Composer<IBotContext> {
         } else {
           await ctx.reply(`Ошибка при запуске сервера ${serverId}`);
         }
-      } else if (action === "stop_server") {
+      } else if (action === 'stop_server') {
         await this.zazuService.sendMinecraftReaction(ctx);
         await ctx.answerCbQuery(`Ожидайте...`);
         const stopped = await this.craftyService.stopServer(serverId);
@@ -85,20 +79,18 @@ export class CraftyModule extends Composer<IBotContext> {
     const servers = await this.craftyService.getServerList();
     const serverList = await Promise.all(
       servers.map(async (server) => {
-        const status = await this.craftyService.getServerStats(
-          server.server_id.toString(),
-        );
+        const status = await this.craftyService.getServerStats(server.server_id.toString());
         return [
           `- ${server.server_name}`,
           `IP: ${server.server_ip}:${server.server_port}`,
           `ID: ${server.server_id}`,
-          `Статус: ${status.running ? "🟢 Online" : "🔴 Offline"}`,
+          `Статус: ${status.running ? '🟢 Online' : '🔴 Offline'}`,
           `Игроков: ${status.online}/${status.max}`,
           `Версия: ${status.version}`,
-        ].join("\n");
+        ].join('\n');
       }),
     );
-    return serverList.join("\n\n");
+    return serverList.join('\n\n');
   }
 
   private async handleGetSchemas(ctx: CommandContext) {
@@ -111,7 +103,7 @@ export class CraftyModule extends Composer<IBotContext> {
     }
   }
 
-  @RequirePermission("MANAGE_CRAFTY")
+  @RequirePermission('MANAGE_CRAFTY')
   private async handleServerList(ctx: CommandContext) {
     try {
       const servers = await this.craftyService.getServerList();
@@ -130,7 +122,7 @@ export class CraftyModule extends Composer<IBotContext> {
         ];
       });
 
-      await ctx.reply(this.text.get("crafty.list.success", { serverList }), {
+      await ctx.reply(this.text.get('crafty.list.success', { serverList }), {
         reply_markup: {
           inline_keyboard: buttons,
         },
@@ -144,7 +136,7 @@ export class CraftyModule extends Composer<IBotContext> {
     const [_, schema] = this.args.parse(ctx.message.text);
 
     if (schema === undefined) {
-      await ctx.reply(this.text.get("crafty.schema.usage"));
+      await ctx.reply(this.text.get('crafty.schema.usage'));
       return;
     }
 
@@ -160,17 +152,15 @@ export class CraftyModule extends Composer<IBotContext> {
   private async handleCraftyError(ctx: Context, error: unknown) {
     if (error instanceof AxiosError) {
       await ctx.reply(
-        this.text.get("crafty.apiError", {
+        this.text.get('crafty.apiError', {
           status: error.response?.status,
           data: JSON.stringify(error.response?.data),
         }),
       );
     } else if (error instanceof Error) {
-      await ctx.reply(
-        this.text.get("crafty.genericError", { error: error.message }),
-      );
+      await ctx.reply(this.text.get('crafty.genericError', { error: error.message }));
     } else {
-      await ctx.reply(this.text.get("crafty.unknownError"));
+      await ctx.reply(this.text.get('crafty.unknownError'));
     }
   }
 }

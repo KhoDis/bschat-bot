@@ -16,7 +16,7 @@ class Timer {
   // Starts the timer
   start(): void {
     if (this.timerId) {
-      throw new Error("Timer is already running.");
+      throw new Error('Timer is already running.');
     }
 
     this.startTime = Date.now();
@@ -36,10 +36,7 @@ class Timer {
     const elapsedTime = Date.now() - this.startTime;
 
     // Update remaining time
-    this.remainingTime = Math.max(
-      0,
-      this.remainingTime - elapsedTime + milliseconds
-    );
+    this.remainingTime = Math.max(0, this.remainingTime - elapsedTime + milliseconds);
 
     // Clear the current timer and restart with updated remaining time
     clearTimeout(this.timerId);

@@ -1,9 +1,9 @@
-import { Composer } from "telegraf";
-import { IBotContext } from "@/context/context.interface";
-import { MemberService } from "@/modules/common/member.service";
-import { TextService } from "@/modules/common/text.service";
-import { inject, injectable } from "inversify";
-import { CommandContext, TYPES } from "@/types";
+import { Composer } from 'telegraf';
+import { IBotContext } from '@/context/context.interface';
+import { MemberService } from '@/modules/common/member.service';
+import { TextService } from '@/modules/common/text.service';
+import { inject, injectable } from 'inversify';
+import { CommandContext, TYPES } from '@/types';
 
 // TODO: add @Group decorator (class-scoped or function-scoped)
 @injectable()
@@ -14,7 +14,7 @@ export class MemberModule extends Composer<IBotContext> {
   ) {
     super();
 
-    this.command("joinbs", this.handleJoin.bind(this));
+    this.command('joinbs', this.handleJoin.bind(this));
   }
 
   private async handleJoin(ctx: CommandContext): Promise<void> {
@@ -23,8 +23,8 @@ export class MemberModule extends Composer<IBotContext> {
     let username = ctx.from.username || null;
     let firstName = ctx.from.first_name;
 
-    if (ctx.chat.type === "private") {
-      await ctx.reply(this.text.get("roles.chatOnly"));
+    if (ctx.chat.type === 'private') {
+      await ctx.reply(this.text.get('roles.chatOnly'));
       return;
     }
 
@@ -46,10 +46,10 @@ export class MemberModule extends Composer<IBotContext> {
       title: ctx.chat.title,
     });
     if (await this.memberService.existsMember(userId, chatId)) {
-      await ctx.reply(this.text.get("member.alreadyJoined", { name: userId }));
+      await ctx.reply(this.text.get('member.alreadyJoined', { name: userId }));
       return;
     }
     await this.memberService.addMember(userId, chatId);
-    await ctx.reply(this.text.get("member.joined", { name: userId }));
+    await ctx.reply(this.text.get('member.joined', { name: userId }));
   }
 }

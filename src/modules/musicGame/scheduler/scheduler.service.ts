@@ -1,4 +1,4 @@
-import { injectable } from "inversify";
+import { injectable } from 'inversify';
 
 type TimerId = NodeJS.Timeout;
 
@@ -23,7 +23,7 @@ export class SchedulerService {
       try {
         await handler();
       } catch (e) {
-        console.error("Scheduled handler error", e);
+        console.error('Scheduled handler error', e);
       }
     }, delay);
     this.timers.set(key, id);

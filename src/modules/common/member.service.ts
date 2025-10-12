@@ -1,6 +1,6 @@
-import { Chat, MusicSubmission, User } from "@prisma/client";
-import { injectable } from "inversify";
-import prisma from "@/prisma/client";
+import { Chat, MusicSubmission, User } from '@prisma/client';
+import { injectable } from 'inversify';
+import prisma from '@/prisma/client';
 
 /**
  * Service for managing Member, Chat, User, and MusicSubmission entities
@@ -9,14 +9,8 @@ import prisma from "@/prisma/client";
 export class MemberService {
   constructor() {}
 
-  async upsertUser(userData: {
-    id: number;
-    username?: string | null;
-    firstName: string;
-  }) {
-    const normalizedName = userData.firstName
-      .normalize("NFKD")
-      .replace(/[\u0300-\u036f]/g, "");
+  async upsertUser(userData: { id: number; username?: string | null; firstName: string }) {
+    const normalizedName = userData.firstName.normalize('NFKD').replace(/[\u0300-\u036f]/g, '');
 
     return prisma.user.upsert({
       where: { id: BigInt(userData.id) },
@@ -113,10 +107,7 @@ export class MemberService {
     return member !== null;
   }
 
-  async getSubmission(
-    userId: number,
-    chatId: number,
-  ): Promise<MusicSubmission | null> {
+  async getSubmission(userId: number, chatId: number): Promise<MusicSubmission | null> {
     return prisma.musicSubmission.findUnique({
       where: {
         memberUserId_memberChatId: {
@@ -152,9 +143,7 @@ export class MemberService {
         fileId: submission.fileId,
         uploadChatId: BigInt(upload.uploadChatId),
         uploadHintMessageId:
-          upload.uploadHintMessageId !== undefined
-            ? BigInt(upload.uploadHintMessageId)
-            : null,
+          upload.uploadHintMessageId !== undefined ? BigInt(upload.uploadHintMessageId) : null,
       },
       update: {
         fileId: submission.fileId,
@@ -171,9 +160,7 @@ export class MemberService {
 
     while (participantsCopy.length > 0) {
       const batch = participantsCopy.splice(0, 5);
-      formattedNames.push(
-        batch.map((p) => this.formatParticipantName(p)).join("\n"),
-      );
+      formattedNames.push(batch.map((p) => this.formatParticipantName(p)).join('\n'));
     }
 
     return formattedNames;
@@ -185,6 +172,6 @@ export class MemberService {
   }
 
   private getFormattedUser(user: User) {
-    return `${user.name}${user.tag ? ` (${user.tag})` : ""}`;
+    return `${user.name}${user.tag ? ` (${user.tag})` : ''}`;
   }
 }

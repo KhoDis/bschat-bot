@@ -1,5 +1,5 @@
-import prisma from "@/prisma/client";
-import { injectable } from "inversify";
+import prisma from '@/prisma/client';
+import { injectable } from 'inversify';
 
 export const PERMISSIONS = {
   ADMIN: 1 << 0, // 0001 = 1
@@ -18,10 +18,7 @@ export class PermissionService {
   /**
    * Checks if a role has a specific permission.
    */
-  async hasPermission(
-    roleId: number,
-    permission: Permission,
-  ): Promise<boolean> {
+  async hasPermission(roleId: number, permission: Permission): Promise<boolean> {
     const role = await prisma.role.findUnique({
       where: { id: roleId },
       select: { permissions: true },
@@ -41,7 +38,7 @@ export class PermissionService {
       select: { permissions: true },
     });
 
-    if (!role) throw new Error("Role not found");
+    if (!role) throw new Error('Role not found');
 
     await prisma.role.update({
       where: { id: roleId },
@@ -54,16 +51,13 @@ export class PermissionService {
   /**
    * Revokes a permission from a role.
    */
-  async revokePermission(
-    roleId: number,
-    permission: Permission,
-  ): Promise<void> {
+  async revokePermission(roleId: number, permission: Permission): Promise<void> {
     const role = await prisma.role.findUnique({
       where: { id: roleId },
       select: { permissions: true },
     });
 
-    if (!role) throw new Error("Role not found");
+    if (!role) throw new Error('Role not found');
 
     await prisma.role.update({
       where: { id: roleId },

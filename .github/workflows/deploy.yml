@@ -2,7 +2,7 @@ name: Docker Image CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ['main']
 
 jobs:
   build:
@@ -11,10 +11,10 @@ jobs:
       DOCKER_CLI_TIMEOUT: 600
 
     steps:
-      - name: "Checkout repository"
+      - name: 'Checkout repository'
         uses: actions/checkout@v4
 
-      - name: "Copy .env to server"
+      - name: 'Copy .env to server'
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.SERVER_HOST }}
@@ -24,20 +24,20 @@ jobs:
           script: |
             echo "${{ secrets.DEPLOY_ENV }}" > /srv/deployments/prod-bschat-bot/.env
 
-      - name: "Set up QEMU"
+      - name: 'Set up QEMU'
         uses: docker/setup-qemu-action@v1
 
-      - name: "Set up Docker Buildx"
+      - name: 'Set up Docker Buildx'
         uses: docker/setup-buildx-action@v3
 
-      - name: "Login to GitHub Registry"
+      - name: 'Login to GitHub Registry'
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
-          username: "KhoDis"
+          username: 'KhoDis'
           password: ${{ secrets.REGISTRY_KEY }}
 
-      - name: "Build & Push bschat-bot Image"
+      - name: 'Build & Push bschat-bot Image'
         uses: docker/build-push-action@v2
         with:
           push: true
@@ -46,18 +46,18 @@ jobs:
           tags: |
             ghcr.io/khodis/prod-bschat-bot:latest
 
-      - name: "Copy docker-compose.yml to server"
+      - name: 'Copy docker-compose.yml to server'
         uses: appleboy/scp-action@v0.1.4
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USERNAME }}
           password: ${{ secrets.SERVER_PASSWORD }}
           port: ${{ secrets.SERVER_PORT }}
-          source: "docker-compose.yml"
-          target: "/srv/deployments/prod-bschat-bot/"
+          source: 'docker-compose.yml'
+          target: '/srv/deployments/prod-bschat-bot/'
           timeout: 300s
 
-      - name: "Deploy on server"
+      - name: 'Deploy on server'
         uses: appleboy/ssh-action@master
         with:
           timeout: 60m

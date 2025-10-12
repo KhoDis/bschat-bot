@@ -1,4 +1,4 @@
-import { injectable } from "inversify";
+import { injectable } from 'inversify';
 
 @injectable()
 export class ArgsService {
@@ -9,7 +9,7 @@ export class ArgsService {
    */
   parse(text: string): string[] {
     const args: string[] = [];
-    let current = "";
+    let current = '';
     let inQuotes = false;
 
     // Trim leading slash or any prefix if needed
@@ -18,10 +18,10 @@ export class ArgsService {
     for (const char of trimmedText) {
       if (char === '"') {
         inQuotes = !inQuotes;
-      } else if (char === " " && !inQuotes) {
+      } else if (char === ' ' && !inQuotes) {
         if (current) {
           args.push(current);
-          current = "";
+          current = '';
         }
       } else {
         current += char;

@@ -1,7 +1,7 @@
-import axios, { AxiosError, AxiosInstance, AxiosResponse } from "axios";
-import { inject, injectable } from "inversify";
-import { ConfigService } from "@/modules/common/config.service";
-import { TYPES } from "@/types";
+import axios, { AxiosError, AxiosInstance, AxiosResponse } from 'axios';
+import { inject, injectable } from 'inversify';
+import { ConfigService } from '@/modules/common/config.service';
+import { TYPES } from '@/types';
 
 export type GetRequest<TBody> = {
   status: string;
@@ -63,8 +63,8 @@ class CraftyService {
   private api: AxiosInstance;
 
   constructor(@inject(TYPES.ConfigService) private config: ConfigService) {
-    const baseUrl = this.config.get("CRAFTY_BASE_URL");
-    const apiKey = this.config.get("CRAFTY_API_KEY");
+    const baseUrl = this.config.get('CRAFTY_BASE_URL');
+    const apiKey = this.config.get('CRAFTY_API_KEY');
     // Initialize axios instance
     this.api = axios.create({
       baseURL: baseUrl,
@@ -78,7 +78,7 @@ class CraftyService {
     const response = await this.makePostRequest<GetRequestEmpty>(
       `/servers/${serverId}/action/start_server`,
     );
-    return response.status === "ok";
+    return response.status === 'ok';
   }
 
   async stopServer(serverId: string): Promise<boolean> {
@@ -86,7 +86,7 @@ class CraftyService {
       `/servers/${serverId}/action/stop_server`,
     );
 
-    return response.status === "ok";
+    return response.status === 'ok';
   }
 
   async getServerStats(serverId: string): Promise<ServerStat> {
@@ -98,8 +98,7 @@ class CraftyService {
   }
 
   async getServerList(): Promise<Server[]> {
-    const response =
-      await this.makeGetRequest<GetRequest<Server[]>>(`/servers`);
+    const response = await this.makeGetRequest<GetRequest<Server[]>>(`/servers`);
 
     return response.data;
   }
@@ -144,10 +143,7 @@ class CraftyService {
     data?: TRequest,
   ): Promise<TResponse> {
     try {
-      const response: AxiosResponse<TResponse> = await this.api.post(
-        endpoint,
-        data,
-      );
+      const response: AxiosResponse<TResponse> = await this.api.post(endpoint, data);
       return response.data;
     } catch (error) {
       if (axios.isAxiosError(error)) {
@@ -160,13 +156,13 @@ class CraftyService {
   private handleError(error: AxiosError): void {
     if (error.response) {
       // Server error (4xx, 5xx)
-      console.error("API Error:", error.response.status, error.response.data);
+      console.error('API Error:', error.response.status, error.response.data);
     } else if (error.request) {
       // Network error (request was made, but no response received)
-      console.error("Network Error:", error.request);
+      console.error('Network Error:', error.request);
     } else {
       // Request wasn't properly formed
-      console.error("Request Error:", error.message);
+      console.error('Request Error:', error.message);
     }
     throw error;
   }

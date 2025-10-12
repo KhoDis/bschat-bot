@@ -1,13 +1,13 @@
-import { message } from "telegraf/filters";
-import { IBotContext } from "@/context/context.interface";
-import { Composer, NarrowedContext } from "telegraf";
-import { Message, Update } from "telegraf/types";
-import { MemberService } from "@/modules/common/member.service";
-import { TextService } from "@/modules/common/text.service";
-import { inject, injectable } from "inversify";
-import { CallbackQueryContext, CommandContext, TYPES } from "@/types";
-import { ZazuService } from "@/modules/joke/zazu.service";
-import { dataAction } from "@/utils/filters";
+import { message } from 'telegraf/filters';
+import { IBotContext } from '@/context/context.interface';
+import { Composer, NarrowedContext } from 'telegraf';
+import { Message, Update } from 'telegraf/types';
+import { MemberService } from '@/modules/common/member.service';
+import { TextService } from '@/modules/common/text.service';
+import { inject, injectable } from 'inversify';
+import { CallbackQueryContext, CommandContext, TYPES } from '@/types';
+import { ZazuService } from '@/modules/joke/zazu.service';
+import { dataAction } from '@/utils/filters';
 
 type MessageContext<T extends Message = Message> = NarrowedContext<
   IBotContext,
@@ -45,33 +45,30 @@ export class MusicGameUploadModule extends Composer<IBotContext> {
   }
 
   private setupHandlers(): void {
-    this.command("start", this.handleStartCommand.bind(this)); // Chat selection command
-    this.command("play", (ctx) => {
+    this.command('start', this.handleStartCommand.bind(this)); // Chat selection command
+    this.command('play', (ctx) => {
       // send audio with the id as an argument
-      ctx.replyWithAudio(ctx.message.text.split(" ")[1]!);
+      ctx.replyWithAudio(ctx.message.text.split(' ')[1]!);
     });
-    this.on(
-      dataAction(/^chat_select_(.+)$/),
-      this.handleChatSelectAction.bind(this),
-    ); // Handle chat selection via inline buttons
-    this.on(message("audio"), this.handleAudioMessage.bind(this));
+    this.on(dataAction(/^chat_select_(.+)$/), this.handleChatSelectAction.bind(this)); // Handle chat selection via inline buttons
+    this.on(message('audio'), this.handleAudioMessage.bind(this));
     this.on(
       [
-        message("animation"),
-        message("contact"),
-        message("dice"),
-        message("document"),
-        message("game"),
-        message("location"),
-        message("photo"),
-        message("poll"),
-        message("sticker"),
-        message("story"),
-        message("text"),
-        message("venue"),
-        message("video"),
-        message("video_note"),
-        message("voice"),
+        message('animation'),
+        message('contact'),
+        message('dice'),
+        message('document'),
+        message('game'),
+        message('location'),
+        message('photo'),
+        message('poll'),
+        message('sticker'),
+        message('story'),
+        message('text'),
+        message('venue'),
+        message('video'),
+        message('video_note'),
+        message('voice'),
       ],
       this.handleHintMessage.bind(this),
     );
@@ -82,7 +79,7 @@ export class MusicGameUploadModule extends Composer<IBotContext> {
     const chats = await this.memberService.getChatsByUserId(ctx.from.id); // Fetch the chats the user is part of
 
     if (chats.length === 0) {
-      await ctx.reply(this.text.get("chat.noChats"));
+      await ctx.reply(this.text.get('chat.noChats'));
       return;
     }
 
@@ -92,7 +89,7 @@ export class MusicGameUploadModule extends Composer<IBotContext> {
       callback_data: `chat_select_${Number(chat.id)}`,
     }));
 
-    await ctx.reply(this.text.get("chat.chooseChat"), {
+    await ctx.reply(this.text.get('chat.chooseChat'), {
       reply_markup: {
         inline_keyboard: buttons.map((button) => [button]), // Display each chat as a separate button
       },
@@ -100,12 +97,10 @@ export class MusicGameUploadModule extends Composer<IBotContext> {
   }
 
   // Handle chat selection and store it in the session
-  private async handleChatSelectAction(
-    ctx: CallbackQueryContext,
-  ): Promise<void> {
-    const action = ctx.callbackQuery.data.split("_")[2];
+  private async handleChatSelectAction(ctx: CallbackQueryContext): Promise<void> {
+    const action = ctx.callbackQuery.data.split('_')[2];
     if (!action) {
-      await ctx.reply(this.text.get("chat.invalidSelection"));
+      await ctx.reply(this.text.get('chat.invalidSelection'));
       return;
     }
     const chatId = parseInt(action, 10);
@@ -115,28 +110,25 @@ export class MusicGameUploadModule extends Composer<IBotContext> {
     const selectedChat = chats.find((chat) => Number(chat.id) === chatId);
 
     if (!selectedChat) {
-      await ctx.reply(this.text.get("chat.invalidSelection"));
+      await ctx.reply(this.text.get('chat.invalidSelection'));
       return;
     }
 
     // Store selected chat in the session
     ctx.session.selectedChatId = chatId;
-    await ctx.reply(this.text.get("chat.chatSelected", { chatId }));
+    await ctx.reply(this.text.get('chat.chatSelected', { chatId }));
   }
 
   private async handleHintMessage(ctx: AnyMediaMessageContext): Promise<void> {
     const chatId = ctx.session.selectedChatId;
     if (!chatId) {
-      await ctx.reply(this.text.get("chat.noChatSelected"));
+      await ctx.reply(this.text.get('chat.noChatSelected'));
       return;
     }
 
-    const submission = await this.memberService.getSubmission(
-      ctx.from.id,
-      chatId,
-    );
+    const submission = await this.memberService.getSubmission(ctx.from.id, chatId);
     if (!submission) {
-      await ctx.reply(this.text.get("chat.trackNotFound"));
+      await ctx.reply(this.text.get('chat.trackNotFound'));
       return;
     }
     await this.zazuService.sendFunnyReaction(ctx);
@@ -148,7 +140,7 @@ export class MusicGameUploadModule extends Composer<IBotContext> {
       ctx.message.message_id,
     );
 
-    await ctx.reply(this.text.get("chat.hintSent"));
+    await ctx.reply(this.text.get('chat.hintSent'));
   }
 
   // Handle audio submission
@@ -157,7 +149,7 @@ export class MusicGameUploadModule extends Composer<IBotContext> {
     const groupChatId = ctx.session.selectedChatId; // Get selected chat from the session
     const uploadChatId = ctx.chat.id;
     if (!groupChatId) {
-      await ctx.reply(this.text.get("chat.noChatSelected"));
+      await ctx.reply(this.text.get('chat.noChatSelected'));
       return;
     }
     await this.zazuService.sendCuteReaction(ctx);
@@ -165,9 +157,7 @@ export class MusicGameUploadModule extends Composer<IBotContext> {
     const userId = ctx.from.id;
     const exists = await this.memberService.existsMember(userId, groupChatId);
     if (!exists) {
-      await ctx.reply(
-        this.text.get("chat.notAMember", { userId, chatId: groupChatId }),
-      );
+      await ctx.reply(this.text.get('chat.notAMember', { userId, chatId: groupChatId }));
       return;
     }
 
@@ -183,7 +173,7 @@ export class MusicGameUploadModule extends Composer<IBotContext> {
     const fileId = ctx.message.audio.file_id;
 
     if (!this.isValidSubmission(userId, fileId)) {
-      await ctx.reply(this.text.get("chat.trackInvalid", { userId, fileId }));
+      await ctx.reply(this.text.get('chat.trackInvalid', { userId, fileId }));
       return;
     }
 
@@ -198,7 +188,7 @@ export class MusicGameUploadModule extends Composer<IBotContext> {
       },
     );
 
-    await ctx.reply(this.text.get("chat.trackSent"));
+    await ctx.reply(this.text.get('chat.trackSent'));
   }
 
   private isValidSubmission(userId: number, fileId: string): boolean {

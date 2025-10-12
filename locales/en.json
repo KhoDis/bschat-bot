@@ -8,17 +8,13 @@
     "Oh, another person who thinks I'm their personal assistant. Well, let’s pretend I don't mind."
   ],
   "musicGame": {
-    "listPlayers": [
-      "Total players: {{playerCount}}\n\n{{playersList}}"
-    ],
+    "listPlayers": ["Total players: {{playerCount}}\n\n{{playersList}}"],
     "noTracks": [
       "No tracks were submitted. Looks like everyone suddenly became shy. How unusual!",
       "Oops, no tracks! How about we do karaoke instead?",
       "Without tracks, the game won’t work. Unless you want to play in silence..."
     ],
-    "resetGame": [
-      "The game has been finished.."
-    ],
+    "resetGame": ["The game has been finished.."],
     "noGame": [
       "Oops, no game! Maybe it exists in a parallel universe?",
       "Game? What game? I'm just here for decoration...",
@@ -37,9 +33,7 @@
       "Yay! I mean... no more rounds. How sad (not really).",
       "Rounds are over. Hope you're happy with what you've done."
     ],
-    "noSuchRound": [
-      "This round only exists in your imagination..."
-    ],
+    "noSuchRound": ["This round only exists in your imagination..."],
     "onRoundStarted": [
       "Guessing time! Or at least pretending to...",
       "Time to show your musical ~illiteracy~ expertise!",
@@ -58,16 +52,8 @@
         "Engaged in deep thought",
         "Pretending to think"
       ],
-      "correct": [
-        "Lucky guessers",
-        "Experts (or just lucky?)",
-        "Somehow guessed it"
-      ],
-      "wrong": [
-        "Missed the mark",
-        "Didn't guess it (how unexpected!)",
-        "Tried, but alas"
-      ]
+      "correct": ["Lucky guessers", "Experts (or just lucky?)", "Somehow guessed it"],
+      "wrong": ["Missed the mark", "Didn't guess it (how unexpected!)", "Tried, but alas"]
     },
     "playRound": [
       "Guessing! Or at least pretending to...",

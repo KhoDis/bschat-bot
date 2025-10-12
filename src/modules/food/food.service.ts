@@ -1,6 +1,6 @@
-import natural from "natural";
-import { injectable } from "inversify";
-import prisma from "@/prisma/client";
+import natural from 'natural';
+import { injectable } from 'inversify';
+import prisma from '@/prisma/client';
 
 @injectable()
 export class FoodService {
@@ -24,9 +24,7 @@ export class FoodService {
     }
   }
 
-  detectCategoryFromText(
-    text: string,
-  ): { stem: string; category: string } | null {
+  detectCategoryFromText(text: string): { stem: string; category: string } | null {
     const tokens = new natural.WordTokenizer().tokenize(text.toLowerCase());
     const stems = tokens.map((t) => this.stemmer.stem(t));
 

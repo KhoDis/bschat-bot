@@ -1,7 +1,7 @@
-import { Guess, Prisma, User, GameStatus } from "@prisma/client";
-import prisma from "../../prisma/client";
-import { injectable } from "inversify";
-import { GameConfig } from "@/modules/musicGame/config/game-config";
+import { Guess, Prisma, User, GameStatus } from '@prisma/client';
+import prisma from '../../prisma/client';
+import { injectable } from 'inversify';
+import { GameConfig } from '@/modules/musicGame/config/game-config';
 
 const roundWithGuesses = Prisma.validator<Prisma.GameRoundInclude>()({
   guesses: {
@@ -73,9 +73,7 @@ export class MusicGameRepository {
     });
   }
 
-  async getRoundByDatabaseId(
-    roundId: number,
-  ): Promise<RoundWithGuesses | null> {
+  async getRoundByDatabaseId(roundId: number): Promise<RoundWithGuesses | null> {
     return prisma.gameRound.findUnique({
       where: { id: roundId },
       include: roundWithGuesses,
@@ -107,7 +105,7 @@ export class MusicGameRepository {
       },
     });
     if (!chat) {
-      throw new Error("Chat not found");
+      throw new Error('Chat not found');
     }
 
     // Get all submissions and filter out nulls
@@ -166,10 +164,7 @@ export class MusicGameRepository {
     return newArray;
   }
 
-  async updateGameRound(
-    gameId: number,
-    currentRound: number,
-  ): Promise<GameWithData> {
+  async updateGameRound(gameId: number, currentRound: number): Promise<GameWithData> {
     return prisma.game.update({
       where: { id: gameId },
       data: { currentRound },
@@ -283,7 +278,7 @@ export class MusicGameRepository {
     return prisma.game.findMany({
       where: { chatId: BigInt(chatId) },
       orderBy: {
-        createdAt: "desc",
+        createdAt: 'desc',
       },
       include: gameWithData,
     });

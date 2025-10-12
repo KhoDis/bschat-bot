@@ -1,17 +1,17 @@
-import { Composer, NarrowedContext } from "telegraf";
-import { IBotContext } from "@/context/context.interface";
-import { inject, injectable } from "inversify";
-import { OpenAI } from "openai";
-import { CommandContext, TYPES } from "@/types";
-import { Message } from "telegraf/typings/core/types/typegram";
-import { ChatCompletionMessageParam } from "openai/resources/chat";
-import { Update } from "telegraf/types";
-import { ConfigService } from "@/modules/common/config.service";
+import { Composer, NarrowedContext } from 'telegraf';
+import { IBotContext } from '@/context/context.interface';
+import { inject, injectable } from 'inversify';
+import { OpenAI } from 'openai';
+import { CommandContext, TYPES } from '@/types';
+import { Message } from 'telegraf/typings/core/types/typegram';
+import { ChatCompletionMessageParam } from 'openai/resources/chat';
+import { Update } from 'telegraf/types';
+import { ConfigService } from '@/modules/common/config.service';
 
 @injectable()
 export class LlmModule extends Composer<IBotContext> {
   private openai: OpenAI;
-  private availableModel = "nousresearch/deephermes-3-mistral-24b-preview:free";
+  private availableModel = 'nousresearch/deephermes-3-mistral-24b-preview:free';
   private conversationHistory = new Map<
     number,
     {
@@ -23,15 +23,13 @@ export class LlmModule extends Composer<IBotContext> {
   private maxConversationsPerChat = 30;
   private maxMessagesPerConversation = 20;
 
-  constructor(
-    @inject(TYPES.ConfigService) private readonly configService: ConfigService,
-  ) {
+  constructor(@inject(TYPES.ConfigService) private readonly configService: ConfigService) {
     super();
 
     // Initialize OpenAI client for OpenRouter
     this.openai = new OpenAI({
-      baseURL: "https://openrouter.ai/api/v1",
-      apiKey: this.configService.get("OPENROUTER_API_KEY"),
+      baseURL: 'https://openrouter.ai/api/v1',
+      apiKey: this.configService.get('OPENROUTER_API_KEY'),
     });
 
     this.setupHandlers();
@@ -39,13 +37,10 @@ export class LlmModule extends Composer<IBotContext> {
 
   private setupHandlers() {
     // Initial trigger handler
-    this.hears(
-      /^(бися|бисруз|ботяра)/i,
-      this.handleTriggeredMessage.bind(this),
-    );
+    this.hears(/^(бися|бисруз|ботяра)/i, this.handleTriggeredMessage.bind(this));
 
     // Handle replies to bot messages
-    this.on("message", async (ctx, next) => {
+    this.on('message', async (ctx, next) => {
       const message = ctx.message as Message.TextMessage;
       const replyToMessage = message.reply_to_message;
 
@@ -54,10 +49,7 @@ export class LlmModule extends Composer<IBotContext> {
         const chatId = ctx.chat.id;
         const conversation = this.conversationHistory.get(chatId);
 
-        if (
-          conversation &&
-          conversation.botMessageIds.includes(replyToMessage.message_id)
-        ) {
+        if (conversation && conversation.botMessageIds.includes(replyToMessage.message_id)) {
           // This is a reply to our bot, continue the conversation
           await this.handleConversationContinuation(ctx, message.text);
           return; // Don't call next() to prevent other handlers from processing
@@ -74,18 +66,18 @@ export class LlmModule extends Composer<IBotContext> {
     const chatId = ctx.chat.id;
 
     try {
-      await ctx.sendChatAction("typing");
+      await ctx.sendChatAction('typing');
 
       // Initialize conversation with system message
       const conversation = {
         messages: [
           {
-            role: "system",
+            role: 'system',
             content:
-              "Тебя зовут Бися, Бисруз или Ботяра. Шути над пользователем, сарказм. Отвечай не как ИИ (с грамматикой и развёрнуто), а как человек (с опечатками, ошибками, без точек в конце, без грамматики и без структуры). Ответы должны быть короткими",
+              'Тебя зовут Бися, Бисруз или Ботяра. Шути над пользователем, сарказм. Отвечай не как ИИ (с грамматикой и развёрнуто), а как человек (с опечатками, ошибками, без точек в конце, без грамматики и без структуры). Ответы должны быть короткими',
           },
           {
-            role: "user",
+            role: 'user',
             content: text,
           },
         ] as ChatCompletionMessageParam[],
@@ -93,9 +85,7 @@ export class LlmModule extends Composer<IBotContext> {
       };
       // Trim conversation length if needed
       if (conversation.messages.length > this.maxMessagesPerConversation) {
-        conversation.messages = conversation.messages.slice(
-          -this.maxMessagesPerConversation,
-        );
+        conversation.messages = conversation.messages.slice(-this.maxMessagesPerConversation);
       }
 
       // Get response from LLM
@@ -105,12 +95,11 @@ export class LlmModule extends Composer<IBotContext> {
       });
 
       const responseText =
-        completion.choices[0]?.message.content ||
-        "Что-то пошло не так... как обычно";
+        completion.choices[0]?.message.content || 'Что-то пошло не так... как обычно';
 
       // Add assistant message to history
       conversation.messages.push({
-        role: "assistant",
+        role: 'assistant',
         content: responseText,
       });
 
@@ -125,8 +114,8 @@ export class LlmModule extends Composer<IBotContext> {
       // Clean up old conversations periodically
       this.scheduleConversationCleanup(chatId);
     } catch (error) {
-      console.error("OpenRouter API error:", error);
-      await ctx.reply("Ой, я сломался... Попробуй ещё раз, может починюсь");
+      console.error('OpenRouter API error:', error);
+      await ctx.reply('Ой, я сломался... Попробуй ещё раз, может починюсь');
     }
   }
 
@@ -140,19 +129,17 @@ export class LlmModule extends Composer<IBotContext> {
     if (!conversation) return;
 
     try {
-      await ctx.sendChatAction("typing");
+      await ctx.sendChatAction('typing');
 
       // Add user message to conversation history
       conversation.messages.push({
-        role: "user",
+        role: 'user',
         content: text,
       });
 
       // Trim conversation length if needed
       if (conversation.messages.length > this.maxMessagesPerConversation) {
-        conversation.messages = conversation.messages.slice(
-          -this.maxMessagesPerConversation,
-        );
+        conversation.messages = conversation.messages.slice(-this.maxMessagesPerConversation);
       }
 
       // Get response from LLM with full conversation history
@@ -162,12 +149,11 @@ export class LlmModule extends Composer<IBotContext> {
       });
 
       const responseText =
-        completion.choices[0]?.message.content ||
-        "Что-то пошло не так... как обычно";
+        completion.choices[0]?.message.content || 'Что-то пошло не так... как обычно';
 
       // Add assistant response to history
       conversation.messages.push({
-        role: "assistant",
+        role: 'assistant',
         content: responseText,
       });
 
@@ -182,8 +168,8 @@ export class LlmModule extends Composer<IBotContext> {
       // Reset conversation cleanup timer
       this.scheduleConversationCleanup(chatId);
     } catch (error) {
-      console.error("OpenRouter API error:", error);
-      await ctx.reply("Ой, я сломался... Попробуй ещё раз, может починюсь");
+      console.error('OpenRouter API error:', error);
+      await ctx.reply('Ой, я сломался... Попробуй ещё раз, может починюсь');
     }
   }
 

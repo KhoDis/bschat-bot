@@ -1,12 +1,8 @@
-import prisma from "@/prisma/client";
-import {
-  Permission,
-  PERMISSIONS,
-  PermissionService,
-} from "./permission.service";
-import { Role, User } from "@prisma/client";
-import { inject, injectable } from "inversify";
-import { TYPES } from "@/types";
+import prisma from '@/prisma/client';
+import { Permission, PERMISSIONS, PermissionService } from './permission.service';
+import { Role, User } from '@prisma/client';
+import { inject, injectable } from 'inversify';
+import { TYPES } from '@/types';
 
 @injectable()
 export class RoleService {
@@ -19,11 +15,7 @@ export class RoleService {
    * Checks if a user has a specific permission in a chat
    * by aggregating permissions from all their roles in that chat
    */
-  async hasPermission(
-    userId: bigint,
-    chatId: bigint,
-    permission: Permission,
-  ): Promise<boolean> {
+  async hasPermission(userId: bigint, chatId: bigint, permission: Permission): Promise<boolean> {
     const userRoles = await prisma.userRole.findMany({
       where: {
         userId,
@@ -51,11 +43,7 @@ export class RoleService {
   /**
    * Assigns a role to a user in a specific chat
    */
-  async assignRole(
-    userId: number,
-    chatId: number,
-    roleName: string,
-  ): Promise<void> {
+  async assignRole(userId: number, chatId: number, roleName: string): Promise<void> {
     const role = await prisma.role.findUnique({
       where: { name_chatId: { name: roleName, chatId: BigInt(chatId) } },
     });
@@ -95,11 +83,7 @@ export class RoleService {
   /**
    * Removes a role from a user in a specific chat
    */
-  async revokeRole(
-    userId: number,
-    chatId: number,
-    roleName: string,
-  ): Promise<void> {
+  async revokeRole(userId: number, chatId: number, roleName: string): Promise<void> {
     const role = await prisma.role.findUnique({
       where: { name_chatId: { name: roleName, chatId: BigInt(chatId) } },
     });
@@ -146,10 +130,7 @@ export class RoleService {
   /**
    * Gets all roles for a user in a specific chat
    */
-  async getUserRoles(
-    userId: bigint,
-    chatId: bigint,
-  ): Promise<Array<{ id: number; name: string }>> {
+  async getUserRoles(userId: bigint, chatId: bigint): Promise<Array<{ id: number; name: string }>> {
     const userRoles = await prisma.userRole.findMany({
       where: {
         userId,

@@ -1,4 +1,4 @@
-version: "3.9"
+version: '3.9'
 
 services:
   db:
@@ -11,7 +11,7 @@ services:
     networks:
       - bschat-net
     ports:
-      - "5430:5432"
+      - '5430:5432'
     volumes:
       - pgdata:/var/lib/postgresql/data
 

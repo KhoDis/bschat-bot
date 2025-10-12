@@ -1,10 +1,8 @@
-import { Context } from "telegraf";
-import { Chat, ChatFromGetChat } from "telegraf/typings/core/types/typegram";
+import { Context } from 'telegraf';
+import { Chat, ChatFromGetChat } from 'telegraf/typings/core/types/typegram';
 
-export const hasUsername = (
-  chat: ChatFromGetChat
-): chat is Chat.PrivateGetChat => {
-  return "username" in chat;
+export const hasUsername = (chat: ChatFromGetChat): chat is Chat.PrivateGetChat => {
+  return 'username' in chat;
 };
 
 export const getName = async (ctx: Context, userId: number) => {

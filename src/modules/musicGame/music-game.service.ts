@@ -1,16 +1,16 @@
-import { inject, injectable } from "inversify";
-import { TYPES } from "@/types";
-import { MusicGameRepository } from "@/modules/musicGame/music-game.repository";
-import { TextService } from "@/modules/common/text.service";
-import { MemberService } from "@/modules/common/member.service";
-import { CommandContext, CallbackQueryContext } from "@/types";
-import { Markup } from "telegraf";
-import { IBotContext } from "@/context/context.interface";
-import { Context } from "telegraf";
-import { User } from "@prisma/client";
-import { InlineKeyboardButton } from "telegraf/typings/core/types/typegram";
-import { SchedulerService } from "@/modules/musicGame/scheduler/scheduler.service";
-import { GameConfig } from "@/modules/musicGame/config/game-config";
+import { inject, injectable } from 'inversify';
+import { TYPES } from '@/types';
+import { MusicGameRepository } from '@/modules/musicGame/music-game.repository';
+import { TextService } from '@/modules/common/text.service';
+import { MemberService } from '@/modules/common/member.service';
+import { CommandContext, CallbackQueryContext } from '@/types';
+import { Markup } from 'telegraf';
+import { IBotContext } from '@/context/context.interface';
+import { Context } from 'telegraf';
+import { User } from '@prisma/client';
+import { InlineKeyboardButton } from 'telegraf/typings/core/types/typegram';
+import { SchedulerService } from '@/modules/musicGame/scheduler/scheduler.service';
+import { GameConfig } from '@/modules/musicGame/config/game-config';
 
 /**
  * MusicGameService - Single service handling the entire music guessing game
@@ -40,11 +40,9 @@ export class MusicGameService {
    * Sets up a new music guessing game instance
    */
   async initiateGameSetup(ctx: CommandContext): Promise<void> {
-    const keyboard = Markup.inlineKeyboard([
-      Markup.button.callback("Начать игру", "game:start"),
-    ]);
+    const keyboard = Markup.inlineKeyboard([Markup.button.callback('Начать игру', 'game:start')]);
 
-    await ctx.reply(this.text.get("musicGame.welcome"), {
+    await ctx.reply(this.text.get('musicGame.welcome'), {
       reply_markup: keyboard.reply_markup,
     });
 
@@ -52,7 +50,7 @@ export class MusicGameService {
     const users = await this.memberService.getSubmissionUsers(ctx.chat.id);
     this.memberService.formatPingNames(users).forEach((batch) => {
       ctx.reply(batch, {
-        parse_mode: "Markdown",
+        parse_mode: 'Markdown',
       });
     });
   }
@@ -65,69 +63,62 @@ export class MusicGameService {
 
     try {
       // Check if there's already an active game
-      const activeGame = await this.gameRepository.getCurrentGameByChatId(
-        ctx.chat.id,
-      );
+      const activeGame = await this.gameRepository.getCurrentGameByChatId(ctx.chat.id);
       if (activeGame) {
-        await ctx.reply(this.text.get("musicGame.activeExists"));
+        await ctx.reply(this.text.get('musicGame.activeExists'));
         return;
       }
 
       // Ensure there are submissions to create a game from
       const users = await this.memberService.getSubmissionUsers(ctx.chat.id);
       if (!users.length) {
-        await ctx.reply(this.text.get("musicGame.noTracks"));
+        await ctx.reply(this.text.get('musicGame.noTracks'));
         return;
       }
 
       // Create a new game with the submitted tracks
       const game = await this.gameRepository.transferSubmissions(ctx.chat.id);
-      await ctx.reply(this.text.get("musicGame.gameStarted"));
+      await ctx.reply(this.text.get('musicGame.gameStarted'));
 
       // Immediately start the first round
       await this.startRound(ctx, Number(game.chatId));
     } catch (error) {
-      console.error("Error starting game:", error);
-      await ctx.reply(this.text.get("musicGame.startError"));
+      console.error('Error starting game:', error);
+      await ctx.reply(this.text.get('musicGame.startError'));
     }
   }
 
   /**
    * Starts a game using a provided config (from lobby)
    */
-  async startGameWithConfig(
-    ctx: IBotContext,
-    config: GameConfig,
-  ): Promise<void> {
+  async startGameWithConfig(ctx: IBotContext, config: GameConfig): Promise<void> {
     if (!ctx.chat) return;
 
     try {
-      const activeGame = await this.gameRepository.getCurrentGameByChatId(
-        ctx.chat.id,
-      );
+      const activeGame = await this.gameRepository.getCurrentGameByChatId(ctx.chat.id);
       if (activeGame) {
-        await ctx.reply(this.text.get("musicGame.activeExists"));
+        await ctx.reply(this.text.get('musicGame.activeExists'));
         return;
       }
 
       const users = await this.memberService.getSubmissionUsers(ctx.chat.id);
       if (!users.length) {
-        await ctx.reply(this.text.get("musicGame.noTracks"));
+        await ctx.reply(this.text.get('musicGame.noTracks'));
         return;
       }
 
       // Create a new game and persist config + set ACTIVE
       const game = await this.gameRepository.transferSubmissions(ctx.chat.id);
       await this.gameRepository.updateGameConfig(game.id, {
-        status: "ACTIVE",
+        status: 'ACTIVE',
         config,
       } as any);
 
-      await ctx.reply(this.text.get("musicGame.gameStarted"));
+      await ctx.reply(this.text.get('musicGame.gameStarted'));
       await this.startRound(ctx, Number(game.chatId));
     } catch (error) {
-      console.error("Error starting game with config:", error);
-      await ctx.reply(this.text.get("musicGame.startError"));
+      console.error('Error starting game with config:', error);
+      await ctx.reply(this.text.get('musicGame.startError'));
     }
   }
 
@@ -138,18 +129,16 @@ export class MusicGameService {
     if (!ctx.chat) return;
 
     try {
-      const game = await this.gameRepository.getCurrentGameByChatId(
-        ctx.chat.id,
-      );
+      const game = await this.gameRepository.getCurrentGameByChatId(ctx.chat.id);
       if (!game) {
-        await ctx.reply(this.text.get("musicGame.noActive"));
+        await ctx.reply(this.text.get('musicGame.noActive'));
         return;
       }
 
       await this.gameRepository.endGame(game.id);
-      await ctx.reply(this.text.get("musicGame.ended"));
+      await ctx.reply(this.text.get('musicGame.ended'));
     } catch (error) {
-      await ctx.reply(this.text.get("musicGame.noActive"));
+      await ctx.reply(this.text.get('musicGame.noActive'));
     }
   }
 
@@ -161,14 +150,11 @@ export class MusicGameService {
   async startRound(ctx: IBotContext, chatId: number): Promise<void> {
     const game = await this.gameRepository.getCurrentGameByChatId(chatId);
     if (!game) {
-      await ctx.reply(this.text.get("musicGame.noGame"));
+      await ctx.reply(this.text.get('musicGame.noGame'));
       return;
     }
 
-    const gameSequence = await this.gameRepository.getRoundBySequence(
-      game.id,
-      game.currentRound,
-    );
+    const gameSequence = await this.gameRepository.getRoundBySequence(game.id, game.currentRound);
     if (!gameSequence) {
       await this.handleGameEnd(ctx, chatId);
       return;
@@ -208,7 +194,7 @@ export class MusicGameService {
         );
       }
     } catch (error) {
-      console.error("Failed to schedule round events:", error);
+      console.error('Failed to schedule round events:', error);
     }
   }
 
@@ -225,26 +211,21 @@ export class MusicGameService {
     try {
       const round = await this.gameRepository.findRoundById(roundId);
       if (!round) {
-        await ctx.reply(this.text.get("rounds.notFound"));
+        await ctx.reply(this.text.get('rounds.notFound'));
         return;
       }
 
-      const game = await this.gameRepository.getCurrentGameByChatId(
-        ctx.chat.id,
-      );
+      const game = await this.gameRepository.getCurrentGameByChatId(ctx.chat.id);
       if (!game) {
-        await ctx.reply(this.text.get("musicGame.notFound"));
+        await ctx.reply(this.text.get('musicGame.notFound'));
         return;
       }
 
       // Check if user already guessed
       const guessingUserId = ctx.from!.id;
-      const existingGuess = await this.gameRepository.findGuess(
-        roundId,
-        guessingUserId,
-      );
+      const existingGuess = await this.gameRepository.findGuess(roundId, guessingUserId);
       if (existingGuess) {
-        await ctx.answerCbQuery(this.text.get("guessing.alreadyGuessed"));
+        await ctx.answerCbQuery(this.text.get('guessing.alreadyGuessed'));
         return;
       }
 
@@ -285,12 +266,12 @@ export class MusicGameService {
 
       await ctx.answerCbQuery(
         isCorrect
-          ? this.text.get("guessing.correctGuess", { points })
-          : this.text.get("guessing.wrongGuess"),
+          ? this.text.get('guessing.correctGuess', { points })
+          : this.text.get('guessing.wrongGuess'),
       );
     } catch (error) {
-      console.error("Error processing guess:", error);
-      await ctx.answerCbQuery(this.text.get("guessing.error"));
+      console.error('Error processing guess:', error);
+      await ctx.answerCbQuery(this.text.get('guessing.error'));
     }
   }
 
@@ -300,18 +281,18 @@ export class MusicGameService {
   async showHint(ctx: Context, chatId: number): Promise<void> {
     const game = await this.gameRepository.getCurrentGameByChatId(chatId);
     if (!game) {
-      await ctx.reply(this.text.get("musicGame.noGame"));
+      await ctx.reply(this.text.get('musicGame.noGame'));
       return;
     }
 
     const round = game.rounds.find((r) => r.roundIndex === game.currentRound);
     if (!round) {
-      await ctx.reply(this.text.get("rounds.noCurrentRound"));
+      await ctx.reply(this.text.get('rounds.noCurrentRound'));
       return;
     }
 
     if (round.hintShownAt) {
-      await ctx.reply(this.text.get("hints.hintAlreadyShown"));
+      await ctx.reply(this.text.get('hints.hintAlreadyShown'));
       return;
     }
 
@@ -325,13 +306,13 @@ export class MusicGameService {
           Number(round.hintMessageId),
         );
       } catch (error) {
-        console.error("Failed to copy hint message:", error);
-        await ctx.reply(this.text.get("hints.hintLayout"));
+        console.error('Failed to copy hint message:', error);
+        await ctx.reply(this.text.get('hints.hintLayout'));
       }
       return;
     }
 
-    await ctx.reply(this.text.get("hints.hintLayout"));
+    await ctx.reply(this.text.get('hints.hintLayout'));
   }
 
   /**
@@ -341,7 +322,7 @@ export class MusicGameService {
     const game = await this.gameRepository.getGameById(gameId);
     if (!game) return;
 
-    await ctx.reply(this.text.get("rounds.nextRound"));
+    await ctx.reply(this.text.get('rounds.nextRound'));
     await this.gameRepository.updateGameRound(gameId, game.currentRound + 1);
     await this.startRound(ctx as any, Number(game.chatId));
   }
@@ -352,16 +333,13 @@ export class MusicGameService {
   async replayCurrentRound(ctx: Context, chatId: number): Promise<void> {
     const game = await this.gameRepository.getCurrentGameByChatId(chatId);
     if (!game) {
-      await ctx.reply(this.text.get("musicGame.noGame"));
+      await ctx.reply(this.text.get('musicGame.noGame'));
       return;
     }
 
-    const gameSequence = await this.gameRepository.getRoundBySequence(
-      game.id,
-      game.currentRound,
-    );
+    const gameSequence = await this.gameRepository.getRoundBySequence(game.id, game.currentRound);
     if (!gameSequence) {
-      await ctx.reply(this.text.get("rounds.noRound"));
+      await ctx.reply(this.text.get('rounds.noRound'));
       return;
     }
 
@@ -375,11 +353,11 @@ export class MusicGameService {
   async skipCurrentRound(ctx: Context, chatId: number): Promise<void> {
     const game = await this.gameRepository.getCurrentGameByChatId(chatId);
     if (!game) {
-      await ctx.reply(this.text.get("musicGame.noGame"));
+      await ctx.reply(this.text.get('musicGame.noGame'));
       return;
     }
 
-    await ctx.reply("⏭️ Раунд пропущен!");
+    await ctx.reply('⏭️ Раунд пропущен!');
     await this.advanceToNextRound(ctx, game.id);
   }
 
@@ -389,19 +367,19 @@ export class MusicGameService {
   async revealCurrentRound(ctx: Context, chatId: number): Promise<void> {
     const game = await this.gameRepository.getCurrentGameByChatId(chatId);
     if (!game) {
-      await ctx.reply(this.text.get("musicGame.noGame"));
+      await ctx.reply(this.text.get('musicGame.noGame'));
       return;
     }
 
     const round = game.rounds.find((r) => r.roundIndex === game.currentRound);
     if (!round) {
-      await ctx.reply(this.text.get("rounds.noCurrentRound"));
+      await ctx.reply(this.text.get('rounds.noCurrentRound'));
       return;
     }
 
     const participants = await this.gameRepository.getParticipants(game.id);
     const correctUser = participants.find((u) => u.id === round.userId);
-    await ctx.reply(`🏁 Правильный ответ: ${correctUser?.name || "Unknown"}!`);
+    await ctx.reply(`🏁 Правильный ответ: ${correctUser?.name || 'Unknown'}!`);
   }
 
   // ==================== GAME STATE & INFO ====================
@@ -413,16 +391,16 @@ export class MusicGameService {
     const games = await this.gameRepository.getGamesOfChat(ctx.chat.id);
 
     if (!games.length) {
-      await ctx.reply("Нет сохранённых игр.");
+      await ctx.reply('Нет сохранённых игр.');
       return;
     }
 
     const gamesList = games
       .map((game) => {
-        const status = game.activeInChat ? "Активная" : "Завершена";
+        const status = game.activeInChat ? 'Активная' : 'Завершена';
         return `ID: ${game.id} | Создана: ${game.createdAt.toLocaleDateString()} | Статус: ${status}`;
       })
-      .join("\n");
+      .join('\n');
 
     await ctx.reply(`Список игр:\n${gamesList}`);
   }
@@ -430,11 +408,9 @@ export class MusicGameService {
   /**
    * Shows information about the current active game
    */
-  async showActiveGameInfo(
-    ctx: CallbackQueryContext | CommandContext,
-  ): Promise<void> {
+  async showActiveGameInfo(ctx: CallbackQueryContext | CommandContext): Promise<void> {
     if (!ctx.chat) {
-      await ctx.reply("Чат не найден");
+      await ctx.reply('Чат не найден');
       return;
     }
     const game = await this.gameRepository.getCurrentGameByChatId(ctx.chat.id);
@@ -448,12 +424,12 @@ export class MusicGameService {
       `Информация об игре:`,
       `ID: ${game.id}`,
       `Создана: ${game.createdAt.toLocaleDateString()}`,
-      `Статус: ${game.activeInChat ? "Активная" : "Завершена"}`,
+      `Статус: ${game.activeInChat ? 'Активная' : 'Завершена'}`,
       `Текущий раунд: ${game.currentRound + 1}`,
       `Всего раундов: ${game.rounds.length}`,
     ];
 
-    await ctx.reply(gameInfo.join("\n"));
+    await ctx.reply(gameInfo.join('\n'));
   }
 
   /**
@@ -463,9 +439,7 @@ export class MusicGameService {
     const game = await this.gameRepository.getCurrentGameByChatId(chatId);
     if (!game) return null;
 
-    const currentRound = game.rounds.find(
-      (r) => r.roundIndex === game.currentRound,
-    );
+    const currentRound = game.rounds.find((r) => r.roundIndex === game.currentRound);
     const participants = await this.gameRepository.getParticipants(game.id);
 
     return {
@@ -482,26 +456,22 @@ export class MusicGameService {
    * List all players in the current game
    */
   async listPlayers(ctx: CommandContext): Promise<void> {
-    const submissionUsers = await this.memberService.getSubmissionUsers(
-      ctx.chat.id,
-    );
+    const submissionUsers = await this.memberService.getSubmissionUsers(ctx.chat.id);
 
     if (!submissionUsers.length) {
-      await ctx.reply("musicGame.noPlayers");
+      await ctx.reply('musicGame.noPlayers');
       return;
     }
 
-    const users = this.memberService
-      .formatPingNames(submissionUsers)
-      .join("\n");
+    const users = this.memberService.formatPingNames(submissionUsers).join('\n');
 
     await ctx.reply(
-      this.text.get("musicGame.listPlayers", {
+      this.text.get('musicGame.listPlayers', {
         playersCount: submissionUsers.length,
         playersList: users,
       }),
       {
-        parse_mode: "Markdown",
+        parse_mode: 'Markdown',
         disable_notification: true,
       },
     );
@@ -514,13 +484,13 @@ export class MusicGameService {
     const users = await this.memberService.getSubmissionUsers(ctx.chat.id);
 
     if (!users.length) {
-      await ctx.reply("musicGame.noPlayers");
+      await ctx.reply('musicGame.noPlayers');
       return;
     }
 
     this.memberService.formatPingNames(users).forEach((batch) => {
       ctx.reply(batch, {
-        parse_mode: "Markdown",
+        parse_mode: 'Markdown',
         disable_notification: false,
       });
     });
@@ -532,7 +502,7 @@ export class MusicGameService {
   async getGameStats(ctx: CommandContext): Promise<void> {
     const game = await this.gameRepository.getCurrentGameByChatId(ctx.chat.id);
     if (!game) {
-      await ctx.reply("Нет активной игры для получения статистики.");
+      await ctx.reply('Нет активной игры для получения статистики.');
       return;
     }
 
@@ -540,11 +510,11 @@ export class MusicGameService {
     const trackDifficulty = await this.calculateTrackDifficulty(game.id);
 
     const statsText = [
-      "📊 Статистика игры:",
+      '📊 Статистика игры:',
       `🎯 Текущий раунд: ${game.currentRound + 1}/${game.rounds.length}`,
       `👥 Участников: ${userStats.size}`,
-      "",
-      "🏆 Топ игроков:",
+      '',
+      '🏆 Топ игроков:',
       ...Array.from(userStats.entries())
         .sort(([, a], [, b]) => b.totalPoints - a.totalPoints)
         .slice(0, 3)
@@ -552,13 +522,13 @@ export class MusicGameService {
           ([userId, stats], index) =>
             `${index + 1}. ${stats.totalPoints} очков (🎯 ${stats.correct}, ❌ ${stats.incorrect})`,
         ),
-      "",
-      "🎵 Сложность треков:",
+      '',
+      '🎵 Сложность треков:',
       ...trackDifficulty
         .sort((a, b) => b.correctGuesses - a.correctGuesses)
         .slice(0, 3)
         .map((item) => `${item.player}: ${item.correctGuesses} угадано`),
-    ].join("\n");
+    ].join('\n');
 
     await ctx.reply(statsText);
   }
@@ -566,23 +536,19 @@ export class MusicGameService {
   // ==================== PRIVATE HELPER METHODS ====================
 
   private async handleGameEnd(ctx: IBotContext, chatId: number): Promise<void> {
-    await ctx.reply(this.text.get("rounds.noMoreRounds"));
+    await ctx.reply(this.text.get('rounds.noMoreRounds'));
     await this.showLeaderboard(ctx, chatId);
     await this.endGame(ctx);
   }
 
-  private async playRound(
-    ctx: Context,
-    participants: User[],
-    currentRound: any,
-  ): Promise<void> {
+  private async playRound(ctx: Context, participants: User[], currentRound: any): Promise<void> {
     const buttons = participants.map((user) => ({
       text: user.name,
       callback_data: `guess:${currentRound.id}_${user.id}`,
     }));
 
     await ctx.replyWithAudio(currentRound.musicFileId, {
-      caption: this.text.get("rounds.playRound"),
+      caption: this.text.get('rounds.playRound'),
       reply_markup: { inline_keyboard: this.chunkButtons(buttons, 3) },
     });
 
@@ -592,19 +558,19 @@ export class MusicGameService {
   private async sendRoundInfo(ctx: Context, roundId: number): Promise<void> {
     const round = await this.gameRepository.findRoundById(roundId);
     if (!round) {
-      await ctx.reply("Раунд не найден: " + roundId);
+      await ctx.reply('Раунд не найден: ' + roundId);
       return;
     }
 
     const info = await this.formatRoundInfo(round);
     const controls = [
       [
-        { text: "💡 Hint Now", callback_data: `round:hint:${round.id}` },
-        { text: "🔁 Replay", callback_data: `round:replay:${round.id}` },
+        { text: '💡 Hint Now', callback_data: `round:hint:${round.id}` },
+        { text: '🔁 Replay', callback_data: `round:replay:${round.id}` },
       ],
       [
-        { text: "⏭️ Skip", callback_data: `round:skip:${round.id}` },
-        { text: "🏁 Reveal", callback_data: `round:reveal:${round.id}` },
+        { text: '⏭️ Skip', callback_data: `round:skip:${round.id}` },
+        { text: '🏁 Reveal', callback_data: `round:reveal:${round.id}` },
       ],
     ];
 
@@ -615,10 +581,10 @@ export class MusicGameService {
           Number(round.infoMessageId),
           undefined,
           info,
-          { parse_mode: "HTML", reply_markup: { inline_keyboard: controls } },
+          { parse_mode: 'HTML', reply_markup: { inline_keyboard: controls } },
         );
       } catch (error) {
-        console.error("Failed to edit message, sending new one:", error);
+        console.error('Failed to edit message, sending new one:', error);
         await this.sendNewRoundInfo(ctx, round, info);
       }
     } else {
@@ -626,29 +592,22 @@ export class MusicGameService {
     }
   }
 
-  private async sendNewRoundInfo(
-    ctx: Context,
-    round: any,
-    info: string,
-  ): Promise<void> {
+  private async sendNewRoundInfo(ctx: Context, round: any, info: string): Promise<void> {
     const controls = [
       [
-        { text: "💡 Hint Now", callback_data: `round:hint:${round.id}` },
-        { text: "🔁 Replay", callback_data: `round:replay:${round.id}` },
+        { text: '💡 Hint Now', callback_data: `round:hint:${round.id}` },
+        { text: '🔁 Replay', callback_data: `round:replay:${round.id}` },
       ],
       [
-        { text: "⏭️ Skip", callback_data: `round:skip:${round.id}` },
-        { text: "🏁 Reveal", callback_data: `round:reveal:${round.id}` },
+        { text: '⏭️ Skip', callback_data: `round:skip:${round.id}` },
+        { text: '🏁 Reveal', callback_data: `round:reveal:${round.id}` },
       ],
     ];
     const message = await ctx.reply(info, {
-      parse_mode: "HTML",
+      parse_mode: 'HTML',
       reply_markup: { inline_keyboard: controls },
     });
-    await this.gameRepository.updateRoundMessageInfo(
-      round.id,
-      message.message_id,
-    );
+    await this.gameRepository.updateRoundMessageInfo(round.id, message.message_id);
   }
 
   private async updateRoundInfo(ctx: Context, roundId: number): Promise<void> {
@@ -660,31 +619,26 @@ export class MusicGameService {
   }
 
   private async formatRoundInfo(round: any): Promise<string> {
-    const notYetGuessed = await this.gameRepository.getUsersNotGuessed(
-      round.id,
-    );
+    const notYetGuessed = await this.gameRepository.getUsersNotGuessed(round.id);
 
     return `
       🎯 Раунд ${round.roundIndex + 1} - продолжаем веселиться!
-      ${round.hintShownAt ? "💡 Подсказка была показана (для особо одарённых)" : ""}
+      ${round.hintShownAt ? '💡 Подсказка была показана (для особо одарённых)' : ''}
       
-      ${this.text.get("rounds.roundInfo.thinking")}: ${notYetGuessed.map((u: any) => u.name).join(", ")}
+      ${this.text.get('rounds.roundInfo.thinking')}: ${notYetGuessed.map((u: any) => u.name).join(', ')}
       
-      ${this.text.get("rounds.roundInfo.correct")}: ${
+      ${this.text.get('rounds.roundInfo.correct')}: ${
         round.guesses
           .filter((g: any) => g.guessedId === round.userId)
-          .map(
-            (g: any) =>
-              `${g.user.name} (${g.points} ${this.getPointsWord(g.points)})`,
-          )
-          .join(", ") || "Пока никто! Неужели так сложно?"
+          .map((g: any) => `${g.user.name} (${g.points} ${this.getPointsWord(g.points)})`)
+          .join(', ') || 'Пока никто! Неужели так сложно?'
       }
       
-      ${this.text.get("rounds.roundInfo.wrong")}: ${
+      ${this.text.get('rounds.roundInfo.wrong')}: ${
         round.guesses
           .filter((g: any) => g.guessedId !== round.userId)
           .map((g: any) => g.user.name)
-          .join(", ") || "Пока никто не ошибся. Но это ненадолго!"
+          .join(', ') || 'Пока никто не ошибся. Но это ненадолго!'
       }
     `;
   }
@@ -692,7 +646,7 @@ export class MusicGameService {
   private async showLeaderboard(ctx: Context, chatId: number): Promise<void> {
     const leaderboard = await this.generateLeaderboard(chatId);
     if (!leaderboard) {
-      await ctx.reply("Произошла ошибка при генерации лидерборда");
+      await ctx.reply('Произошла ошибка при генерации лидерборда');
       return;
     }
     await ctx.reply(leaderboard);
@@ -715,7 +669,7 @@ export class MusicGameService {
       .sort(([, a], [, b]) => b.totalPoints - a.totalPoints)
       .map(
         ([userId, stats], index) =>
-          `${index + 1}. ${getUserByIdMap.get(userId)?.name || "Unknown"} — 🏆 ${
+          `${index + 1}. ${getUserByIdMap.get(userId)?.name || 'Unknown'} — 🏆 ${
             stats.totalPoints
           } очков (🎯 ${stats.correct} угадано, ❌ ${stats.incorrect} не угадано)`,
       );
@@ -723,28 +677,23 @@ export class MusicGameService {
     const trackDifficulty = await this.calculateTrackDifficulty(game.id);
     const sortedTrackDifficulty = trackDifficulty
       .sort((a, b) => b.correctGuesses - a.correctGuesses)
-      .map(
-        (item) =>
-          `${item.index + 1}. ${item.player} — 🎯 ${item.correctGuesses}`,
-      );
+      .map((item) => `${item.index + 1}. ${item.player} — 🎯 ${item.correctGuesses}`);
 
-    const mostPoints = (await Promise.all(sortedLeaderboard)).join("\n");
+    const mostPoints = (await Promise.all(sortedLeaderboard)).join('\n');
 
     return [
-      this.text.get("leaderboard.mostPoints"),
+      this.text.get('leaderboard.mostPoints'),
       mostPoints,
-      this.text.get("leaderboard.leastGuessed"),
-      sortedTrackDifficulty.join("\n"),
-    ].join("\n\n");
+      this.text.get('leaderboard.leastGuessed'),
+      sortedTrackDifficulty.join('\n'),
+    ].join('\n\n');
   }
 
   private async checkAllPlayersGuessed(roundId: number): Promise<boolean> {
     const round = await this.gameRepository.findRoundById(roundId);
     if (!round) return false;
 
-    const participants = await this.gameRepository.getParticipants(
-      round.gameId,
-    );
+    const participants = await this.gameRepository.getParticipants(round.gameId);
     const notYetGuessed = await this.gameRepository.getUsersNotGuessed(roundId);
 
     return notYetGuessed.length === 0;
@@ -805,7 +754,7 @@ export class MusicGameService {
 
   private async calculateUserStats(gameId: number) {
     const game = await this.gameRepository.getGameById(gameId);
-    if (!game) throw new Error("Game not found");
+    if (!game) throw new Error('Game not found');
 
     const userStats = new Map<
       number,
@@ -839,15 +788,13 @@ export class MusicGameService {
 
   private async calculateTrackDifficulty(gameId: number) {
     const game = await this.gameRepository.getGameById(gameId);
-    if (!game) throw new Error("Game not found");
+    if (!game) throw new Error('Game not found');
 
     // Logic for calculating track difficulty
     return game.rounds.map((round) => {
-      const correctGuesses = round.guesses.filter(
-        (g) => g.guessedId === round.userId,
-      ).length;
+      const correctGuesses = round.guesses.filter((g) => g.guessedId === round.userId).length;
       return {
-        player: round.user.name || "Unknown",
+        player: round.user.name || 'Unknown',
         correctGuesses,
         index: round.roundIndex,
       };
@@ -855,9 +802,9 @@ export class MusicGameService {
   }
 
   private getPointsWord(points: number): string {
-    if (points === 1) return "очко";
-    if (points >= 2 && points <= 4) return "очка";
-    return "очков";
+    if (points === 1) return 'очко';
+    if (points >= 2 && points <= 4) return 'очка';
+    return 'очков';
   }
 
   private chunkButtons(buttons: InlineKeyboardButton[], size: number) {

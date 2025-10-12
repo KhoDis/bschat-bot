@@ -1,16 +1,11 @@
-import Timer from "./Timer";
-import { formatTime } from "./timeUtils";
+import Timer from './Timer';
+import { formatTime } from './timeUtils';
 
 class TimerInterval {
   timer: Timer;
   interval: NodeJS.Timeout;
 
-  constructor(
-    callback: () => void,
-    runAfter: number,
-    update: () => void,
-    updateEach: number
-  ) {
+  constructor(callback: () => void, runAfter: number, update: () => void, updateEach: number) {
     this.timer = new Timer(callback, runAfter);
     this.timer.start();
     this.interval = setInterval(update, updateEach);

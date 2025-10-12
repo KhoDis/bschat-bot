@@ -1,14 +1,14 @@
-import { defineConfig } from "vitest/config";
-import { resolve } from "node:path";
+import { defineConfig } from 'vitest/config';
+import { resolve } from 'node:path';
 
 export default defineConfig({
   resolve: {
-    alias: [{ find: "@", replacement: resolve(__dirname, "./src") }],
+    alias: [{ find: '@', replacement: resolve(__dirname, './src') }],
   },
   test: {
-    environment: "node",
+    environment: 'node',
     coverage: {
-      provider: "istanbul",
+      provider: 'istanbul',
     },
   },
 });

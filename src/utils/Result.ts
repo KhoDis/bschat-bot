@@ -20,9 +20,7 @@ export class Result<T, E = Error> {
     return this.error ? Result.err(this.error) : fn(this.value!);
   }
 
-  async andThenAsync<U>(
-    fn: (value: T) => Promise<Result<U, E>>,
-  ): Promise<Result<U, E>> {
+  async andThenAsync<U>(fn: (value: T) => Promise<Result<U, E>>): Promise<Result<U, E>> {
     if (this.error) return Result.err(this.error);
     return await fn(this.value!);
   }
@@ -31,10 +29,7 @@ export class Result<T, E = Error> {
     return this.error ? err(this.error) : ok(this.value!);
   }
 
-  async matchAsync<U>(
-    ok: (value: T) => Promise<U>,
-    err: (error: E) => Promise<U>,
-  ): Promise<U> {
+  async matchAsync<U>(ok: (value: T) => Promise<U>, err: (error: E) => Promise<U>): Promise<U> {
     return this.error ? await err(this.error) : await ok(this.value!);
   }
 }

@@ -1,35 +1,35 @@
-import { IBotContext } from "@/context/context.interface";
-import { Composer } from "telegraf";
-import { inject, injectable } from "inversify";
-import { createApi } from "unsplash-js";
-import { ConfigService } from "@/modules/common/config.service";
-import { TextService } from "@/modules/common/text.service";
-import { CommandContext, TYPES } from "@/types";
-import { FoodService } from "@/modules/food/food.service";
-import prisma from "@/prisma/client";
-import { RequirePermission } from "@/modules/permissions/require-permission.decorator";
-import { Prisma } from "@prisma/client";
-import { ArgsService } from "@/modules/common/args.service";
+import { IBotContext } from '@/context/context.interface';
+import { Composer } from 'telegraf';
+import { inject, injectable } from 'inversify';
+import { createApi } from 'unsplash-js';
+import { ConfigService } from '@/modules/common/config.service';
+import { TextService } from '@/modules/common/text.service';
+import { CommandContext, TYPES } from '@/types';
+import { FoodService } from '@/modules/food/food.service';
+import prisma from '@/prisma/client';
+import { RequirePermission } from '@/modules/permissions/require-permission.decorator';
+import { Prisma } from '@prisma/client';
+import { ArgsService } from '@/modules/common/args.service';
 
 const specialChars = [
-  "_",
-  "*",
-  "[",
-  "]",
-  "(",
-  ")",
-  "~",
-  "`",
-  ">",
-  "#",
-  "+",
-  "-",
-  "=",
-  "|",
-  "{",
-  "}",
-  ".",
-  "!",
+  '_',
+  '*',
+  '[',
+  ']',
+  '(',
+  ')',
+  '~',
+  '`',
+  '>',
+  '#',
+  '+',
+  '-',
+  '=',
+  '|',
+  '{',
+  '}',
+  '.',
+  '!',
 ];
 
 @injectable()
@@ -46,7 +46,7 @@ export class FoodModule extends Composer<IBotContext> {
     super();
 
     this.unsplash = createApi({
-      accessKey: this.config.get("UNSPLASH_ACCESS_KEY"),
+      accessKey: this.config.get('UNSPLASH_ACCESS_KEY'),
     });
 
     this.setupCommands();
@@ -54,43 +54,43 @@ export class FoodModule extends Composer<IBotContext> {
   }
 
   private setupCommands() {
-    this.command("addfood", (ctx) => this.handleAddFood(ctx));
-    this.command("removefood", (ctx) => this.handleRemoveFood(ctx));
-    this.command("listfood", (ctx) => this.handleListFood(ctx));
+    this.command('addfood', (ctx) => this.handleAddFood(ctx));
+    this.command('removefood', (ctx) => this.handleRemoveFood(ctx));
+    this.command('listfood', (ctx) => this.handleListFood(ctx));
 
-    this.command("renamefood", (ctx) => this.handleRenameFood(ctx));
+    this.command('renamefood', (ctx) => this.handleRenameFood(ctx));
 
     // New commands
-    this.command("addtrigger", (ctx) => this.handleAddTrigger(ctx));
-    this.command("removetrigger", (ctx) => this.handleRemoveTrigger(ctx));
-    this.command("listtriggers", (ctx) => this.handleListTriggers(ctx));
+    this.command('addtrigger', (ctx) => this.handleAddTrigger(ctx));
+    this.command('removetrigger', (ctx) => this.handleRemoveTrigger(ctx));
+    this.command('listtriggers', (ctx) => this.handleListTriggers(ctx));
 
-    this.command("setfoodchance", (ctx) => this.handleSetChance(ctx));
+    this.command('setfoodchance', (ctx) => this.handleSetChance(ctx));
   }
 
-  @RequirePermission("MANAGE_FOOD")
+  @RequirePermission('MANAGE_FOOD')
   private async handleSetChance(ctx: CommandContext) {
     const args = this.args.parse(ctx.message.text);
     if (args.length < 2) {
-      await ctx.reply(this.text.get("food.setchance.usage"));
+      await ctx.reply(this.text.get('food.setchance.usage'));
       return;
     }
 
     const value = parseInt(args[1]!, 10);
     if (isNaN(value) || value < 0 || value > 100) {
-      await ctx.reply(this.text.get("food.setchance.invalid"));
+      await ctx.reply(this.text.get('food.setchance.invalid'));
       return;
     }
 
     this.responseChance = value;
-    await ctx.reply(this.text.get("food.setchance.success", { value }));
+    await ctx.reply(this.text.get('food.setchance.success', { value }));
   }
 
-  @RequirePermission("MANAGE_FOOD")
+  @RequirePermission('MANAGE_FOOD')
   private async handleAddFood(ctx: CommandContext) {
     const args = this.args.parse(ctx.message.text);
     if (args.length < 3) {
-      await ctx.reply(this.text.get("food.add.usage"));
+      await ctx.reply(this.text.get('food.add.usage'));
       return;
     }
 
@@ -98,7 +98,7 @@ export class FoodModule extends Composer<IBotContext> {
     const triggers = args.slice(2);
 
     if (!query || triggers.length === 0) {
-      await ctx.reply(this.text.get("food.add.usage"));
+      await ctx.reply(this.text.get('food.add.usage'));
       return;
     }
 
@@ -115,9 +115,7 @@ export class FoodModule extends Composer<IBotContext> {
         },
       });
 
-      const existingTriggerMap = new Map(
-        existingTriggers.map((t) => [t.trigger, t]),
-      );
+      const existingTriggerMap = new Map(existingTriggers.map((t) => [t.trigger, t]));
       const newTriggers = triggers.filter((t) => !existingTriggerMap.has(t));
       const transfers: { trigger: string; from: string }[] = [];
 
@@ -147,37 +145,37 @@ export class FoodModule extends Composer<IBotContext> {
 
       await this.foodService.initializeStemMap();
 
-      const added = this.text.get("food.add.success", {
+      const added = this.text.get('food.add.success', {
         query,
-        triggers: triggers.join(", "),
+        triggers: triggers.join(', '),
       });
       if (transfers.length > 0) {
         const transferMessages = transfers
           .map((t) =>
-            this.text.get("food.add.transfer", {
+            this.text.get('food.add.transfer', {
               trigger: t.trigger,
               from: t.from,
             }),
           )
-          .join("\n");
+          .join('\n');
         await ctx.reply(`${added}\n\n${transferMessages}`);
       } else {
         await ctx.reply(added);
       }
     } catch (error) {
       if (error instanceof Error) {
-        await ctx.reply(this.text.get("food.error", { error: error.message }));
+        await ctx.reply(this.text.get('food.error', { error: error.message }));
         return;
       }
       throw error;
     }
   }
 
-  @RequirePermission("MANAGE_FOOD")
+  @RequirePermission('MANAGE_FOOD')
   private async handleRenameFood(ctx: CommandContext) {
     const args = this.args.parse(ctx.message.text);
     if (args.length < 3) {
-      await ctx.reply(this.text.get("food.rename.usage"));
+      await ctx.reply(this.text.get('food.rename.usage'));
       return;
     }
 
@@ -185,7 +183,7 @@ export class FoodModule extends Composer<IBotContext> {
     const newName = args[2];
 
     if (!oldName || !newName) {
-      await ctx.reply(this.text.get("food.rename.usage"));
+      await ctx.reply(this.text.get('food.rename.usage'));
       return;
     }
 
@@ -196,30 +194,23 @@ export class FoodModule extends Composer<IBotContext> {
       });
 
       await this.foodService.initializeStemMap();
-      await ctx.reply(
-        this.text.get("food.rename.success", { oldName, newName }),
-      );
+      await ctx.reply(this.text.get('food.rename.success', { oldName, newName }));
     } catch (error) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === "P2025"
-      ) {
-        await ctx.reply(
-          this.text.get("food.categoryNotFound", { query: oldName }),
-        );
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+        await ctx.reply(this.text.get('food.categoryNotFound', { query: oldName }));
       } else if (error instanceof Error) {
-        await ctx.reply(this.text.get("food.error", { error: error.message }));
+        await ctx.reply(this.text.get('food.error', { error: error.message }));
       } else {
         throw error;
       }
     }
   }
 
-  @RequirePermission("MANAGE_FOOD")
+  @RequirePermission('MANAGE_FOOD')
   private async handleAddTrigger(ctx: CommandContext) {
     const args = this.args.parse(ctx.message.text);
     if (args.length < 3) {
-      await ctx.reply(this.text.get("food.trigger.add.usage"));
+      await ctx.reply(this.text.get('food.trigger.add.usage'));
       return;
     }
 
@@ -227,7 +218,7 @@ export class FoodModule extends Composer<IBotContext> {
     const newTriggers = args.slice(2);
 
     if (!query || newTriggers.length === 0) {
-      await ctx.reply(this.text.get("food.trigger.add.usage"));
+      await ctx.reply(this.text.get('food.trigger.add.usage'));
       return;
     }
 
@@ -238,7 +229,7 @@ export class FoodModule extends Composer<IBotContext> {
       });
 
       if (!category) {
-        await ctx.reply(this.text.get("food.categoryNotFound", { query }));
+        await ctx.reply(this.text.get('food.categoryNotFound', { query }));
         return;
       }
 
@@ -249,15 +240,11 @@ export class FoodModule extends Composer<IBotContext> {
       });
 
       const existingTriggerValues = existingTriggers.map((t) => t.trigger);
-      const duplicates = newTriggers.filter((t) =>
-        existingTriggerValues.includes(t),
-      );
-      const triggersToAdd = newTriggers.filter(
-        (t) => !existingTriggerValues.includes(t),
-      );
+      const duplicates = newTriggers.filter((t) => existingTriggerValues.includes(t));
+      const triggersToAdd = newTriggers.filter((t) => !existingTriggerValues.includes(t));
 
       if (triggersToAdd.length === 0) {
-        await ctx.reply(this.text.get("food.trigger.add.allExist", { query }));
+        await ctx.reply(this.text.get('food.trigger.add.allExist', { query }));
         return;
       }
 
@@ -271,15 +258,15 @@ export class FoodModule extends Composer<IBotContext> {
 
       await this.foodService.initializeStemMap();
 
-      const addedMsg = this.text.get("food.trigger.add.success", {
+      const addedMsg = this.text.get('food.trigger.add.success', {
         count: triggersToAdd.length,
         query,
-        triggers: triggersToAdd.join(", "),
+        triggers: triggersToAdd.join(', '),
       });
       if (duplicates.length > 0) {
-        const skipped = this.text.get("food.trigger.add.skipped", {
+        const skipped = this.text.get('food.trigger.add.skipped', {
           count: duplicates.length,
-          duplicates: duplicates.join(", "),
+          duplicates: duplicates.join(', '),
         });
         await ctx.reply(`${addedMsg}\n${skipped}`);
       } else {
@@ -287,7 +274,7 @@ export class FoodModule extends Composer<IBotContext> {
       }
     } catch (error) {
       if (error instanceof Error) {
-        await ctx.reply(this.text.get("food.error", { error: error.message }));
+        await ctx.reply(this.text.get('food.error', { error: error.message }));
         return;
       }
 
@@ -295,18 +282,18 @@ export class FoodModule extends Composer<IBotContext> {
     }
   }
 
-  @RequirePermission("MANAGE_FOOD")
+  @RequirePermission('MANAGE_FOOD')
   private async handleRemoveTrigger(ctx: CommandContext) {
     const args = this.args.parse(ctx.message.text);
     if (args.length < 2) {
-      await ctx.reply(this.text.get("food.trigger.remove.usage"));
+      await ctx.reply(this.text.get('food.trigger.remove.usage'));
       return;
     }
 
     const triggersToRemove = args.slice(1);
 
     if (triggersToRemove.length === 0) {
-      await ctx.reply(this.text.get("food.trigger.remove.usage"));
+      await ctx.reply(this.text.get('food.trigger.remove.usage'));
       return;
     }
 
@@ -323,15 +310,13 @@ export class FoodModule extends Composer<IBotContext> {
       await this.foodService.initializeStemMap();
 
       if (result.count === 0) {
-        await ctx.reply(this.text.get("food.trigger.remove.none"));
+        await ctx.reply(this.text.get('food.trigger.remove.none'));
       } else {
-        await ctx.reply(
-          this.text.get("food.trigger.remove.success", { count: result.count }),
-        );
+        await ctx.reply(this.text.get('food.trigger.remove.success', { count: result.count }));
       }
     } catch (error) {
       if (error instanceof Error) {
-        await ctx.reply(this.text.get("food.error", { error: error.message }));
+        await ctx.reply(this.text.get('food.error', { error: error.message }));
         return;
       }
 
@@ -339,18 +324,18 @@ export class FoodModule extends Composer<IBotContext> {
     }
   }
 
-  @RequirePermission("MANAGE_FOOD")
+  @RequirePermission('MANAGE_FOOD')
   private async handleRemoveFood(ctx: CommandContext) {
     const args = this.args.parse(ctx.message.text);
     if (args.length < 2) {
-      await ctx.reply(this.text.get("food.remove.usage"));
+      await ctx.reply(this.text.get('food.remove.usage'));
       return;
     }
 
     const query = args[1];
 
     if (!query) {
-      await ctx.reply(this.text.get("food.remove.usage"));
+      await ctx.reply(this.text.get('food.remove.usage'));
       return;
     }
 
@@ -359,10 +344,10 @@ export class FoodModule extends Composer<IBotContext> {
         where: { query },
       });
       await this.foodService.initializeStemMap();
-      await ctx.reply(this.text.get("food.remove.success", { query }));
+      await ctx.reply(this.text.get('food.remove.success', { query }));
     } catch (error) {
       if (error instanceof Error) {
-        await ctx.reply(this.text.get("food.error", { error: error.message }));
+        await ctx.reply(this.text.get('food.error', { error: error.message }));
         return;
       }
 
@@ -373,12 +358,12 @@ export class FoodModule extends Composer<IBotContext> {
   private async handleListFood(ctx: IBotContext) {
     const categories = await prisma.foodCategory.findMany();
     if (!categories.length) {
-      await ctx.reply(this.text.get("food.list.none"));
+      await ctx.reply(this.text.get('food.list.none'));
       return;
     }
 
-    const list = categories.map((c) => `• ${c.query}`).join("\n");
-    await ctx.reply(this.text.get("food.list.header", { list }));
+    const list = categories.map((c) => `• ${c.query}`).join('\n');
+    await ctx.reply(this.text.get('food.list.header', { list }));
   }
 
   private async handleListTriggers(ctx: CommandContext) {
@@ -391,22 +376,22 @@ export class FoodModule extends Composer<IBotContext> {
       });
 
       if (!categories.length) {
-        await ctx.reply(this.text.get("food.triggers.none"));
+        await ctx.reply(this.text.get('food.triggers.none'));
         return;
       }
 
       const list = categories
         .map((c) => {
-          return `• ${c.query}: ${c.triggers.map((t) => t.trigger).join(", ")}`;
+          return `• ${c.query}: ${c.triggers.map((t) => t.trigger).join(', ')}`;
         })
-        .join("\n");
-      await ctx.reply(this.text.get("food.triggers.all.header", { list }));
+        .join('\n');
+      await ctx.reply(this.text.get('food.triggers.all.header', { list }));
     } else {
       // Show triggers for specific category
       const query = args[1];
 
       if (!query) {
-        await ctx.reply(this.text.get("food.triggers.usage"));
+        await ctx.reply(this.text.get('food.triggers.usage'));
         return;
       }
 
@@ -416,20 +401,18 @@ export class FoodModule extends Composer<IBotContext> {
       });
 
       if (!category) {
-        await ctx.reply(this.text.get("food.categoryNotFound", { query }));
+        await ctx.reply(this.text.get('food.categoryNotFound', { query }));
         return;
       }
 
       if (!category.triggers.length) {
-        await ctx.reply(
-          this.text.get("food.triggers.category.none", { query }),
-        );
+        await ctx.reply(this.text.get('food.triggers.category.none', { query }));
         return;
       }
 
-      const triggersList = category.triggers.map((t) => t.trigger).join(", ");
+      const triggersList = category.triggers.map((t) => t.trigger).join(', ');
       await ctx.reply(
-        this.text.get("food.triggers.category.header", {
+        this.text.get('food.triggers.category.header', {
           query,
           triggersList,
         }),
@@ -438,12 +421,10 @@ export class FoodModule extends Composer<IBotContext> {
   }
 
   private setupFoodListener() {
-    this.on("message", async (ctx, next) => {
-      if (!ctx.message || !("text" in ctx.message)) return;
+    this.on('message', async (ctx, next) => {
+      if (!ctx.message || !('text' in ctx.message)) return;
 
-      const detected = this.foodService.detectCategoryFromText(
-        ctx.message.text,
-      );
+      const detected = this.foodService.detectCategoryFromText(ctx.message.text);
       if (!detected) return;
 
       const roll = Math.random() * 100;
@@ -457,12 +438,10 @@ export class FoodModule extends Composer<IBotContext> {
 
         await ctx.replyWithPhoto(photoData.url, {
           caption: `Вот твоя ${category}\\! 🍽️\n\n${attribution}`,
-          parse_mode: "MarkdownV2",
+          parse_mode: 'MarkdownV2',
         });
       } catch (error) {
-        await ctx.reply(
-          this.text.get("food.unsplash.error", { error: String(error) }),
-        );
+        await ctx.reply(this.text.get('food.unsplash.error', { error: String(error) }));
       }
 
       await next();
@@ -471,9 +450,9 @@ export class FoodModule extends Composer<IBotContext> {
 
   private escapeMarkdownV2(text: string): string {
     return text
-      .split("")
+      .split('')
       .map((char) => (specialChars.includes(char) ? `\\${char}` : char))
-      .join("");
+      .join('');
   }
 
   private async fetchUnsplashPhoto(
@@ -482,25 +461,23 @@ export class FoodModule extends Composer<IBotContext> {
     const result = await this.unsplash.photos.getRandom({
       query: fullQuery,
       count: 1,
-      orientation: "landscape",
+      orientation: 'landscape',
     });
 
     if (result.errors || !result.response) {
-      throw new Error(result.errors?.[0] || "Unknown error");
+      throw new Error(result.errors?.[0] || 'Unknown error');
     }
 
-    const photo = Array.isArray(result.response)
-      ? result.response[0]
-      : result.response;
+    const photo = Array.isArray(result.response) ? result.response[0] : result.response;
 
     if (!photo) {
-      throw new Error("No photo found");
+      throw new Error('No photo found');
     }
 
     return {
       url: photo.urls.regular,
-      authorName: this.escapeMarkdownV2(photo.user.name || "Unknown"),
-      authorUsername: this.escapeMarkdownV2(photo.user.username || "unknown"),
+      authorName: this.escapeMarkdownV2(photo.user.name || 'Unknown'),
+      authorUsername: this.escapeMarkdownV2(photo.user.username || 'unknown'),
     };
   }
 }

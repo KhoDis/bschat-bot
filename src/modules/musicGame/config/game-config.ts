@@ -1,6 +1,6 @@
-import { z } from "zod";
+import { z } from 'zod';
 
-export const scoringPresetSchema = z.enum(["classic", "aggressive", "gentle"]);
+export const scoringPresetSchema = z.enum(['classic', 'aggressive', 'gentle']);
 
 export const gameConfigSchema = z.object({
   hintDelaySec: z.number().int().min(0).default(30),
@@ -8,7 +8,7 @@ export const gameConfigSchema = z.object({
   advanceDelaySec: z.number().int().min(0).default(10),
   allowSelfGuess: z.boolean().default(false),
   shuffle: z.boolean().default(true),
-  scoringPreset: scoringPresetSchema.default("classic"),
+  scoringPreset: scoringPresetSchema.default('classic'),
 });
 
 export type GameConfig = z.infer<typeof gameConfigSchema>;
