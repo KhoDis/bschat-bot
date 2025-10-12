@@ -204,10 +204,20 @@ export class MusicGameRepository {
     points: number;
     isLateGuess: boolean;
   }): Promise<Guess> {
-    return prisma.guess.create({
-      data: {
+    return prisma.guess.upsert({
+      where: {
+        roundId_userId: {
+          roundId: data.roundId,
+          userId: BigInt(data.userId),
+        },
+      },
+      create: {
         roundId: data.roundId,
         userId: BigInt(data.userId),
+        guessedId: BigInt(data.guessedId),
+        points: data.points,
+      },
+      update: {
         guessedId: BigInt(data.guessedId),
         points: data.points,
       },
