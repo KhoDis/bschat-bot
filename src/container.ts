@@ -27,6 +27,7 @@ import { SchedulerService } from '@/modules/musicGame/scheduler/scheduler.servic
 import { UiRenderer } from '@/modules/musicGame/ui.renderer';
 import { ActionCodec } from '@/modules/musicGame/action.codec';
 import { GuessService } from '@/modules/musicGame/guess.service';
+import { RoundOrchestratorService } from '@/modules/musicGame/round-orchestrator.service';
 
 const container = new Container();
 
@@ -70,6 +71,7 @@ container.bind<MusicGameUploadModule>(TYPES.PrivateComposer).to(MusicGameUploadM
 container.bind<UiRenderer>(TYPES.UiRenderer).to(UiRenderer).inSingletonScope();
 container.bind<ActionCodec>(TYPES.ActionCodec).to(ActionCodec).inSingletonScope();
 container.bind<GuessService>(TYPES.GuessService).to(GuessService);
+container.bind<RoundOrchestratorService>(TYPES.RoundOrchestrator).to(RoundOrchestratorService);
 
 // Scheduler (keeping for now - may be integrated later)
 container.bind<SchedulerService>(TYPES.SchedulerService).to(SchedulerService).inSingletonScope();

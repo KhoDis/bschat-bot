@@ -49,6 +49,7 @@ export const TYPES = {
   UiRenderer: Symbol.for('UiRenderer'),
   ActionCodec: Symbol.for('ActionCodec'),
   GuessService: Symbol.for('GuessService'),
+  RoundOrchestrator: Symbol.for('RoundOrchestrator'),
 
   // Scheduler / Events
   SchedulerService: Symbol.for('SchedulerService'),

@@ -14,6 +14,7 @@ import { GameConfig } from '@/modules/musicGame/config/game-config';
 import { UiRenderer } from '@/modules/musicGame/ui.renderer';
 import { ActionCodec } from '@/modules/musicGame/action.codec';
 import { GuessService } from '@/modules/musicGame/guess.service';
+import { RoundOrchestratorService } from '@/modules/musicGame/round-orchestrator.service';
 
 /**
  * MusicGameService - Single service handling the entire music guessing game
@@ -38,6 +39,7 @@ export class MusicGameService {
     @inject(TYPES.UiRenderer) private ui: UiRenderer,
     @inject(TYPES.ActionCodec) private codec: ActionCodec,
     @inject(TYPES.GuessService) private guessService: GuessService,
+    @inject(TYPES.RoundOrchestrator) private roundOrchestrator: RoundOrchestratorService,
   ) {}
 
   // ==================== GAME LIFECYCLE ====================
@@ -159,49 +161,12 @@ export class MusicGameService {
       await ctx.reply(this.text.get('musicGame.noGame'));
       return;
     }
-
-    const gameSequence = await this.gameRepository.getRoundBySequence(game.id, game.currentRound);
-    if (!gameSequence) {
+    const hasRound = await this.gameRepository.getRoundBySequence(game.id, game.currentRound);
+    if (!hasRound) {
       await this.handleGameEnd(ctx, chatId);
       return;
     }
-
-    const participants = await this.gameRepository.getParticipants(game.id);
-    await this.playRound(ctx, participants, gameSequence);
-
-    // Schedule round events based on config
-    try {
-      const config = (game as any).config as {
-        hintDelaySec?: number;
-        advanceDelaySec?: number;
-        autoAdvance?: boolean;
-      } | null;
-
-      if (config?.hintDelaySec && ctx.chat) {
-        const hintKey = `hint:${gameSequence.id}`;
-        this.scheduler.scheduleOnce(
-          hintKey,
-          new Date(Date.now() + config.hintDelaySec * 1000),
-          async () => {
-            await this.showHint(ctx, chatId);
-          },
-        );
-      }
-
-      // Schedule round advancement if auto-advance is enabled
-      if (config?.autoAdvance && config?.advanceDelaySec && ctx.chat) {
-        const advanceKey = `advance:${gameSequence.id}`;
-        this.scheduler.scheduleOnce(
-          advanceKey,
-          new Date(Date.now() + config.advanceDelaySec * 1000),
-          async () => {
-            await this.advanceToNextRound(ctx, game.id);
-          },
-        );
-      }
-    } catch (error) {
-      console.error('Failed to schedule round events:', error);
-    }
+    await this.roundOrchestrator.startRound(ctx, chatId);
   }
 
   /**
@@ -259,52 +224,14 @@ export class MusicGameService {
    * Shows a hint for the current round
    */
   async showHint(ctx: Context, chatId: number): Promise<void> {
-    const game = await this.gameRepository.getCurrentGameByChatId(chatId);
-    if (!game) {
-      await ctx.reply(this.text.get('musicGame.noGame'));
-      return;
-    }
-
-    const round = game.rounds.find((r) => r.roundIndex === game.currentRound);
-    if (!round) {
-      await ctx.reply(this.text.get('rounds.noCurrentRound'));
-      return;
-    }
-
-    if (round.hintShownAt) {
-      await ctx.reply(this.text.get('hints.hintAlreadyShown'));
-      return;
-    }
-
-    await this.gameRepository.showHint(round.id);
-
-    if (ctx.chat && round.hintChatId && round.hintMessageId) {
-      try {
-        await ctx.telegram.copyMessage(
-          ctx.chat.id,
-          Number(round.hintChatId),
-          Number(round.hintMessageId),
-        );
-      } catch (error) {
-        console.error('Failed to copy hint message:', error);
-        await ctx.reply(this.text.get('hints.hintLayout'));
-      }
-      return;
-    }
-
-    await ctx.reply(this.text.get('hints.hintLayout'));
+    await this.roundOrchestrator.showHint(ctx, chatId);
   }
 
   /**
    * Advances to the next round
    */
   async advanceToNextRound(ctx: Context, gameId: number): Promise<void> {
-    const game = await this.gameRepository.getGameById(gameId);
-    if (!game) return;
-
-    await ctx.reply(this.text.get('rounds.nextRound'));
-    await this.gameRepository.updateGameRound(gameId, game.currentRound + 1);
-    await this.startRound(ctx as any, Number(game.chatId));
+    await this.roundOrchestrator.advanceToNextRound(ctx, gameId);
   }
 
   /**
@@ -324,7 +251,7 @@ export class MusicGameService {
     }
 
     const participants = await this.gameRepository.getParticipants(game.id);
-    await this.playRound(ctx, participants, gameSequence);
+    await this.roundOrchestrator.playRound(ctx, participants, gameSequence);
   }
 
   /**
