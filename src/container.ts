@@ -24,6 +24,8 @@ import { ArgsService } from '@/modules/common/args.service';
 import { FoodService } from '@/modules/food/food.service';
 import { LlmModule } from '@/modules/joke/llm.module';
 import { SchedulerService } from '@/modules/musicGame/scheduler/scheduler.service';
+import { UiRenderer } from '@/modules/musicGame/ui.renderer';
+import { ActionCodec } from '@/modules/musicGame/action.codec';
 
 const container = new Container();
 
@@ -64,6 +66,8 @@ container.bind<MusicGameService>(TYPES.MusicGameService).to(MusicGameService);
 container.bind<MusicGameModule>(TYPES.MusicGameConsolidatedModule).to(MusicGameModule);
 container.bind<MusicGameRepository>(TYPES.GameRepository).to(MusicGameRepository);
 container.bind<MusicGameUploadModule>(TYPES.PrivateComposer).to(MusicGameUploadModule);
+container.bind<UiRenderer>(TYPES.UiRenderer).to(UiRenderer).inSingletonScope();
+container.bind<ActionCodec>(TYPES.ActionCodec).to(ActionCodec).inSingletonScope();
 
 // Scheduler (keeping for now - may be integrated later)
 container.bind<SchedulerService>(TYPES.SchedulerService).to(SchedulerService).inSingletonScope();

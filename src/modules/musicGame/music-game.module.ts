@@ -3,6 +3,8 @@ import { IBotContext } from '@/context/context.interface';
 import { inject, injectable } from 'inversify';
 import { CallbackQueryContext, CommandContext, TYPES } from '@/types';
 import { MusicGameService } from './music-game.service';
+import { UiRenderer } from './ui.renderer';
+import { ActionCodec } from './action.codec';
 import { RequirePermission } from '@/modules/permissions/require-permission.decorator';
 import { ActionHelper } from '@/modules/common/action.helper';
 import { callbackQuery } from 'telegraf/filters';
@@ -20,7 +22,11 @@ import { callbackQuery } from 'telegraf/filters';
 export class MusicGameModule extends Composer<IBotContext> {
   private actions = new ActionHelper<CallbackQueryContext>();
 
-  constructor(@inject(TYPES.MusicGameService) private musicGameService: MusicGameService) {
+  constructor(
+    @inject(TYPES.MusicGameService) private musicGameService: MusicGameService,
+    @inject(TYPES.UiRenderer) private ui: UiRenderer,
+    @inject(TYPES.ActionCodec) private codec: ActionCodec,
+  ) {
     super();
 
     // Game lifecycle commands
@@ -130,30 +136,12 @@ export class MusicGameModule extends Composer<IBotContext> {
   private async renderLobby(ctx: IBotContext) {
     if (!ctx.chat) return;
 
-    const keyboard = {
-      inline_keyboard: [
-        [
-          {
-            text: '🎮 Start Game',
-            callback_data: this.actions.encode('lobby', 'start'),
-          },
-          {
-            text: '⚙️ Settings',
-            callback_data: this.actions.encode('lobby', 'settings'),
-          },
-        ],
-        [
-          {
-            text: '📊 Game Info',
-            callback_data: this.actions.encode('lobby', 'info'),
-          },
-          {
-            text: '👥 Players',
-            callback_data: this.actions.encode('lobby', 'players'),
-          },
-        ],
-      ],
-    };
+    const keyboard = this.ui.lobbyKeyboard({
+      start: this.actions.encode('lobby', 'start'),
+      settings: this.actions.encode('lobby', 'settings'),
+      info: this.actions.encode('lobby', 'info'),
+      players: this.actions.encode('lobby', 'players'),
+    });
 
     await ctx.reply('🎵 Music Game Lobby\n\nChoose an option:', {
       reply_markup: keyboard,

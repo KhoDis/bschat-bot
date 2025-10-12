@@ -207,8 +207,8 @@ export class MusicGameRepository {
     return prisma.guess.create({
       data: {
         roundId: data.roundId,
-        userId: data.userId,
-        guessedId: data.guessedId,
+        userId: BigInt(data.userId),
+        guessedId: BigInt(data.guessedId),
         points: data.points,
       },
     });

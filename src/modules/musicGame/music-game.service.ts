@@ -11,6 +11,7 @@ import { User } from '@prisma/client';
 import { InlineKeyboardButton } from 'telegraf/typings/core/types/typegram';
 import { SchedulerService } from '@/modules/musicGame/scheduler/scheduler.service';
 import { GameConfig } from '@/modules/musicGame/config/game-config';
+import { UiRenderer } from '@/modules/musicGame/ui.renderer';
 
 /**
  * MusicGameService - Single service handling the entire music guessing game
@@ -32,6 +33,7 @@ export class MusicGameService {
     @inject(TYPES.TextService) private text: TextService,
     @inject(TYPES.MemberService) private memberService: MemberService,
     @inject(TYPES.SchedulerService) private scheduler: SchedulerService,
+    @inject(TYPES.UiRenderer) private ui: UiRenderer,
   ) {}
 
   // ==================== GAME LIFECYCLE ====================
@@ -563,16 +565,7 @@ export class MusicGameService {
     }
 
     const info = await this.formatRoundInfo(round);
-    const controls = [
-      [
-        { text: '💡 Hint Now', callback_data: `round:hint:${round.id}` },
-        { text: '🔁 Replay', callback_data: `round:replay:${round.id}` },
-      ],
-      [
-        { text: '⏭️ Skip', callback_data: `round:skip:${round.id}` },
-        { text: '🏁 Reveal', callback_data: `round:reveal:${round.id}` },
-      ],
-    ];
+    const controls = this.ui.roundControls(round.id);
 
     if (round.infoMessageId) {
       try {
@@ -593,16 +586,7 @@ export class MusicGameService {
   }
 
   private async sendNewRoundInfo(ctx: Context, round: any, info: string): Promise<void> {
-    const controls = [
-      [
-        { text: '💡 Hint Now', callback_data: `round:hint:${round.id}` },
-        { text: '🔁 Replay', callback_data: `round:replay:${round.id}` },
-      ],
-      [
-        { text: '⏭️ Skip', callback_data: `round:skip:${round.id}` },
-        { text: '🏁 Reveal', callback_data: `round:reveal:${round.id}` },
-      ],
-    ];
+    const controls = this.ui.roundControls(round.id);
     const message = await ctx.reply(info, {
       parse_mode: 'HTML',
       reply_markup: { inline_keyboard: controls },
