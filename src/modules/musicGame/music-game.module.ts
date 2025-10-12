@@ -4,7 +4,8 @@ import { inject, injectable } from "inversify";
 import { CallbackQueryContext, CommandContext, TYPES } from "@/types";
 import { MusicGameService } from "./music-game.service";
 import { RequirePermission } from "@/modules/permissions/require-permission.decorator";
-import { dataAction } from "@/utils/filters";
+import { ActionHelper } from "@/modules/common/action.helper";
+import { callbackQuery } from "telegraf/filters";
 
 /**
  * MusicGameConsolidatedModule - Single module for the entire music game
@@ -17,6 +18,8 @@ import { dataAction } from "@/utils/filters";
  */
 @injectable()
 export class MusicGameModule extends Composer<IBotContext> {
+  private actions = new ActionHelper<CallbackQueryContext>();
+
   constructor(
     @inject(TYPES.MusicGameService) private musicGameService: MusicGameService,
   ) {
@@ -33,22 +36,57 @@ export class MusicGameModule extends Composer<IBotContext> {
     this.command("music_stats", this.handleMusicStats.bind(this));
     this.command("music_ping", this.handleMusicPing.bind(this));
 
-    // Game action handlers
-    this.on(dataAction(/^game:start$/), this.handleGameStart.bind(this));
-    this.on(dataAction(/^guess:(.+)_(.+)$/), this.handleGuess.bind(this));
-    this.on(dataAction(/^round:hint:(.+)$/), this.handleRoundHint.bind(this));
-    this.on(
-      dataAction(/^round:replay:(.+)$/),
-      this.handleRoundReplay.bind(this),
-    );
-    this.on(dataAction(/^round:skip:(.+)$/), this.handleRoundSkip.bind(this));
-    this.on(
-      dataAction(/^round:reveal:(.+)$/),
-      this.handleRoundReveal.bind(this),
-    );
+    // ==================== REGISTER ACTIONS ====================
 
-    // Lobby action handlers
-    this.on(dataAction(/^lobby:(.+)$/), this.handleLobbyAction.bind(this));
+    this.actions.handle("game_start", async (ctx) => {
+      await this.musicGameService.startGame(ctx);
+    });
+
+    this.actions.handle("guess", async (ctx, roundId, guessedUserId) => {
+      await this.musicGameService.processGuess(
+        ctx,
+        parseInt(roundId),
+        parseInt(guessedUserId),
+      );
+    });
+
+    this.actions.handle("round_hint", async (ctx, roundId) => {
+      if (ctx.chat) {
+        await this.musicGameService.showHint(ctx, ctx.chat.id);
+      }
+    });
+
+    this.actions.handle("round_replay", async (ctx, roundId) => {
+      if (ctx.chat) {
+        await this.musicGameService.replayCurrentRound(ctx, ctx.chat.id);
+      }
+    });
+
+    this.actions.handle("round_skip", async (ctx, roundId) => {
+      if (ctx.chat) {
+        await this.musicGameService.skipCurrentRound(ctx, ctx.chat.id);
+      }
+    });
+
+    this.actions.handle("round_reveal", async (ctx, roundId) => {
+      if (ctx.chat) {
+        await this.musicGameService.revealCurrentRound(ctx, ctx.chat.id);
+      }
+    });
+
+    this.actions.handle("lobby", async (ctx, action) => {
+      await this.handleLobbyAction(ctx, action);
+    });
+
+    // One dispatcher for all callback queries
+    this.on(callbackQuery("data"), async (ctx) => {
+      const handled = await this.actions.dispatch(ctx);
+      if (!handled) {
+        await ctx.answerCbQuery("Unknown action");
+      } else {
+        await ctx.answerCbQuery();
+      }
+    });
   }
 
   // ==================== COMMAND HANDLERS ====================
@@ -60,7 +98,6 @@ export class MusicGameModule extends Composer<IBotContext> {
 
   @RequirePermission("MANAGE_MUSIC_GAME")
   private async handleMusicLobby(ctx: CommandContext) {
-    // This will be handled by the lobby action handler
     await this.renderLobby(ctx);
   }
 
@@ -94,83 +131,32 @@ export class MusicGameModule extends Composer<IBotContext> {
     await this.musicGameService.pingPlayers(ctx);
   }
 
-  // ==================== ACTION HANDLERS ====================
-
-  private async handleGameStart(ctx: IBotContext) {
-    await this.musicGameService.startGame(ctx);
-  }
-
-  private async handleGuess(ctx: CallbackQueryContext) {
-    const data = ctx.callbackQuery.data as string;
-    const [, roundId, guessedUserId] = data.split(":");
-
-    if (!roundId || !guessedUserId) {
-      await ctx.answerCbQuery("Invalid guess data");
-      return;
-    }
-
-    await this.musicGameService.processGuess(
-      ctx,
-      parseInt(roundId),
-      parseInt(guessedUserId),
-    );
-  }
-
-  private async handleRoundHint(ctx: CallbackQueryContext) {
-    const data = ctx.callbackQuery.data as string;
-    const [, , roundId] = data.split(":");
-
-    if (ctx.chat) {
-      await this.musicGameService.showHint(ctx, ctx.chat.id);
-    }
-    await ctx.answerCbQuery();
-  }
-
-  private async handleRoundReplay(ctx: CallbackQueryContext) {
-    const data = ctx.callbackQuery.data as string;
-    const [, , roundId] = data.split(":");
-
-    if (ctx.chat) {
-      await this.musicGameService.replayCurrentRound(ctx, ctx.chat.id);
-    }
-    await ctx.answerCbQuery();
-  }
-
-  private async handleRoundSkip(ctx: CallbackQueryContext) {
-    const data = ctx.callbackQuery.data as string;
-    const [, , roundId] = data.split(":");
-
-    if (ctx.chat) {
-      await this.musicGameService.skipCurrentRound(ctx, ctx.chat.id);
-    }
-    await ctx.answerCbQuery();
-  }
-
-  private async handleRoundReveal(ctx: CallbackQueryContext) {
-    const data = ctx.callbackQuery.data as string;
-    const [, , roundId] = data.split(":");
-
-    if (ctx.chat) {
-      await this.musicGameService.revealCurrentRound(ctx, ctx.chat.id);
-    }
-    await ctx.answerCbQuery();
-  }
-
   // ==================== LOBBY HANDLERS ====================
 
   private async renderLobby(ctx: IBotContext) {
     if (!ctx.chat) return;
 
-    // Simple lobby interface - can be enhanced later
     const keyboard = {
       inline_keyboard: [
         [
-          { text: "🎮 Start Game", callback_data: "lobby:start" },
-          { text: "⚙️ Settings", callback_data: "lobby:settings" },
+          {
+            text: "🎮 Start Game",
+            callback_data: this.actions.encode("lobby", "start"),
+          },
+          {
+            text: "⚙️ Settings",
+            callback_data: this.actions.encode("lobby", "settings"),
+          },
         ],
         [
-          { text: "📊 Game Info", callback_data: "lobby:info" },
-          { text: "👥 Players", callback_data: "lobby:players" },
+          {
+            text: "📊 Game Info",
+            callback_data: this.actions.encode("lobby", "info"),
+          },
+          {
+            text: "👥 Players",
+            callback_data: this.actions.encode("lobby", "players"),
+          },
         ],
       ],
     };
@@ -180,10 +166,7 @@ export class MusicGameModule extends Composer<IBotContext> {
     });
   }
 
-  private async handleLobbyAction(ctx: CallbackQueryContext) {
-    const data = ctx.callbackQuery.data as string;
-    const [, action] = data.split(":");
-
+  private async handleLobbyAction(ctx: CallbackQueryContext, action: string) {
     switch (action) {
       case "start":
         await this.musicGameService.startGame(ctx);
@@ -200,7 +183,5 @@ export class MusicGameModule extends Composer<IBotContext> {
       default:
         await ctx.reply("Unknown action");
     }
-
-    await ctx.answerCbQuery();
   }
 }

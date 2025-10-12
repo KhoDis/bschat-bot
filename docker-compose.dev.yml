@@ -1,3 +1,5 @@
+version: "3.9"
+
 services:
   db:
     image: postgres:latest
@@ -9,22 +11,29 @@ services:
     networks:
       - bschat-net
     ports:
-      - "5430:5432" # Use a different port from production to avoid conflicts
+      - "5430:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
 
   bot:
     depends_on:
       - db
-    build: .
+    build:
+      context: .
+      target: deps # build only dependencies stage for dev
     env_file:
       - .env
     networks:
       - bschat-net
     volumes:
-      - .:/app # Mount local directory for live code updates
-    command: npm run dev # Run bot in development mode
+      # Mount everything *except node_modules*
+      - .:/app:cached
+      - /app/node_modules
+    command: sh -c "npm install && npm run dev"
     restart: unless-stopped
+    environment:
+      - CHOKIDAR_USEPOLLING=true # enables file watching on Windows/WSL
+      - WATCHPACK_POLLING=true # for Webpack-based tools
 
 networks:
   bschat-net:
