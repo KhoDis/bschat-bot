@@ -15,6 +15,7 @@ import { FoodModule } from '@/modules/food/food.module';
 import { LlmModule } from '@/modules/joke/llm.module';
 import { SchedulerService } from '@/modules/musicGame/scheduler/scheduler.service';
 import { MusicGameModule } from '@/modules/musicGame/music-game.module';
+import { MemberService } from '@/modules/common/member.service';
 import prisma from '@/prisma/client';
 
 class Bot {
@@ -37,6 +38,36 @@ class Bot {
         defaultSession: () => ({}),
       }),
     );
+
+    // Auto-sync chat membership from any group message
+    this.bot.use(async (ctx, next) => {
+      if (ctx.chat?.type !== 'private' && ctx.from && ctx.chat) {
+        try {
+          const memberService = container.get<MemberService>(TYPES.MemberService);
+
+          // Sync user
+          await memberService.upsertUser({
+            id: ctx.from.id,
+            username: ctx.from.username,
+            firstName: ctx.from.first_name,
+          });
+
+          // Sync chat
+          if ('title' in ctx.chat) {
+            await memberService.upsertChat({
+              id: ctx.chat.id,
+              title: ctx.chat.title,
+            });
+          }
+
+          // Auto-sync membership
+          await memberService.autoSyncMembership(ctx.from.id, ctx.chat.id);
+        } catch (error) {
+          console.error('Failed to auto-sync membership:', error);
+        }
+      }
+      return next();
+    });
 
     // const textMiddleware = container
     //   .get<TriggerModule>(TYPES.TextComposer)

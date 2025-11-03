@@ -1,4 +1,4 @@
-import { Chat, User, GameRound } from '@prisma/client';
+import { Chat, User, GameRound, ChatMembership } from '@prisma/client';
 import { injectable } from 'inversify';
 import prisma from '@/prisma/client';
 import { inject } from 'inversify';
@@ -6,7 +6,9 @@ import { TYPES } from '@/types';
 import { MusicGameRepository } from '../musicGame/music-game.repository';
 
 /**
- * Service for managing Member, Chat, and User entities
+ * Service for managing ChatMembership, Chat, and User entities
+ *
+ * Handles automatic membership syncing from Telegram activity
  */
 @injectable()
 export class MemberService {
@@ -42,11 +44,45 @@ export class MemberService {
     });
   }
 
-  async addMember(userId: number, chatId: number): Promise<void> {
-    await prisma.member.create({
-      data: {
+  /**
+   * Auto-syncs membership when user sends a message in a group chat.
+   * Called automatically by middleware in app.ts.
+   *
+   * This is the ONLY way users join chats now - no manual command needed.
+   */
+  async autoSyncMembership(userId: number, chatId: number): Promise<void> {
+    await prisma.chatMembership.upsert({
+      where: {
+        userId_chatId: {
+          userId: BigInt(userId),
+          chatId: BigInt(chatId),
+        },
+      },
+      create: {
         userId: BigInt(userId),
         chatId: BigInt(chatId),
+        lastSeen: new Date(),
+        isActive: true,
+      },
+      update: {
+        lastSeen: new Date(),
+        isActive: true,
+      },
+    });
+  }
+
+  /**
+   * Mark member as inactive (e.g., when they leave the chat)
+   * Can be called from bot event handlers if needed
+   */
+  async deactivateMember(userId: number, chatId: number): Promise<void> {
+    await prisma.chatMembership.updateMany({
+      where: {
+        userId: BigInt(userId),
+        chatId: BigInt(chatId),
+      },
+      data: {
+        isActive: false,
       },
     });
   }
@@ -96,24 +132,57 @@ export class MemberService {
 
   async getUsersByChatId(chatId: number): Promise<User[]> {
     return prisma.user.findMany({
-      where: { members: { some: { chatId: BigInt(chatId) } } },
+      where: {
+        memberships: {
+          some: {
+            chatId: BigInt(chatId),
+            isActive: true,
+          },
+        },
+      },
     });
   }
 
   async getChatsByUserId(userId: number): Promise<Chat[]> {
     return prisma.chat.findMany({
-      where: { members: { some: { userId: BigInt(userId) } } },
+      where: {
+        memberships: {
+          some: {
+            userId: BigInt(userId),
+            isActive: true,
+          },
+        },
+      },
     });
   }
 
   async existsMember(userId: number, chatId: number): Promise<boolean> {
-    const member = await prisma.member.findFirst({
+    const member = await prisma.chatMembership.findFirst({
       where: {
         userId: BigInt(userId),
         chatId: BigInt(chatId),
+        isActive: true,
       },
     });
     return member !== null;
+  }
+
+  /**
+   * Get active memberships for a user with their chats
+   */
+  async getActiveMemberships(userId: number): Promise<(ChatMembership & { chat: Chat })[]> {
+    return prisma.chatMembership.findMany({
+      where: {
+        userId: BigInt(userId),
+        isActive: true,
+      },
+      include: {
+        chat: true,
+      },
+      orderBy: {
+        lastSeen: 'desc',
+      },
+    });
   }
 
   /**
@@ -152,11 +221,11 @@ export class MemberService {
   ) {
     // Get or create LOBBY game
     let game = await this.gameRepository.getCurrentGameByChatId(submission.chatId);
-    
+
     if (!game) {
       // OPTION 1: Auto-create lobby
       game = await this.gameRepository.createEmptyLobby(submission.chatId);
-      
+
       // OPTION 2: Require admin to create lobby first
       // throw new Error('No lobby game exists. Admin must create one first');
     }
@@ -166,7 +235,7 @@ export class MemberService {
       userId: submission.userId,
       musicFileId: submission.fileId,
       hintChatId: upload.uploadChatId,
-      hintMessageId: upload.uploadHintMessageId,
+      hintMessageId: upload.uploadHintMessageId ?? undefined,
     });
   }
 

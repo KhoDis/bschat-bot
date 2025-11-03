@@ -13,20 +13,25 @@ model User {
   name String // Telegram username
 
   // Relations
-  guesses    Guess[]
-  roles      UserRole[]
-  gameRounds GameRound[]
-  // Tells in which chats the user is in
-  members    Member[]
+  guesses     Guess[]
+  roles       UserRole[]
+  gameRounds  GameRound[]
+  memberships ChatMembership[]
 }
 
-model Member {
+model ChatMembership {
   user   User   @relation(fields: [userId], references: [id])
   userId BigInt
   chat   Chat   @relation(fields: [chatId], references: [id])
   chatId BigInt
 
+  joinedAt DateTime @default(now())
+  lastSeen DateTime @default(now())
+  isActive Boolean  @default(true)
+
   @@id([userId, chatId])
+  @@index([chatId, isActive])
+  @@index([userId, isActive])
 }
 
 model Role {
@@ -50,12 +55,12 @@ model UserRole {
 }
 
 model Chat {
-  id           BigInt   @id // Telegram chat ID
+  id           BigInt           @id // Telegram chat ID
   title        String
-  games        Game[]   @relation("ChatToGames") // One-to-many relationship with Game
-  activeGame   Game?    @relation("ChatToActiveGame", fields: [activeGameId], references: [id])
-  activeGameId Int?     @unique
-  members      Member[]
+  games        Game[]           @relation("ChatToGames") // One-to-many relationship with Game
+  activeGame   Game?            @relation("ChatToActiveGame", fields: [activeGameId], references: [id])
+  activeGameId Int?             @unique
+  memberships  ChatMembership[]
 }
 
 model Game {
