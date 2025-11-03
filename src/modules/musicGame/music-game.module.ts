@@ -1,84 +1,72 @@
 import { Composer } from 'telegraf';
 import { IBotContext } from '@/context/context.interface';
 import { inject, injectable } from 'inversify';
-import { CallbackQueryContext, CommandContext, TYPES } from '@/types';
-import { MusicGameService } from './music-game.service';
-import { UiRenderer } from './ui.renderer';
-import { ActionCodec } from './action.codec';
-import { RequirePermission } from '@/modules/permissions/require-permission.decorator';
+import { CallbackQueryContext, TYPES } from '@/types';
 import { ActionHelper } from '@/modules/common/action.helper';
 import { callbackQuery } from 'telegraf/filters';
+import { LobbyHandler } from './features/lobby';
+import { GameplayHandler } from './features/gameplay';
+import { InfoHandler } from './features/info';
 
 /**
- * MusicGameConsolidatedModule - Single module for the entire music game
+ * MusicGameModule - Unified entry point for music game features
  *
- * This module consolidates all game functionality into one place, eliminating
- * the complexity of multiple fragmented modules and circular dependencies.
+ * This module wires together three focused feature handlers:
+ * - Lobby: Pre-game setup and configuration
+ * - Gameplay: Active game round interactions
+ * - Info: Game information and statistics
  *
- * All game commands and actions flow through this single module, making
- * the code much easier to understand and maintain.
+ * Each feature is self-contained with its own handler and UI logic.
  */
 @injectable()
 export class MusicGameModule extends Composer<IBotContext> {
   private actions = new ActionHelper<CallbackQueryContext>();
 
   constructor(
-    @inject(TYPES.MusicGameService) private musicGameService: MusicGameService,
-    @inject(TYPES.UiRenderer) private ui: UiRenderer,
-    @inject(TYPES.ActionCodec) private codec: ActionCodec,
+    @inject(TYPES.LobbyHandler) private lobbyHandler: LobbyHandler,
+    @inject(TYPES.GameplayHandler) private gameplayHandler: GameplayHandler,
+    @inject(TYPES.InfoHandler) private infoHandler: InfoHandler,
   ) {
     super();
 
-    // Game lifecycle commands
-    this.command('music_game', this.handleMusicGame.bind(this));
-    this.command('music_lobby', this.handleMusicLobby.bind(this));
-    this.command('music_start', this.handleMusicStart.bind(this));
-    this.command('music_end', this.handleMusicEnd.bind(this));
-    this.command('music_info', this.handleMusicInfo.bind(this));
-    this.command('music_list', this.handleMusicList.bind(this));
-    this.command('music_players', this.handleMusicPlayers.bind(this));
-    this.command('music_stats', this.handleMusicStats.bind(this));
-    this.command('music_ping', this.handleMusicPing.bind(this));
+    this.registerCommands();
+    this.registerActions();
+    this.registerCallbackQueryHandler();
+  }
 
-    // ==================== REGISTER ACTIONS ====================
+  /**
+   * Register all command handlers from features
+   */
+  private registerCommands(): void {
+    // Lobby commands
+    this.command('music_game', this.lobbyHandler.handleMusicGame.bind(this.lobbyHandler));
+    this.command('music_lobby', this.lobbyHandler.handleMusicLobby.bind(this.lobbyHandler));
 
-    this.actions.handle('game_start', async (ctx) => {
-      await this.musicGameService.startGame(ctx);
-    });
+    // Gameplay commands
+    this.command('music_start', this.gameplayHandler.handleMusicStart.bind(this.gameplayHandler));
+    this.command('music_end', this.gameplayHandler.handleMusicEnd.bind(this.gameplayHandler));
 
-    this.actions.handle('guess', async (ctx, roundId, guessedUserId) => {
-      await this.musicGameService.processGuess(ctx, parseInt(roundId), parseInt(guessedUserId));
-    });
+    // Info commands
+    this.command('music_info', this.infoHandler.handleMusicInfo.bind(this.infoHandler));
+    this.command('music_list', this.infoHandler.handleMusicList.bind(this.infoHandler));
+    this.command('music_players', this.infoHandler.handleMusicPlayers.bind(this.infoHandler));
+    this.command('music_stats', this.infoHandler.handleMusicStats.bind(this.infoHandler));
+    this.command('music_ping', this.infoHandler.handleMusicPing.bind(this.infoHandler));
+  }
 
-    this.actions.handle('round_hint', async (ctx, roundId) => {
-      if (ctx.chat) {
-        await this.musicGameService.showHint(ctx, ctx.chat.id);
-      }
-    });
+  /**
+   * Register all action handlers from features
+   */
+  private registerActions(): void {
+    this.lobbyHandler.registerActions(this.actions);
+    this.gameplayHandler.registerActions(this.actions);
+    // Info handler has no callback actions
+  }
 
-    this.actions.handle('round_replay', async (ctx, roundId) => {
-      if (ctx.chat) {
-        await this.musicGameService.replayCurrentRound(ctx, ctx.chat.id);
-      }
-    });
-
-    this.actions.handle('round_skip', async (ctx, roundId) => {
-      if (ctx.chat) {
-        await this.musicGameService.skipCurrentRound(ctx, ctx.chat.id);
-      }
-    });
-
-    this.actions.handle('round_reveal', async (ctx, roundId) => {
-      if (ctx.chat) {
-        await this.musicGameService.revealCurrentRound(ctx, ctx.chat.id);
-      }
-    });
-
-    this.actions.handle('lobby', async (ctx, action) => {
-      await this.handleLobbyAction(ctx, action);
-    });
-
-    // One dispatcher for all callback queries
+  /**
+   * Register the unified callback query dispatcher
+   */
+  private registerCallbackQueryHandler(): void {
     this.on(callbackQuery('data'), async (ctx) => {
       const handled = await this.actions.dispatch(ctx);
       if (!handled) {
@@ -87,83 +75,5 @@ export class MusicGameModule extends Composer<IBotContext> {
         await ctx.answerCbQuery();
       }
     });
-  }
-
-  // ==================== COMMAND HANDLERS ====================
-
-  @RequirePermission('MANAGE_MUSIC_GAME')
-  private async handleMusicGame(ctx: CommandContext) {
-    await this.musicGameService.initiateGameSetup(ctx);
-  }
-
-  @RequirePermission('MANAGE_MUSIC_GAME')
-  private async handleMusicLobby(ctx: CommandContext) {
-    await this.renderLobby(ctx);
-  }
-
-  @RequirePermission('MANAGE_MUSIC_GAME')
-  private async handleMusicStart(ctx: CommandContext) {
-    await this.musicGameService.startGame(ctx);
-  }
-
-  @RequirePermission('MANAGE_MUSIC_GAME')
-  private async handleMusicEnd(ctx: CommandContext) {
-    await this.musicGameService.endGame(ctx);
-  }
-
-  private async handleMusicInfo(ctx: CommandContext) {
-    await this.musicGameService.showActiveGameInfo(ctx);
-  }
-
-  private async handleMusicList(ctx: CommandContext) {
-    await this.musicGameService.listGames(ctx);
-  }
-
-  private async handleMusicPlayers(ctx: CommandContext) {
-    await this.musicGameService.listPlayers(ctx);
-  }
-
-  private async handleMusicStats(ctx: CommandContext) {
-    await this.musicGameService.getGameStats(ctx);
-  }
-
-  private async handleMusicPing(ctx: CommandContext) {
-    await this.musicGameService.pingPlayers(ctx);
-  }
-
-  // ==================== LOBBY HANDLERS ====================
-
-  private async renderLobby(ctx: IBotContext) {
-    if (!ctx.chat) return;
-
-    const keyboard = this.ui.lobbyKeyboard({
-      start: this.actions.encode('lobby', 'start'),
-      settings: this.actions.encode('lobby', 'settings'),
-      info: this.actions.encode('lobby', 'info'),
-      players: this.actions.encode('lobby', 'players'),
-    });
-
-    await ctx.reply('🎵 Music Game Lobby\n\nChoose an option:', {
-      reply_markup: keyboard,
-    });
-  }
-
-  private async handleLobbyAction(ctx: CallbackQueryContext, action: string) {
-    switch (action) {
-      case 'start':
-        await this.musicGameService.startGame(ctx);
-        break;
-      case 'settings':
-        await ctx.reply('⚙️ Settings panel - coming soon!');
-        break;
-      case 'info':
-        await this.musicGameService.showActiveGameInfo(ctx);
-        break;
-      case 'players':
-        await ctx.reply('👥 Player management - coming soon!');
-        break;
-      default:
-        await ctx.reply('Unknown action');
-    }
   }
 }

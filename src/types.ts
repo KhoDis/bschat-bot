@@ -46,11 +46,18 @@ export const TYPES = {
 
   MusicGameService: Symbol.for('MusicGameService'),
   MusicGameConsolidatedModule: Symbol.for('MusicGameConsolidatedModule'),
-  UiRenderer: Symbol.for('UiRenderer'),
   ActionCodec: Symbol.for('ActionCodec'),
   GuessService: Symbol.for('GuessService'),
   RoundOrchestrator: Symbol.for('RoundOrchestrator'),
   GameLifecycle: Symbol.for('GameLifecycle'),
+
+  // Music Game Features
+  LobbyHandler: Symbol.for('LobbyHandler'),
+  LobbyUi: Symbol.for('LobbyUi'),
+  GameplayHandler: Symbol.for('GameplayHandler'),
+  GameplayUi: Symbol.for('GameplayUi'),
+  InfoHandler: Symbol.for('InfoHandler'),
+  InfoUi: Symbol.for('InfoUi'),
 
   // Scheduler / Events
   SchedulerService: Symbol.for('SchedulerService'),

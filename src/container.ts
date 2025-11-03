@@ -24,11 +24,13 @@ import { ArgsService } from '@/modules/common/args.service';
 import { FoodService } from '@/modules/food/food.service';
 import { LlmModule } from '@/modules/joke/llm.module';
 import { SchedulerService } from '@/modules/musicGame/scheduler/scheduler.service';
-import { UiRenderer } from '@/modules/musicGame/ui.renderer';
 import { ActionCodec } from '@/modules/musicGame/action.codec';
 import { GuessService } from '@/modules/musicGame/guess.service';
 import { RoundOrchestratorService } from '@/modules/musicGame/round-orchestrator.service';
 import { GameLifecycleService } from '@/modules/musicGame/game-lifecycle.service';
+import { LobbyHandler, LobbyUi } from '@/modules/musicGame/features/lobby';
+import { GameplayHandler, GameplayUi } from '@/modules/musicGame/features/gameplay';
+import { InfoHandler, InfoUi } from '@/modules/musicGame/features/info';
 
 const container = new Container();
 
@@ -69,11 +71,18 @@ container.bind<MusicGameService>(TYPES.MusicGameService).to(MusicGameService);
 container.bind<MusicGameModule>(TYPES.MusicGameConsolidatedModule).to(MusicGameModule);
 container.bind<MusicGameRepository>(TYPES.GameRepository).to(MusicGameRepository);
 container.bind<MusicGameUploadModule>(TYPES.PrivateComposer).to(MusicGameUploadModule);
-container.bind<UiRenderer>(TYPES.UiRenderer).to(UiRenderer).inSingletonScope();
 container.bind<ActionCodec>(TYPES.ActionCodec).to(ActionCodec).inSingletonScope();
 container.bind<GuessService>(TYPES.GuessService).to(GuessService);
 container.bind<RoundOrchestratorService>(TYPES.RoundOrchestrator).to(RoundOrchestratorService);
 container.bind<GameLifecycleService>(TYPES.GameLifecycle).to(GameLifecycleService);
+
+// Music Game Features
+container.bind<LobbyHandler>(TYPES.LobbyHandler).to(LobbyHandler);
+container.bind<LobbyUi>(TYPES.LobbyUi).to(LobbyUi);
+container.bind<GameplayHandler>(TYPES.GameplayHandler).to(GameplayHandler);
+container.bind<GameplayUi>(TYPES.GameplayUi).to(GameplayUi);
+container.bind<InfoHandler>(TYPES.InfoHandler).to(InfoHandler);
+container.bind<InfoUi>(TYPES.InfoUi).to(InfoUi);
 
 // Scheduler (keeping for now - may be integrated later)
 container.bind<SchedulerService>(TYPES.SchedulerService).to(SchedulerService).inSingletonScope();

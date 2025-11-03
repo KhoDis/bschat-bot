@@ -11,7 +11,7 @@ import { User } from '@prisma/client';
 import { InlineKeyboardButton } from 'telegraf/typings/core/types/typegram';
 import { SchedulerService } from '@/modules/musicGame/scheduler/scheduler.service';
 import { GameConfig } from '@/modules/musicGame/config/game-config';
-import { UiRenderer } from '@/modules/musicGame/ui.renderer';
+import { GameplayUi } from '@/modules/musicGame/features/gameplay';
 import { ActionCodec } from '@/modules/musicGame/action.codec';
 import { GuessService } from '@/modules/musicGame/guess.service';
 import { GameLifecycleService } from '@/modules/musicGame/game-lifecycle.service';
@@ -37,7 +37,7 @@ export class MusicGameService {
     @inject(TYPES.TextService) private text: TextService,
     @inject(TYPES.MemberService) private memberService: MemberService,
     @inject(TYPES.SchedulerService) private scheduler: SchedulerService,
-    @inject(TYPES.UiRenderer) private ui: UiRenderer,
+    @inject(TYPES.GameplayUi) private ui: GameplayUi,
     @inject(TYPES.ActionCodec) private codec: ActionCodec,
     @inject(TYPES.GuessService) private guessService: GuessService,
     @inject(TYPES.RoundOrchestrator) private roundOrchestrator: RoundOrchestratorService,

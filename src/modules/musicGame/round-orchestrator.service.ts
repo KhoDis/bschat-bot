@@ -3,7 +3,6 @@ import { TYPES } from '@/types';
 import { MusicGameRepository } from '@/modules/musicGame/music-game.repository';
 import { SchedulerService } from '@/modules/musicGame/scheduler/scheduler.service';
 import { TextService } from '@/modules/common/text.service';
-import { UiRenderer } from '@/modules/musicGame/ui.renderer';
 import { Context } from 'telegraf';
 import { User } from '@prisma/client';
 
@@ -13,7 +12,6 @@ export class RoundOrchestratorService {
     @inject(TYPES.GameRepository) private gameRepository: MusicGameRepository,
     @inject(TYPES.SchedulerService) private scheduler: SchedulerService,
     @inject(TYPES.TextService) private text: TextService,
-    @inject(TYPES.UiRenderer) private ui: UiRenderer,
   ) {}
 
   async startRound(ctx: Context, chatId: number): Promise<void> {
