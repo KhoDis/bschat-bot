@@ -20,32 +20,11 @@ model User {
   members    Member[]
 }
 
-// Note: wait until prisma supports composite types
-// type MessageLocation {
-//   chatId    BigInt
-//   messageId BigInt
-// }
-
-model MusicSubmission {
-  fileId              String
-  uploadChatId        BigInt
-  uploadHintMessageId BigInt?
-
-  // Relations
-  member       Member @relation(fields: [memberUserId, memberChatId], references: [userId, chatId])
-  memberUserId BigInt
-  memberChatId BigInt
-
-  @@id([memberUserId, memberChatId])
-}
-
 model Member {
   user   User   @relation(fields: [userId], references: [id])
   userId BigInt
   chat   Chat   @relation(fields: [chatId], references: [id])
   chatId BigInt
-
-  musicSubmission MusicSubmission?
 
   @@id([userId, chatId])
 }
@@ -105,12 +84,12 @@ model GameRound {
   startedAt     DateTime? // When the round started
   hintShownAt   DateTime? // When the hint was revealed
   endedAt       DateTime? // When the round ended
-  status        RoundStatus @default(PENDING)
+  phase         RoundPhase @default(DRAFT)
 
-  // Copied from MusicSubmission
-  hintChatId    BigInt? // Telegram chat ID which the hint was sent
+  // Track data (uploaded by user)
+  hintChatId    BigInt? // Telegram chat ID where hint was sent
   hintMessageId BigInt? // Message ID of the hint
-  musicFileId   String
+  musicFileId   String // Telegram file ID of the music
 
   // Round can only have one user (the one who submitted the music)
   user    User    @relation(fields: [userId], references: [id])
@@ -122,6 +101,7 @@ model GameRound {
   guesses Guess[]
 
   @@unique([gameId, roundIndex])
+  @@unique([gameId, userId]) // One submission per user per game
 }
 
 model Guess {
@@ -162,9 +142,8 @@ enum GameStatus {
   COMPLETED
 }
 
-enum RoundStatus {
-  PENDING
-  PLAYING
-  HINT_SHOWN
-  COMPLETED
+enum RoundPhase {
+  DRAFT // Round is in lobby, not yet started
+  LIVE // Round is active and being played
+  COMPLETED // Round has finished
 }

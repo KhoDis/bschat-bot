@@ -1,4 +1,4 @@
-import { Guess, Prisma, User, GameStatus } from '@prisma/client';
+import { Guess, Prisma, User, GameStatus, RoundPhase } from '@prisma/client';
 import prisma from '../../prisma/client';
 import { injectable } from 'inversify';
 import { GameConfig } from '@/modules/musicGame/config/game-config';
@@ -61,15 +61,31 @@ export class MusicGameRepository {
   }
 
   async endGame(gameId: number): Promise<void> {
-    await prisma.game.update({
-      where: { id: gameId },
-      data: {
-        chat: {
-          update: {
-            activeGameId: null,
+    await prisma.$transaction(async (tx) => {
+      // Set all LIVE rounds to COMPLETED
+      await tx.gameRound.updateMany({
+        where: {
+          gameId: gameId,
+          phase: RoundPhase.LIVE,
+        },
+        data: {
+          phase: RoundPhase.COMPLETED,
+          endedAt: new Date(),
+        },
+      });
+
+      // Update game status and remove from active
+      await tx.game.update({
+        where: { id: gameId },
+        data: {
+          status: GameStatus.COMPLETED,
+          chat: {
+            update: {
+              activeGameId: null,
+            },
           },
         },
-      },
+      });
     });
   }
 
@@ -92,64 +108,201 @@ export class MusicGameRepository {
     });
   }
 
-  async transferSubmissions(chatId: number): Promise<GameWithData> {
-    const chat = await prisma.chat.findUnique({
-      where: { id: BigInt(chatId) },
-      include: {
-        members: {
-          include: {
-            user: true,
-            musicSubmission: true,
-          },
-        },
-      },
-    });
-    if (!chat) {
-      throw new Error('Chat not found');
-    }
-
-    // Get all submissions and filter out nulls
-    const submissions = chat.members
-      .map((member) => member.musicSubmission)
-      .filter((submission) => submission !== null);
-
-    // Shuffle the submissions array
-    const shuffledSubmissions = this.shuffleArray([...submissions]);
-
+  /**
+   * Creates an empty LOBBY game for a chat
+   */
+  async createEmptyLobby(chatId: number): Promise<GameWithData> {
     const game = await prisma.game.create({
       data: {
-        rounds: {
-          create: shuffledSubmissions.map((track, index) => ({
-            roundIndex: index,
-            musicFileId: track.fileId,
-            hintChatId: BigInt(track.uploadChatId),
-            hintMessageId: track.uploadHintMessageId,
-            userId: BigInt(track.memberUserId),
-          })),
-        },
+        status: GameStatus.LOBBY,
         chatId: BigInt(chatId),
       },
       include: gameWithData,
     });
 
-    // Add game as active game in the chat
-    await prisma.chat.update({
-      where: { id: BigInt(chatId) },
-      data: {
-        activeGameId: game.id,
+    return game;
+  }
+
+  /**
+   * Upserts a DRAFT round for a user in a lobby game
+   */
+  async upsertDraftRound(
+    gameId: number,
+    data: {
+      userId: number;
+      musicFileId: string;
+      hintChatId?: number;
+      hintMessageId?: number;
+    },
+  ): Promise<void> {
+    const game = await prisma.game.findUnique({
+      where: { id: gameId },
+      include: { rounds: { where: { phase: RoundPhase.DRAFT } } },
+    });
+
+    if (!game) {
+      throw new Error('Game not found');
+    }
+
+    if (game.status !== GameStatus.LOBBY) {
+      throw new Error('Can only add tracks to LOBBY games');
+    }
+
+    // Check if user already has a DRAFT round
+    const existingRound = await prisma.gameRound.findUnique({
+      where: {
+        gameId_userId: {
+          gameId,
+          userId: BigInt(data.userId),
+        },
       },
     });
 
-    // Remove the member's music submission
-    await prisma.musicSubmission.deleteMany({
+    if (existingRound) {
+      // Update existing DRAFT round
+      await prisma.gameRound.update({
+        where: { id: existingRound.id },
+        data: {
+          musicFileId: data.musicFileId,
+          hintChatId: data.hintChatId ? BigInt(data.hintChatId) : null,
+          hintMessageId: data.hintMessageId ? BigInt(data.hintMessageId) : null,
+        },
+      });
+    } else {
+      // Create new DRAFT round with next roundIndex
+      const maxIndex =
+        game.rounds.length > 0 ? Math.max(...game.rounds.map((r) => r.roundIndex)) : -1;
+
+      await prisma.gameRound.create({
+        data: {
+          gameId,
+          userId: BigInt(data.userId),
+          roundIndex: maxIndex + 1,
+          musicFileId: data.musicFileId,
+          hintChatId: data.hintChatId ? BigInt(data.hintChatId) : null,
+          hintMessageId: data.hintMessageId ? BigInt(data.hintMessageId) : null,
+          phase: RoundPhase.DRAFT,
+        },
+      });
+    }
+  }
+
+  /**
+   * Deletes a user's DRAFT round from a lobby game
+   */
+  async deleteDraftRound(gameId: number, userId: number): Promise<void> {
+    await prisma.gameRound.deleteMany({
       where: {
-        OR: submissions.map((submission) => ({
-          memberUserId: submission.memberUserId,
-          memberChatId: BigInt(chatId),
-        })),
+        gameId,
+        userId: BigInt(userId),
+        phase: RoundPhase.DRAFT,
       },
     });
-    return game;
+
+    // Reindex remaining DRAFT rounds
+    const draftRounds = await prisma.gameRound.findMany({
+      where: {
+        gameId,
+        phase: RoundPhase.DRAFT,
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    for (let i = 0; i < draftRounds.length; i++) {
+      await prisma.gameRound.update({
+        where: { id: draftRounds[i]!.id },
+        data: { roundIndex: i },
+      });
+    }
+  }
+
+  /**
+   * Gets all users who have DRAFT rounds in a lobby game
+   */
+  async getDraftSubmissionUsers(chatId: number): Promise<User[]> {
+    const game = await this.getCurrentGameByChatId(chatId);
+    if (!game || game.status !== GameStatus.LOBBY) {
+      return [];
+    }
+
+    return prisma.user.findMany({
+      where: {
+        gameRounds: {
+          some: {
+            gameId: game.id,
+            phase: RoundPhase.DRAFT,
+          },
+        },
+      },
+    });
+  }
+
+  /**
+   * Transitions a game from LOBBY to ACTIVE:
+   * - Shuffles DRAFT rounds
+   * - Flips all DRAFT rounds to LIVE
+   * - Sets game status to ACTIVE
+   * - Sets game as active in chat
+   */
+  async startGameFromLobby(gameId: number, config?: GameConfig): Promise<GameWithData> {
+    const game = await prisma.game.findUnique({
+      where: { id: gameId },
+      include: { rounds: { where: { phase: RoundPhase.DRAFT } } },
+    });
+
+    if (!game) {
+      throw new Error('Game not found');
+    }
+
+    if (game.status !== GameStatus.LOBBY) {
+      throw new Error('Game is not in LOBBY state');
+    }
+
+    if (game.rounds.length === 0) {
+      throw new Error('Cannot start game with no tracks');
+    }
+
+    const chatId = game.chatId;
+
+    // Shuffle DRAFT rounds
+    const shuffledRounds = this.shuffleArray([...game.rounds]);
+
+    // Transaction: shuffle, flip rounds to LIVE, set game to ACTIVE, set as active game
+    const updatedGame = await prisma.$transaction(async (tx) => {
+      // Update round indices to shuffle
+      for (let i = 0; i < shuffledRounds.length; i++) {
+        await tx.gameRound.update({
+          where: { id: shuffledRounds[i]!.id },
+          data: {
+            roundIndex: i,
+            phase: RoundPhase.LIVE,
+            startedAt: new Date(),
+          },
+        });
+      }
+
+      // Update game status
+      const updated = await tx.game.update({
+        where: { id: gameId },
+        data: {
+          status: GameStatus.ACTIVE,
+          config: config ? (config as unknown as Prisma.InputJsonValue) : undefined,
+        },
+        include: gameWithData,
+      });
+
+      // Set as active game in chat
+      await tx.chat.update({
+        where: { id: chatId },
+        data: {
+          activeGameId: gameId,
+        },
+      });
+
+      return updated;
+    });
+
+    return updatedGame;
   }
 
   shuffleArray<T>(array: T[]): T[] {
@@ -291,6 +444,32 @@ export class MusicGameRepository {
         createdAt: 'desc',
       },
       include: gameWithData,
+    });
+  }
+
+  /**
+   * Get LIVE rounds count for a game
+   */
+  async getLiveRoundsCount(gameId: number): Promise<number> {
+    return prisma.gameRound.count({
+      where: {
+        gameId,
+        phase: RoundPhase.LIVE,
+      },
+    });
+  }
+
+  /**
+   * Get current LIVE round by game sequence
+   */
+  async getLiveRoundBySequence(gameId: number, gameSequence: number) {
+    return prisma.gameRound.findFirst({
+      where: {
+        gameId,
+        roundIndex: gameSequence,
+        phase: RoundPhase.LIVE,
+      },
+      include: roundWithGuesses,
     });
   }
 }

@@ -1,13 +1,16 @@
-import { Chat, MusicSubmission, User } from '@prisma/client';
+import { Chat, User, GameRound } from '@prisma/client';
 import { injectable } from 'inversify';
 import prisma from '@/prisma/client';
+import { inject } from 'inversify';
+import { TYPES } from '@/types';
+import { MusicGameRepository } from '../musicGame/music-game.repository';
 
 /**
- * Service for managing Member, Chat, User, and MusicSubmission entities
+ * Service for managing Member, Chat, and User entities
  */
 @injectable()
 export class MemberService {
-  constructor() {}
+  constructor(@inject(TYPES.GameRepository) private gameRepository: MusicGameRepository) {}
 
   async upsertUser(userData: { id: number; username?: string | null; firstName: string }) {
     const normalizedName = userData.firstName.normalize('NFKD').replace(/[\u0300-\u036f]/g, '');
@@ -48,39 +51,45 @@ export class MemberService {
     });
   }
 
+  /**
+   * Get users who have submitted DRAFT rounds in the current lobby
+   */
   async getSubmissionUsers(chatId: number): Promise<User[]> {
-    const submissions = await prisma.musicSubmission.findMany({
-      where: {
-        memberChatId: BigInt(chatId),
-      },
-      include: {
-        member: {
-          include: {
-            user: true,
-          },
-        },
-      },
-    });
-
-    return submissions.map((submission) => submission.member.user);
+    return this.gameRepository.getDraftSubmissionUsers(chatId);
   }
 
+  /**
+   * Add or update hint for a user's DRAFT round
+   */
   async addMusicHint(
     memberUserId: number,
     memberChatId: number,
     hintChatId: number,
     hintMessageId: number,
   ): Promise<void> {
-    await prisma.musicSubmission.update({
+    const game = await this.gameRepository.getCurrentGameByChatId(memberChatId);
+    if (!game) {
+      throw new Error('No lobby game found');
+    }
+
+    const round = await prisma.gameRound.findUnique({
       where: {
-        memberUserId_memberChatId: {
-          memberUserId: BigInt(memberUserId),
-          memberChatId: BigInt(memberChatId),
+        gameId_userId: {
+          gameId: game.id,
+          userId: BigInt(memberUserId),
         },
       },
+    });
+
+    if (!round) {
+      throw new Error('No draft round found for user');
+    }
+
+    await prisma.gameRound.update({
+      where: { id: round.id },
       data: {
-        uploadHintMessageId: BigInt(hintMessageId),
-        uploadChatId: BigInt(hintChatId),
+        hintChatId: BigInt(hintChatId),
+        hintMessageId: BigInt(hintMessageId),
       },
     });
   }
@@ -107,17 +116,29 @@ export class MemberService {
     return member !== null;
   }
 
-  async getSubmission(userId: number, chatId: number): Promise<MusicSubmission | null> {
-    return prisma.musicSubmission.findUnique({
+  /**
+   * Get a user's DRAFT round submission
+   */
+  async getSubmission(userId: number, chatId: number): Promise<GameRound | null> {
+    const game = await this.gameRepository.getCurrentGameByChatId(chatId);
+    if (!game) {
+      return null;
+    }
+
+    return prisma.gameRound.findUnique({
       where: {
-        memberUserId_memberChatId: {
-          memberUserId: BigInt(userId),
-          memberChatId: BigInt(chatId),
+        gameId_userId: {
+          gameId: game.id,
+          userId: BigInt(userId),
         },
       },
     });
   }
 
+  /**
+   * Save or update a user's DRAFT round submission
+   * FLOW OPTION 1: Auto-create lobby game if none exists
+   */
   async saveSubmission(
     submission: {
       userId: number;
@@ -129,25 +150,23 @@ export class MemberService {
       uploadHintMessageId?: number;
     },
   ) {
-    // Upsert musicSubmission
-    await prisma.musicSubmission.upsert({
-      where: {
-        memberUserId_memberChatId: {
-          memberUserId: BigInt(submission.userId),
-          memberChatId: BigInt(submission.chatId),
-        },
-      },
-      create: {
-        memberUserId: BigInt(submission.userId),
-        memberChatId: BigInt(submission.chatId),
-        fileId: submission.fileId,
-        uploadChatId: BigInt(upload.uploadChatId),
-        uploadHintMessageId:
-          upload.uploadHintMessageId !== undefined ? BigInt(upload.uploadHintMessageId) : null,
-      },
-      update: {
-        fileId: submission.fileId,
-      },
+    // Get or create LOBBY game
+    let game = await this.gameRepository.getCurrentGameByChatId(submission.chatId);
+    
+    if (!game) {
+      // OPTION 1: Auto-create lobby
+      game = await this.gameRepository.createEmptyLobby(submission.chatId);
+      
+      // OPTION 2: Require admin to create lobby first
+      // throw new Error('No lobby game exists. Admin must create one first');
+    }
+
+    // Upsert DRAFT round
+    await this.gameRepository.upsertDraftRound(game.id, {
+      userId: submission.userId,
+      musicFileId: submission.fileId,
+      hintChatId: upload.uploadChatId,
+      hintMessageId: upload.uploadHintMessageId,
     });
   }
 

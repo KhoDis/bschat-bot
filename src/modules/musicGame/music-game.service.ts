@@ -79,6 +79,10 @@ export class MusicGameService {
       await ctx.reply(this.text.get('musicGame.noTracks'));
       return;
     }
+    if (result === 'NO_LOBBY') {
+      await ctx.reply('No lobby exists. Tracks will create one automatically when uploaded.');
+      return;
+    }
     if (result === 'ERROR') {
       await ctx.reply(this.text.get('musicGame.startError'));
       return;
@@ -169,6 +173,14 @@ export class MusicGameService {
       }
       if (result === 'ALREADY_GUESSED') {
         await ctx.answerCbQuery(this.text.get('guessing.alreadyGuessed'));
+        return;
+      }
+      if (result === 'ROUND_NOT_LIVE') {
+        await ctx.answerCbQuery('This round is not active');
+        return;
+      }
+      if (result === 'GAME_NOT_ACTIVE') {
+        await ctx.answerCbQuery('Game is not active');
         return;
       }
 

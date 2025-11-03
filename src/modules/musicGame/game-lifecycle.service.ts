@@ -5,6 +5,7 @@ import { MemberService } from '@/modules/common/member.service';
 import { TextService } from '@/modules/common/text.service';
 import { IBotContext } from '@/context/context.interface';
 import { GameConfig } from '@/modules/musicGame/config/game-config';
+import { GameStatus } from '@prisma/client';
 
 @injectable()
 export class GameLifecycleService {
@@ -14,9 +15,13 @@ export class GameLifecycleService {
     @inject(TYPES.TextService) private text: TextService,
   ) {}
 
-  async start(
+  /**
+   * Creates a lobby with DRAFT rounds from submissions.
+   * Game stays in LOBBY state until explicitly started.
+   */
+  async createLobby(
     ctx: IBotContext,
-  ): Promise<'ALREADY_ACTIVE' | 'NO_TRACKS' | { chatId: number } | 'ERROR'> {
+  ): Promise<'ALREADY_ACTIVE' | 'NO_TRACKS' | { gameId: number; chatId: number } | 'ERROR'> {
     if (!ctx.chat) return 'ERROR';
     try {
       const activeGame = await this.gameRepository.getCurrentGameByChatId(ctx.chat.id);
@@ -25,14 +30,51 @@ export class GameLifecycleService {
       const users = await this.memberService.getSubmissionUsers(ctx.chat.id);
       if (!users.length) return 'NO_TRACKS';
 
-      const game = await this.gameRepository.transferSubmissions(ctx.chat.id);
-      return { chatId: Number(game.chatId) };
+      const game = await this.gameRepository.createLobbyFromSubmissions(ctx.chat.id);
+      return { gameId: game.id, chatId: Number(game.chatId) };
+    } catch (e) {
+      console.error('Error creating lobby:', e);
+      return 'ERROR';
+    }
+  }
+
+  /**
+   * Starts a game from LOBBY state.
+   * Transitions DRAFT rounds to LIVE and sets game to ACTIVE.
+   */
+  async start(
+    ctx: IBotContext,
+  ): Promise<'ALREADY_ACTIVE' | 'NO_TRACKS' | 'NO_LOBBY' | { chatId: number } | 'ERROR'> {
+    if (!ctx.chat) return 'ERROR';
+    try {
+      const activeGame = await this.gameRepository.getCurrentGameByChatId(ctx.chat.id);
+      
+      // If there's an ACTIVE game, return error
+      if (activeGame && activeGame.status === GameStatus.ACTIVE) {
+        return 'ALREADY_ACTIVE';
+      }
+
+      // If there's no LOBBY game, return error
+      if (!activeGame || activeGame.status !== GameStatus.LOBBY) {
+        return 'NO_LOBBY';
+      }
+
+      // Check if lobby has tracks
+      const users = await this.memberService.getSubmissionUsers(ctx.chat.id);
+      if (!users.length) return 'NO_TRACKS';
+
+      // Start the lobby game
+      const started = await this.gameRepository.startGameFromLobby(activeGame.id);
+      return { chatId: Number(started.chatId) };
     } catch (e) {
       console.error('Error starting game:', e);
       return 'ERROR';
     }
   }
 
+  /**
+   * Starts a game with config (creates lobby if needed, then starts with config)
+   */
   async startWithConfig(
     ctx: IBotContext,
     config: GameConfig,
@@ -40,17 +82,25 @@ export class GameLifecycleService {
     if (!ctx.chat) return 'ERROR';
     try {
       const activeGame = await this.gameRepository.getCurrentGameByChatId(ctx.chat.id);
-      if (activeGame) return 'ALREADY_ACTIVE';
+      
+      // If there's an ACTIVE game, return error
+      if (activeGame && activeGame.status === GameStatus.ACTIVE) {
+        return 'ALREADY_ACTIVE';
+      }
 
+      // If there's a LOBBY game, start it with config
+      if (activeGame && activeGame.status === GameStatus.LOBBY) {
+        const started = await this.gameRepository.startGameFromLobby(activeGame.id, config);
+        return { chatId: Number(started.chatId) };
+      }
+
+      // Otherwise, create lobby and start with config
       const users = await this.memberService.getSubmissionUsers(ctx.chat.id);
       if (!users.length) return 'NO_TRACKS';
 
-      const game = await this.gameRepository.transferSubmissions(ctx.chat.id);
-      await this.gameRepository.updateGameConfig(game.id, {
-        status: 'ACTIVE' as any,
-        config,
-      } as any);
-      return { chatId: Number(game.chatId) };
+      const lobby = await this.gameRepository.createLobbyFromSubmissions(ctx.chat.id);
+      const started = await this.gameRepository.startGameFromLobby(lobby.id, config);
+      return { chatId: Number(started.chatId) };
     } catch (e) {
       console.error('Error starting game with config:', e);
       return 'ERROR';
