@@ -5,6 +5,7 @@ import { ActionHelper } from '@/modules/common/action.helper';
 import { RequirePermission } from '@/modules/permissions/require-permission.decorator';
 import { LobbyUi } from './lobby.ui';
 import { IBotContext } from '@/context/context.interface';
+import { GameConfig } from '../../config/game-config';
 
 /**
  * Lobby Handler - Pre-game setup and configuration
@@ -29,6 +30,9 @@ export class LobbyHandler {
   registerActions(actions: ActionHelper<CallbackQueryContext>): void {
     actions.handle('lobby', async (ctx, action) => {
       await this.handleLobbyAction(ctx, action);
+    });
+    actions.handle('settings', async (ctx, action, ...args) => {
+      await this.handleSettingsAction(ctx, action, ...args);
     });
   }
 
@@ -75,7 +79,7 @@ export class LobbyHandler {
         await this.musicGameService.startGame(ctx);
         break;
       case 'settings':
-        await ctx.reply('⚙️ Settings panel - coming soon!');
+        await this.showSettings(ctx);
         break;
       case 'info':
         await this.musicGameService.showActiveGameInfo(ctx);
@@ -83,8 +87,123 @@ export class LobbyHandler {
       case 'players':
         await ctx.reply('👥 Player management - coming soon!');
         break;
+      case 'back':
+        await this.renderLobby(ctx);
+        break;
       default:
         await ctx.reply('Unknown action');
     }
+  }
+
+  /**
+   * Show settings panel
+   */
+  private async showSettings(ctx: CallbackQueryContext): Promise<void> {
+    if (!ctx.chat) return;
+
+    let game = await this.musicGameService.getCurrentGame(ctx.chat.id);
+
+    // If no game exists, create a LOBBY game with default config
+    if (!game) {
+      // Create lobby through lifecycle service
+      const result = await this.musicGameService.createLobbyForSettings(ctx.chat.id);
+      if (!result) {
+        await ctx.answerCbQuery('Failed to create game. Upload tracks first.');
+        return;
+      }
+      game = await this.musicGameService.getCurrentGame(ctx.chat.id);
+      if (!game) {
+        await ctx.answerCbQuery('Failed to create game');
+        return;
+      }
+    }
+
+    const config = this.musicGameService.getGameConfig(game);
+    const keyboard = this.ui.settingsKeyboard(config, {
+      toggle: (key) => this.actions.encode('settings', 'toggle', key),
+      setPreset: (preset) => this.actions.encode('settings', 'preset', preset),
+      setDelay: (key, value) => this.actions.encode('settings', 'delay', key, value.toString()),
+      back: this.actions.encode('lobby', 'back'),
+    });
+
+    // Try to edit message if it's a callback query, otherwise send new message
+    if (ctx.callbackQuery?.message && 'text' in ctx.callbackQuery.message) {
+      await ctx.editMessageText(this.ui.settingsText(config), {
+        parse_mode: 'HTML',
+        reply_markup: keyboard,
+      });
+    } else {
+      await ctx.reply(this.ui.settingsText(config), {
+        parse_mode: 'HTML',
+        reply_markup: keyboard,
+      });
+    }
+  }
+
+  /**
+   * Handle settings actions
+   */
+  private async handleSettingsAction(
+    ctx: CallbackQueryContext,
+    action: string,
+    ...args: string[]
+  ): Promise<void> {
+    if (!ctx.chat) return;
+
+    const game = await this.musicGameService.getCurrentGame(ctx.chat.id);
+    if (!game) {
+      await ctx.answerCbQuery('No active game found');
+      return;
+    }
+
+    const currentConfig = this.musicGameService.getGameConfig(game);
+    let newConfig: GameConfig = { ...currentConfig };
+
+    switch (action) {
+      case 'toggle': {
+        const key = args[0];
+        if (key === 'autoAdvance') {
+          newConfig.autoAdvance = !newConfig.autoAdvance;
+        } else if (key === 'shuffle') {
+          newConfig.shuffle = !newConfig.shuffle;
+        } else if (key === 'allowSelfGuess') {
+          newConfig.allowSelfGuess = !newConfig.allowSelfGuess;
+        }
+        break;
+      }
+      case 'preset': {
+        const preset = args[0];
+        if (preset === 'classic' || preset === 'aggressive' || preset === 'gentle') {
+          newConfig.scoringPreset = preset;
+        }
+        break;
+      }
+      case 'delay': {
+        const key = args[0];
+        const valueStr = args[1];
+        if (!key || !valueStr) {
+          await ctx.answerCbQuery('Invalid delay parameters');
+          return;
+        }
+        const value = parseInt(valueStr, 10);
+        if (isNaN(value)) {
+          await ctx.answerCbQuery('Invalid delay value');
+          return;
+        }
+        if (key === 'hintDelaySec') {
+          newConfig.hintDelaySec = value;
+        } else if (key === 'advanceDelaySec') {
+          newConfig.advanceDelaySec = value;
+        }
+        break;
+      }
+      default:
+        await ctx.answerCbQuery('Unknown settings action');
+        return;
+    }
+
+    await this.musicGameService.updateGameConfig(ctx.chat.id, newConfig);
+    await this.showSettings(ctx);
+    await ctx.answerCbQuery('Settings updated');
   }
 }

@@ -10,7 +10,7 @@ import { Context } from 'telegraf';
 import { User } from '@prisma/client';
 import { InlineKeyboardButton } from 'telegraf/typings/core/types/typegram';
 import { SchedulerService } from '@/modules/musicGame/scheduler/scheduler.service';
-import { GameConfig } from '@/modules/musicGame/config/game-config';
+import { GameConfig, defaultGameConfig } from '@/modules/musicGame/config/game-config';
 import { GameplayUi } from '@/modules/musicGame/features/gameplay';
 import { ActionCodec } from '@/modules/musicGame/action.codec';
 import { GuessService } from '@/modules/musicGame/guess.service';
@@ -437,6 +437,60 @@ export class MusicGameService {
     ].join('\n');
 
     await ctx.reply(this.text.get('musicGame.stats', { stats: statsText }));
+  }
+
+  // ==================== GAME CONFIG MANAGEMENT ====================
+
+  /**
+   * Get current game for chat (LOBBY or ACTIVE)
+   */
+  async getCurrentGame(chatId: number) {
+    return this.gameRepository.getCurrentGameByChatId(chatId);
+  }
+
+  /**
+   * Get game config from game object
+   */
+  getGameConfig(game: Awaited<ReturnType<typeof this.getCurrentGame>>): GameConfig {
+    if (!game) {
+      return defaultGameConfig;
+    }
+    return {
+      hintDelaySec: game.hintDelaySec,
+      autoAdvance: game.autoAdvance,
+      advanceDelaySec: game.advanceDelaySec,
+      allowSelfGuess: game.allowSelfGuess,
+      shuffle: game.shuffle,
+      scoringPreset: game.scoringPreset,
+    };
+  }
+
+  /**
+   * Update game config
+   */
+  async updateGameConfig(chatId: number, config: GameConfig): Promise<void> {
+    const game = await this.gameRepository.getCurrentGameByChatId(chatId);
+    if (!game) {
+      throw new Error('Game not found');
+    }
+    await this.gameRepository.updateGameConfig(game.id, { config });
+  }
+
+  /**
+   * Create a LOBBY game for settings (even without tracks)
+   */
+  async createLobbyForSettings(chatId: number): Promise<boolean> {
+    try {
+      const existingGame = await this.gameRepository.getCurrentGameByChatId(chatId);
+      if (existingGame) {
+        return true; // Game already exists
+      }
+      await this.gameRepository.createEmptyLobby(chatId);
+      return true;
+    } catch (error) {
+      console.error('Error creating lobby for settings:', error);
+      return false;
+    }
   }
 
   // ==================== PRIVATE HELPER METHODS ====================
