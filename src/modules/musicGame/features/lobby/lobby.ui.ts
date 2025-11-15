@@ -47,13 +47,15 @@ export class LobbyUi {
             ? 120
             : 30;
     const nextAdvanceDelay =
-      config.advanceDelaySec === 10
-        ? 20
-        : config.advanceDelaySec === 20
-          ? 30
-          : config.advanceDelaySec === 30
-            ? 10
-            : 10;
+      config.advanceDelaySec === 60 // 1 min
+        ? 90 // 1.5 min
+        : config.advanceDelaySec === 90
+          ? 120 // 2 min
+          : config.advanceDelaySec === 120
+            ? 150 // 2.5 min
+            : config.advanceDelaySec === 150
+              ? 180 // 3 min (максимум)
+              : 60; // Default to 1 min
     const nextPreset =
       config.scoringPreset === 'classic'
         ? 'aggressive'
@@ -64,7 +66,7 @@ export class LobbyUi {
     const buttons: InlineKeyboardButton[][] = [
       [
         {
-          text: `⏱️ Hint Delay: ${config.hintDelaySec}s → ${nextHintDelay}s`,
+          text: `⏱️ Hint Delay: ${this.formatDelay(config.hintDelaySec)} → ${this.formatDelay(nextHintDelay)}`,
           callback_data: actions.setDelay('hintDelaySec', nextHintDelay),
         },
       ],
@@ -114,7 +116,7 @@ export class LobbyUi {
   settingsText(config: GameConfig): string {
     return `⚙️ <b>Game Settings</b>
 
-⏱️ <b>Hint Delay:</b> ${config.hintDelaySec}s
+⏱️ <b>Hint Delay:</b> ${this.formatDelay(config.hintDelaySec)}
 ⏭️ <b>Auto Advance:</b> ${config.autoAdvance ? 'Enabled' : 'Disabled'}
 ${config.autoAdvance ? `⏱️ <b>Advance Delay:</b> ${this.formatDelay(config.advanceDelaySec)}\n` : ''}🔀 <b>Shuffle:</b> ${config.shuffle ? 'Enabled' : 'Disabled'}
 🎯 <b>Scoring Preset:</b> ${config.scoringPreset}
@@ -182,6 +184,7 @@ ${playersList}
     if (minutes % 1 === 0) {
       return `${minutes}min`;
     }
+    // Format half minutes (e.g., 1.5min)
     return `${minutes}min`;
   }
 }

@@ -52,6 +52,14 @@ export class MusicGameModule extends Composer<IBotContext> {
     this.command('music_players', this.infoHandler.handleMusicPlayers.bind(this.infoHandler));
     this.command('music_stats', this.infoHandler.handleMusicStats.bind(this.infoHandler));
     this.command('music_ping', this.infoHandler.handleMusicPing.bind(this.infoHandler));
+
+    // Help commands
+    this.command('music_help', this.infoHandler.handleMusicHelp.bind(this.infoHandler));
+    this.command(
+      'music_organizer_help',
+      this.infoHandler.handleMusicOrganizerHelp.bind(this.infoHandler),
+    );
+    this.command('music_dev_help', this.infoHandler.handleMusicDevHelp.bind(this.infoHandler));
   }
 
   /**

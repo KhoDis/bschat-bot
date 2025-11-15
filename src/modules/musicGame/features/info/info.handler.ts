@@ -4,7 +4,7 @@ import { MusicGameService } from '../../music-game.service';
 
 /**
  * Info Handler - Game information and statistics
- * 
+ *
  * Handles:
  * - /music_info - Show current game info
  * - /music_list - List all games
@@ -14,9 +14,7 @@ import { MusicGameService } from '../../music-game.service';
  */
 @injectable()
 export class InfoHandler {
-  constructor(
-    @inject(TYPES.MusicGameService) private musicGameService: MusicGameService,
-  ) {}
+  constructor(@inject(TYPES.MusicGameService) private musicGameService: MusicGameService) {}
 
   /**
    * /music_info - Show information about the current game
@@ -52,5 +50,25 @@ export class InfoHandler {
   async handleMusicPing(ctx: CommandContext): Promise<void> {
     await this.musicGameService.pingPlayers(ctx);
   }
-}
 
+  /**
+   * /music_help - Show help for players
+   */
+  async handleMusicHelp(ctx: CommandContext): Promise<void> {
+    await this.musicGameService.showPlayerHelp(ctx);
+  }
+
+  /**
+   * /music_organizer_help - Show help for organizers
+   */
+  async handleMusicOrganizerHelp(ctx: CommandContext): Promise<void> {
+    await this.musicGameService.showOrganizerHelp(ctx);
+  }
+
+  /**
+   * /music_dev_help - Show help for developers
+   */
+  async handleMusicDevHelp(ctx: CommandContext): Promise<void> {
+    await this.musicGameService.showDeveloperHelp(ctx);
+  }
+}
