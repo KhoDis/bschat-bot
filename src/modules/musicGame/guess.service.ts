@@ -2,7 +2,6 @@ import { inject, injectable } from 'inversify';
 import { TYPES } from '@/types';
 import { MusicGameRepository } from '@/modules/musicGame/music-game.repository';
 import { ScoringStrategy, scoringByPreset } from '@/modules/musicGame/scoring';
-import { GameConfig } from '@/modules/musicGame/config/game-config';
 import { RoundPhase, GameStatus } from '@prisma/client';
 
 @injectable()
@@ -42,8 +41,7 @@ export class GuessService {
     const timeElapsed = (Date.now() - round.createdAt.getTime()) / 1000;
     const isLateGuess = round.roundIndex < game.currentRound;
 
-    const config = (game as any).config as GameConfig | null;
-    const preset = config?.scoringPreset ?? 'classic';
+    const preset = game.scoringPreset ?? 'classic';
     const strategy: ScoringStrategy = scoringByPreset(preset);
 
     // If guessedUserId is provided and valid, use it; otherwise fall back to guessingUserId

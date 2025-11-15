@@ -64,12 +64,20 @@ model Chat {
 }
 
 model Game {
-  id           Int         @id @default(autoincrement())
-  createdAt    DateTime    @default(now())
+  id           Int        @id @default(autoincrement())
+  createdAt    DateTime   @default(now())
   // TODO: rename to gameSequence
-  currentRound Int         @default(0)
-  status       GameStatus  @default(LOBBY)
-  config       Json?
+  currentRound Int        @default(0)
+  status       GameStatus @default(LOBBY)
+
+  // Game configuration
+  hintDelaySec    Int           @default(30)
+  autoAdvance     Boolean       @default(false)
+  advanceDelaySec Int           @default(10)
+  allowSelfGuess  Boolean       @default(false)
+  shuffle         Boolean       @default(true)
+  scoringPreset   ScoringPreset @default(classic)
+
   rounds       GameRound[]
   chatId       BigInt
   chat         Chat        @relation("ChatToGames", fields: [chatId], references: [id]) // One-to-many relation with Chat
@@ -151,4 +159,10 @@ enum RoundPhase {
   DRAFT // Round is in lobby, not yet started
   LIVE // Round is active and being played
   COMPLETED // Round has finished
+}
+
+enum ScoringPreset {
+  classic
+  aggressive
+  gentle
 }

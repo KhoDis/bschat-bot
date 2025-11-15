@@ -1,7 +1,7 @@
 import { Guess, Prisma, User, GameStatus, RoundPhase } from '@prisma/client';
 import prisma from '../../prisma/client';
 import { injectable } from 'inversify';
-import { GameConfig } from '@/modules/musicGame/config/game-config';
+import { GameConfig, gameConfigToPrisma } from '@/modules/musicGame/config/game-config';
 
 const roundWithGuesses = Prisma.validator<Prisma.GameRoundInclude>()({
   guesses: {
@@ -409,13 +409,16 @@ export class MusicGameRepository {
         });
       }
 
-      // Update game status
+      // Update game status and config
+      const updateData: Prisma.GameUpdateInput = {
+        status: GameStatus.ACTIVE,
+      };
+      if (config) {
+        Object.assign(updateData, gameConfigToPrisma(config));
+      }
       const updated = await tx.game.update({
         where: { id: gameId },
-        data: {
-          status: GameStatus.ACTIVE,
-          config: config ? (config as unknown as Prisma.InputJsonValue) : undefined,
-        },
+        data: updateData,
         include: gameWithData,
       });
 
@@ -462,7 +465,7 @@ export class MusicGameRepository {
       updateData.status = data.status;
     }
     if (data.config !== undefined) {
-      updateData.config = data.config as unknown as Prisma.InputJsonValue;
+      Object.assign(updateData, gameConfigToPrisma(data.config));
     }
     await prisma.game.update({
       where: { id: gameId },

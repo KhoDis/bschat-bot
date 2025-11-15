@@ -34,31 +34,22 @@ export class RoundOrchestratorService {
     await this.playRound(ctx, participants, gameSequence);
 
     try {
-      const config = (game as { config?: unknown }).config as
-        | {
-            hintDelaySec?: number;
-            advanceDelaySec?: number;
-            autoAdvance?: boolean;
-          }
-        | null
-        | undefined;
-
-      if (config?.hintDelaySec && ctx.chat) {
+      if (game.hintDelaySec && ctx.chat) {
         const hintKey = `hint:${gameSequence.id}`;
         this.scheduler.scheduleOnce(
           hintKey,
-          new Date(Date.now() + config.hintDelaySec * 1000),
+          new Date(Date.now() + game.hintDelaySec * 1000),
           async () => {
             await this.showHint(ctx, chatId);
           },
         );
       }
 
-      if (config?.autoAdvance && config?.advanceDelaySec && ctx.chat) {
+      if (game.autoAdvance && game.advanceDelaySec && ctx.chat) {
         const advanceKey = `advance:${gameSequence.id}`;
         this.scheduler.scheduleOnce(
           advanceKey,
-          new Date(Date.now() + config.advanceDelaySec * 1000),
+          new Date(Date.now() + game.advanceDelaySec * 1000),
           async () => {
             await this.advanceToNextRound(ctx, game.id);
           },
