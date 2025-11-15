@@ -35,7 +35,7 @@ const specialChars = [
 
 @injectable()
 export class FoodModule extends Composer<IBotContext> {
-  private unsplash: ReturnType<typeof createApi>;
+  private unsplash: ReturnType<typeof createApi> | null = null;
   private responseChance = 100;
 
   constructor(
@@ -47,9 +47,12 @@ export class FoodModule extends Composer<IBotContext> {
   ) {
     super();
 
-    this.unsplash = createApi({
-      accessKey: this.config.get('UNSPLASH_ACCESS_KEY'),
-    });
+    const accessKey = this.config.getOptional('UNSPLASH_ACCESS_KEY');
+    if (accessKey) {
+      this.unsplash = createApi({
+        accessKey,
+      });
+    }
 
     this.setupCommands();
     this.setupFoodListener();
@@ -430,13 +433,19 @@ export class FoodModule extends Composer<IBotContext> {
       const { category } = detected;
 
       try {
-        const photoData = await this.fetchUnsplashPhoto(category);
-        const attribution = `||Фото: [${photoData.authorName}](https://unsplash.com/@${photoData.authorUsername}) / Unsplash||`;
+        if (!this.unsplash) {
+          await ctx.reply(`Вот твоя ${category}\\! 🍽️`, {
+            parse_mode: 'MarkdownV2',
+          });
+        } else {
+          const photoData = await this.fetchUnsplashPhoto(category);
+          const attribution = `||Фото: [${photoData.authorName}](https://unsplash.com/@${photoData.authorUsername}) / Unsplash||`;
 
-        await ctx.replyWithPhoto(photoData.url, {
-          caption: `Вот твоя ${category}\\! 🍽️\n\n${attribution}`,
-          parse_mode: 'MarkdownV2',
-        });
+          await ctx.replyWithPhoto(photoData.url, {
+            caption: `Вот твоя ${category}\\! 🍽️\n\n${attribution}`,
+            parse_mode: 'MarkdownV2',
+          });
+        }
       } catch (error) {
         await ctx.reply(this.text.get('food.unsplash.error', { error: String(error) }));
       }
@@ -455,6 +464,9 @@ export class FoodModule extends Composer<IBotContext> {
   private async fetchUnsplashPhoto(
     fullQuery: string,
   ): Promise<{ url: string; authorName: string; authorUsername: string }> {
+    if (!this.unsplash) {
+      throw new Error('Unsplash is not configured');
+    }
     const result = await this.unsplash.photos.getRandom({
       query: fullQuery,
       count: 1,

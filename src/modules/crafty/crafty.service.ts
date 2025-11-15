@@ -60,21 +60,31 @@ export type ServerStat = {
 
 @injectable()
 class CraftyService {
-  private api: AxiosInstance;
+  private api: AxiosInstance | null = null;
 
   constructor(@inject(TYPES.ConfigService) private config: ConfigService) {
-    const baseUrl = this.config.get('CRAFTY_BASE_URL');
-    const apiKey = this.config.get('CRAFTY_API_KEY');
-    // Initialize axios instance
-    this.api = axios.create({
-      baseURL: baseUrl,
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-      },
-    });
+    const baseUrl = this.config.getOptional('CRAFTY_BASE_URL');
+    const apiKey = this.config.getOptional('CRAFTY_API_KEY');
+    
+    // Only initialize axios instance if both config values are provided
+    if (baseUrl && apiKey) {
+      this.api = axios.create({
+        baseURL: baseUrl,
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+        },
+      });
+    }
+  }
+
+  private ensureConfigured(): void {
+    if (!this.api) {
+      throw new Error('Crafty service is not configured. Please set CRAFTY_BASE_URL and CRAFTY_API_KEY environment variables.');
+    }
   }
 
   async startServer(serverId: string): Promise<boolean> {
+    this.ensureConfigured();
     const response = await this.makePostRequest<GetRequestEmpty>(
       `/servers/${serverId}/action/start_server`,
     );
@@ -82,6 +92,7 @@ class CraftyService {
   }
 
   async stopServer(serverId: string): Promise<boolean> {
+    this.ensureConfigured();
     const response = await this.makePostRequest<GetRequestEmpty>(
       `/servers/${serverId}/action/stop_server`,
     );
@@ -90,6 +101,7 @@ class CraftyService {
   }
 
   async getServerStats(serverId: string): Promise<ServerStat> {
+    this.ensureConfigured();
     const response = await this.makeGetRequest<GetRequest<ServerStat>>(
       `/servers/${serverId}/stats`,
     );
@@ -98,16 +110,19 @@ class CraftyService {
   }
 
   async getServerList(): Promise<Server[]> {
+    this.ensureConfigured();
     const response = await this.makeGetRequest<GetRequest<Server[]>>(`/servers`);
 
     return response.data;
   }
 
   async getJsonSchemas(): Promise<any> {
+    this.ensureConfigured();
     return this.makeGetRequest(`/jsonschema`);
   }
 
   async getJsonSchema(schema: string): Promise<any> {
+    this.ensureConfigured();
     return this.makeGetRequest(`/jsonschema/${schema}`);
   }
 
@@ -120,6 +135,9 @@ class CraftyService {
     endpoint: string,
     params?: Record<string, string>,
   ): Promise<TResponse> {
+    if (!this.api) {
+      throw new Error('Crafty service is not configured');
+    }
     try {
       const response: AxiosResponse<TResponse> = await this.api.get(endpoint, {
         params,
@@ -142,6 +160,9 @@ class CraftyService {
     endpoint: string,
     data?: TRequest,
   ): Promise<TResponse> {
+    if (!this.api) {
+      throw new Error('Crafty service is not configured');
+    }
     try {
       const response: AxiosResponse<TResponse> = await this.api.post(endpoint, data);
       return response.data;

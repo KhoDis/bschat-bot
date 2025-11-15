@@ -2,7 +2,7 @@ version: '3.9'
 
 services:
   db:
-    image: postgres:latest
+    image: postgres:16-alpine
     restart: always
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-mydatabase}
@@ -29,7 +29,7 @@ services:
       # Mount everything *except node_modules*
       - .:/app:cached
       - /app/node_modules
-    command: sh -c "npm run dev"
+    command: sh -c "npx prisma generate && npm run dev"
     restart: unless-stopped
     environment:
       - CHOKIDAR_USEPOLLING=true # enables file watching on Windows/WSL

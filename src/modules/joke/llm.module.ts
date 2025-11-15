@@ -10,7 +10,7 @@ import { ConfigService } from '@/modules/common/config.service';
 
 @injectable()
 export class LlmModule extends Composer<IBotContext> {
-  private openai: OpenAI;
+  private openai: OpenAI | null = null;
   private availableModel = 'nousresearch/deephermes-3-mistral-24b-preview:free';
   private conversationHistory = new Map<
     number,
@@ -26,11 +26,14 @@ export class LlmModule extends Composer<IBotContext> {
   constructor(@inject(TYPES.ConfigService) private readonly configService: ConfigService) {
     super();
 
-    // Initialize OpenAI client for OpenRouter
-    this.openai = new OpenAI({
-      baseURL: 'https://openrouter.ai/api/v1',
-      apiKey: this.configService.get('OPENROUTER_API_KEY'),
-    });
+    // Initialize OpenAI client for OpenRouter if API key is provided
+    const apiKey = this.configService.getOptional('OPENROUTER_API_KEY');
+    if (apiKey) {
+      this.openai = new OpenAI({
+        baseURL: 'https://openrouter.ai/api/v1',
+        apiKey,
+      });
+    }
 
     this.setupHandlers();
   }
@@ -64,6 +67,13 @@ export class LlmModule extends Composer<IBotContext> {
   private async handleTriggeredMessage(ctx: CommandContext) {
     const text = ctx.message.text;
     const chatId = ctx.chat.id;
+
+    if (!this.openai) {
+      await ctx.reply(
+        'LLM не настроен. Установите OPENROUTER_API_KEY для использования этой функции.',
+      );
+      return;
+    }
 
     try {
       await ctx.sendChatAction('typing');
@@ -127,6 +137,13 @@ export class LlmModule extends Composer<IBotContext> {
     const conversation = this.conversationHistory.get(chatId);
 
     if (!conversation) return;
+
+    if (!this.openai) {
+      await ctx.reply(
+        'LLM не настроен. Установите OPENROUTER_API_KEY для использования этой функции.',
+      );
+      return;
+    }
 
     try {
       await ctx.sendChatAction('typing');
