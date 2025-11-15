@@ -7,7 +7,7 @@ import { CommandContext, CallbackQueryContext } from '@/types';
 import { Markup } from 'telegraf';
 import { IBotContext } from '@/context/context.interface';
 import { Context } from 'telegraf';
-import { User } from '@prisma/client';
+import { User, RoundPhase } from '@prisma/client';
 import { InlineKeyboardButton } from 'telegraf/typings/core/types/typegram';
 import { SchedulerService } from '@/modules/musicGame/scheduler/scheduler.service';
 import { GameConfig, defaultGameConfig } from '@/modules/musicGame/config/game-config';
@@ -384,9 +384,45 @@ export class MusicGameService {
   }
 
   /**
+   * Get submission players for chat
+   */
+  async getSubmissionPlayers(
+    chatId: number,
+  ): Promise<Array<{ id: bigint; name: string; tag: string | null }>> {
+    return this.memberService.getSubmissionUsers(chatId);
+  }
+
+  /**
+   * Remove player's track from the game
+   */
+  async removePlayerTrack(
+    chatId: number,
+    userId: number,
+  ): Promise<'NO_GAME' | 'NO_TRACK' | 'SUCCESS'> {
+    const game = await this.gameRepository.getCurrentGameByChatId(chatId);
+    if (!game) {
+      return 'NO_GAME';
+    }
+
+    // Check if player has a DRAFT round
+    const draftRound = game.rounds.find(
+      (round) => Number(round.userId) === userId && round.phase === RoundPhase.DRAFT,
+    );
+
+    if (!draftRound) {
+      return 'NO_TRACK';
+    }
+
+    await this.gameRepository.deleteDraftRound(game.id, userId);
+    return 'SUCCESS';
+  }
+
+  /**
    * Ping all players in the current game
    */
-  async pingPlayers(ctx: CommandContext): Promise<void> {
+  async pingPlayers(ctx: CommandContext | CallbackQueryContext): Promise<void> {
+    if (!ctx.chat) return;
+
     const users = await this.memberService.getSubmissionUsers(ctx.chat.id);
 
     if (!users.length) {

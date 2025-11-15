@@ -7,7 +7,7 @@ export type ScoringPreset = z.infer<typeof scoringPresetSchema>;
 export const gameConfigSchema = z.object({
   hintDelaySec: z.number().int().min(0).default(30),
   autoAdvance: z.boolean().default(false),
-  advanceDelaySec: z.number().int().min(0).default(10),
+  advanceDelaySec: z.number().int().min(0).default(60), // Default: 1 minute
   allowSelfGuess: z.boolean().default(false),
   shuffle: z.boolean().default(true),
   scoringPreset: scoringPresetSchema.default('classic'),

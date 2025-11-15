@@ -38,9 +38,28 @@ export class LobbyUi {
     },
   ) {
     // Helper to cycle through delay values
-    const nextHintDelay = config.hintDelaySec === 30 ? 60 : config.hintDelaySec === 60 ? 90 : config.hintDelaySec === 90 ? 120 : 30;
-    const nextAdvanceDelay = config.advanceDelaySec === 10 ? 20 : config.advanceDelaySec === 20 ? 30 : config.advanceDelaySec === 30 ? 10 : 10;
-    const nextPreset = config.scoringPreset === 'classic' ? 'aggressive' : config.scoringPreset === 'aggressive' ? 'gentle' : 'classic';
+    const nextHintDelay =
+      config.hintDelaySec === 30
+        ? 60
+        : config.hintDelaySec === 60
+          ? 90
+          : config.hintDelaySec === 90
+            ? 120
+            : 30;
+    const nextAdvanceDelay =
+      config.advanceDelaySec === 10
+        ? 20
+        : config.advanceDelaySec === 20
+          ? 30
+          : config.advanceDelaySec === 30
+            ? 10
+            : 10;
+    const nextPreset =
+      config.scoringPreset === 'classic'
+        ? 'aggressive'
+        : config.scoringPreset === 'aggressive'
+          ? 'gentle'
+          : 'classic';
 
     const buttons: InlineKeyboardButton[][] = [
       [
@@ -58,7 +77,7 @@ export class LobbyUi {
       config.autoAdvance
         ? [
             {
-              text: `⏱️ Advance Delay: ${config.advanceDelaySec}s → ${nextAdvanceDelay}s`,
+              text: `⏱️ Advance Delay: ${this.formatDelay(config.advanceDelaySec)} → ${this.formatDelay(nextAdvanceDelay)}`,
               callback_data: actions.setDelay('advanceDelaySec', nextAdvanceDelay),
             },
           ]
@@ -97,9 +116,72 @@ export class LobbyUi {
 
 ⏱️ <b>Hint Delay:</b> ${config.hintDelaySec}s
 ⏭️ <b>Auto Advance:</b> ${config.autoAdvance ? 'Enabled' : 'Disabled'}
-${config.autoAdvance ? `⏱️ <b>Advance Delay:</b> ${config.advanceDelaySec}s\n` : ''}🔀 <b>Shuffle:</b> ${config.shuffle ? 'Enabled' : 'Disabled'}
+${config.autoAdvance ? `⏱️ <b>Advance Delay:</b> ${this.formatDelay(config.advanceDelaySec)}\n` : ''}🔀 <b>Shuffle:</b> ${config.shuffle ? 'Enabled' : 'Disabled'}
 🎯 <b>Scoring Preset:</b> ${config.scoringPreset}
 👤 <b>Allow Self Guess:</b> ${config.allowSelfGuess ? 'Yes' : 'No'}`;
   }
-}
 
+  /**
+   * Generate players panel keyboard
+   */
+  playersKeyboard(
+    players: Array<{ id: bigint; name: string; tag: string | null }>,
+    actions: {
+      remove: (userId: string) => string;
+      ping: string;
+      back: string;
+    },
+  ) {
+    const buttons: InlineKeyboardButton[][] = players.map((player) => [
+      {
+        text: `❌ ${player.name}`,
+        callback_data: actions.remove(player.id.toString()),
+      },
+    ]);
+
+    buttons.push([
+      { text: '📢 Ping All', callback_data: actions.ping },
+      { text: '🔙 Back to Lobby', callback_data: actions.back },
+    ]);
+
+    return {
+      inline_keyboard: buttons,
+    };
+  }
+
+  /**
+   * Format players text
+   */
+  playersText(players: Array<{ id: bigint; name: string; tag: string | null }>): string {
+    if (players.length === 0) {
+      return '👥 <b>Players</b>\n\nNo players have submitted tracks yet.';
+    }
+
+    const playersList = players
+      .map((player, index) => {
+        const tag = player.tag ? `@${player.tag}` : '';
+        return `${index + 1}. ${player.name}${tag ? ` ${tag}` : ''}`;
+      })
+      .join('\n');
+
+    return `👥 <b>Players</b> (${players.length})
+
+${playersList}
+
+<i>Click on a player to remove their track</i>`;
+  }
+
+  /**
+   * Format delay in seconds to human-readable format
+   */
+  private formatDelay(seconds: number): string {
+    if (seconds < 60) {
+      return `${seconds}s`;
+    }
+    const minutes = seconds / 60;
+    if (minutes % 1 === 0) {
+      return `${minutes}min`;
+    }
+    return `${minutes}min`;
+  }
+}

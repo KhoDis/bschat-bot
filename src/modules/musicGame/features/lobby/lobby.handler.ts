@@ -34,6 +34,9 @@ export class LobbyHandler {
     actions.handle('settings', async (ctx, action, ...args) => {
       await this.handleSettingsAction(ctx, action, ...args);
     });
+    actions.handle('players', async (ctx, action, ...args) => {
+      await this.handlePlayersAction(ctx, action, ...args);
+    });
   }
 
   /**
@@ -85,7 +88,7 @@ export class LobbyHandler {
         await this.musicGameService.showActiveGameInfo(ctx);
         break;
       case 'players':
-        await ctx.reply('👥 Player management - coming soon!');
+        await this.showPlayers(ctx);
         break;
       case 'back':
         await this.renderLobby(ctx);
@@ -205,5 +208,100 @@ export class LobbyHandler {
     await this.musicGameService.updateGameConfig(ctx.chat.id, newConfig);
     await this.showSettings(ctx);
     await ctx.answerCbQuery('Settings updated');
+  }
+
+  /**
+   * Show players panel
+   */
+  private async showPlayers(ctx: CallbackQueryContext): Promise<void> {
+    if (!ctx.chat) return;
+
+    const players = await this.musicGameService.getSubmissionPlayers(ctx.chat.id);
+
+    if (players.length === 0) {
+      const keyboard = this.ui.playersKeyboard([], {
+        remove: () => '',
+        ping: this.actions.encode('players', 'ping'),
+        back: this.actions.encode('lobby', 'back'),
+      });
+
+      if (ctx.callbackQuery?.message && 'text' in ctx.callbackQuery.message) {
+        await ctx.editMessageText(this.ui.playersText([]), {
+          parse_mode: 'HTML',
+          reply_markup: keyboard,
+        });
+      } else {
+        await ctx.reply(this.ui.playersText([]), {
+          parse_mode: 'HTML',
+          reply_markup: keyboard,
+        });
+      }
+      return;
+    }
+
+    const keyboard = this.ui.playersKeyboard(players, {
+      remove: (userId) => this.actions.encode('players', 'remove', userId),
+      ping: this.actions.encode('players', 'ping'),
+      back: this.actions.encode('lobby', 'back'),
+    });
+
+    if (ctx.callbackQuery?.message && 'text' in ctx.callbackQuery.message) {
+      await ctx.editMessageText(this.ui.playersText(players), {
+        parse_mode: 'HTML',
+        reply_markup: keyboard,
+      });
+    } else {
+      await ctx.reply(this.ui.playersText(players), {
+        parse_mode: 'HTML',
+        reply_markup: keyboard,
+      });
+    }
+  }
+
+  /**
+   * Handle players actions
+   */
+  private async handlePlayersAction(
+    ctx: CallbackQueryContext,
+    action: string,
+    ...args: string[]
+  ): Promise<void> {
+    if (!ctx.chat) return;
+
+    switch (action) {
+      case 'remove': {
+        const userIdStr = args[0];
+        if (!userIdStr) {
+          await ctx.answerCbQuery('Invalid player ID');
+          return;
+        }
+        const userId = parseInt(userIdStr, 10);
+        if (isNaN(userId)) {
+          await ctx.answerCbQuery('Invalid player ID');
+          return;
+        }
+
+        const result = await this.musicGameService.removePlayerTrack(ctx.chat.id, userId);
+        if (result === 'NO_GAME') {
+          await ctx.answerCbQuery('No game found');
+          return;
+        }
+        if (result === 'NO_TRACK') {
+          await ctx.answerCbQuery('Player has no track to remove');
+          return;
+        }
+
+        await this.showPlayers(ctx);
+        await ctx.answerCbQuery('Player track removed');
+        break;
+      }
+      case 'ping': {
+        await this.musicGameService.pingPlayers(ctx);
+        await ctx.answerCbQuery('Players pinged');
+        break;
+      }
+      default:
+        await ctx.answerCbQuery('Unknown players action');
+    }
   }
 }
