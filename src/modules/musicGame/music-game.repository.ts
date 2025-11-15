@@ -45,6 +45,7 @@ export class MusicGameRepository {
   }
 
   async getCurrentGameByChatId(chatId: number): Promise<GameWithData | null> {
+    console.log('[Repository] getCurrentGameByChatId called for chatId:', chatId);
     const chat = await prisma.chat.findUnique({
       where: { id: BigInt(chatId) },
       include: {
@@ -54,10 +55,93 @@ export class MusicGameRepository {
       },
     });
 
-    // Extract the active game from the chat
-    const activeGame = chat?.activeGame;
+    console.log('[Repository] Chat found:', {
+      chatId: chat?.id?.toString(),
+      activeGameId: chat?.activeGameId,
+      hasActiveGame: !!chat?.activeGame,
+      activeGameStatus: chat?.activeGame?.status,
+    });
 
-    return activeGame || null;
+    // First, try to get the active game (ACTIVE status)
+    const activeGame = chat?.activeGame;
+    if (activeGame) {
+      console.log('[Repository] Returning activeGame:', activeGame.id, activeGame.status);
+      return activeGame;
+    }
+
+    // If no active game, look for a LOBBY game for this chat
+    console.log('[Repository] No active game, searching for LOBBY game...');
+
+    // Debug: Check all games for this chat
+    const allGames = await prisma.game.findMany({
+      where: {
+        chatId: BigInt(chatId),
+      },
+      select: {
+        id: true,
+        status: true,
+        chatId: true,
+        createdAt: true,
+        _count: {
+          select: {
+            rounds: true,
+          },
+        },
+      },
+    });
+    console.log(
+      '[Repository] All games for chat:',
+      allGames.map((g) => ({
+        id: g.id,
+        status: g.status,
+        chatId: g.chatId.toString(),
+        roundsCount: g._count.rounds,
+      })),
+    );
+
+    // Debug: Check if there are games in other chats (to help debug chatId mismatch)
+    if (allGames.length === 0) {
+      const anyGames = await prisma.game.findMany({
+        take: 5,
+        orderBy: {
+          createdAt: 'desc',
+        },
+        select: {
+          id: true,
+          status: true,
+          chatId: true,
+          createdAt: true,
+        },
+      });
+      console.log(
+        '[Repository] Recent games in database (for debugging):',
+        anyGames.map((g) => ({
+          id: g.id,
+          status: g.status,
+          chatId: g.chatId.toString(),
+        })),
+      );
+    }
+
+    const lobbyGame = await prisma.game.findFirst({
+      where: {
+        chatId: BigInt(chatId),
+        status: GameStatus.LOBBY,
+      },
+      include: gameWithData,
+      orderBy: {
+        createdAt: 'desc', // Get the most recent LOBBY game
+      },
+    });
+
+    console.log('[Repository] LOBBY game search result:', {
+      found: !!lobbyGame,
+      id: lobbyGame?.id,
+      status: lobbyGame?.status,
+      roundsCount: lobbyGame?.rounds.length,
+    });
+
+    return lobbyGame || null;
   }
 
   async endGame(gameId: number): Promise<void> {
@@ -220,21 +304,65 @@ export class MusicGameRepository {
    * Gets all users who have DRAFT rounds in a lobby game
    */
   async getDraftSubmissionUsers(chatId: number): Promise<User[]> {
-    const game = await this.getCurrentGameByChatId(chatId);
-    if (!game || game.status !== GameStatus.LOBBY) {
-      return [];
-    }
+    console.log('[Repository] getDraftSubmissionUsers called for chatId:', chatId);
 
-    return prisma.user.findMany({
+    // Debug: Check all rounds for this chat
+    const allRounds = await prisma.gameRound.findMany({
+      where: {
+        game: {
+          chatId: BigInt(chatId),
+        },
+      },
+      include: {
+        game: {
+          select: {
+            id: true,
+            status: true,
+            chatId: true,
+          },
+        },
+        user: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
+    console.log(
+      '[Repository] All rounds for chat:',
+      allRounds.map((r) => ({
+        id: r.id,
+        gameId: r.gameId,
+        gameStatus: r.game.status,
+        phase: r.phase,
+        userId: r.userId.toString(),
+        userName: r.user.name,
+      })),
+    );
+
+    // Search for DRAFT rounds in any game for this chat
+    // This is more reliable than relying on getCurrentGameByChatId
+    // because LOBBY games might not have activeGameId set
+    const users = await prisma.user.findMany({
       where: {
         gameRounds: {
           some: {
-            gameId: game.id,
+            game: {
+              chatId: BigInt(chatId),
+              status: GameStatus.LOBBY,
+            },
             phase: RoundPhase.DRAFT,
           },
         },
       },
     });
+    console.log(
+      '[Repository] Found users with DRAFT rounds:',
+      users.length,
+      users.map((u) => ({ id: u.id.toString(), name: u.name })),
+    );
+    return users;
   }
 
   /**

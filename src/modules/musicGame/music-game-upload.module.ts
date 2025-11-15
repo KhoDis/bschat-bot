@@ -148,6 +148,12 @@ export class MusicGameUploadModule extends Composer<IBotContext> {
     await ctx.reply(ctx.message.audio.file_id);
     const groupChatId = ctx.session.selectedChatId; // Get selected chat from the session
     const uploadChatId = ctx.chat.id;
+    console.log('[MusicGameUpload] handleAudioMessage:', {
+      userId: ctx.from.id,
+      selectedChatId: groupChatId,
+      uploadChatId: uploadChatId,
+      fileId: ctx.message.audio.file_id.substring(0, 20) + '...',
+    });
     if (!groupChatId) {
       await ctx.reply(this.text.get('chat.noChatSelected'));
       return;

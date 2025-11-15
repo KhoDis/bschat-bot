@@ -219,24 +219,40 @@ export class MemberService {
       uploadHintMessageId?: number;
     },
   ) {
+    console.log('[MemberService] saveSubmission called:', {
+      userId: submission.userId,
+      chatId: submission.chatId,
+      uploadChatId: upload.uploadChatId,
+      fileId: submission.fileId.substring(0, 20) + '...',
+    });
+    
     // Get or create LOBBY game
     let game = await this.gameRepository.getCurrentGameByChatId(submission.chatId);
+    console.log('[MemberService] Found game:', {
+      found: !!game,
+      id: game?.id,
+      status: game?.status,
+    });
 
     if (!game) {
+      console.log('[MemberService] No game found, creating new LOBBY game for chatId:', submission.chatId);
       // OPTION 1: Auto-create lobby
       game = await this.gameRepository.createEmptyLobby(submission.chatId);
+      console.log('[MemberService] Created new LOBBY game:', game.id);
 
       // OPTION 2: Require admin to create lobby first
       // throw new Error('No lobby game exists. Admin must create one first');
     }
 
     // Upsert DRAFT round
+    console.log('[MemberService] Upserting DRAFT round for game:', game.id);
     await this.gameRepository.upsertDraftRound(game.id, {
       userId: submission.userId,
       musicFileId: submission.fileId,
       hintChatId: upload.uploadChatId,
       hintMessageId: upload.uploadHintMessageId ?? undefined,
     });
+    console.log('[MemberService] DRAFT round saved successfully');
   }
 
   // NOTE: https://limits.tginfo.me/en

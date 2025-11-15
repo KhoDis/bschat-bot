@@ -24,7 +24,8 @@
       "Oh, the great moment has arrived! The game has started! Prepare to showcase your musical ignorance!",
       "Let the battle of titans begin! Or, wait... who are these mere mortals?",
       "The game has started! Hope you're ready for a total destruction of your musical ambitions!"
-    ]
+    ],
+    "stats": "{{stats}}"
   },
   "rounds": {
     "noMoreRounds": [

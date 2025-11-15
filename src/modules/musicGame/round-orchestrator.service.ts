@@ -1,10 +1,12 @@
 import { inject, injectable } from 'inversify';
 import { TYPES } from '@/types';
-import { MusicGameRepository } from '@/modules/musicGame/music-game.repository';
+import { MusicGameRepository, RoundWithGuesses } from '@/modules/musicGame/music-game.repository';
 import { SchedulerService } from '@/modules/musicGame/scheduler/scheduler.service';
 import { TextService } from '@/modules/common/text.service';
+import { ActionCodec } from '@/modules/musicGame/action.codec';
 import { Context } from 'telegraf';
 import { User } from '@prisma/client';
+import { InlineKeyboardButton } from 'telegraf/typings/core/types/typegram';
 
 @injectable()
 export class RoundOrchestratorService {
@@ -12,6 +14,7 @@ export class RoundOrchestratorService {
     @inject(TYPES.GameRepository) private gameRepository: MusicGameRepository,
     @inject(TYPES.SchedulerService) private scheduler: SchedulerService,
     @inject(TYPES.TextService) private text: TextService,
+    @inject(TYPES.ActionCodec) private codec: ActionCodec,
   ) {}
 
   async startRound(ctx: Context, chatId: number): Promise<void> {
@@ -31,11 +34,14 @@ export class RoundOrchestratorService {
     await this.playRound(ctx, participants, gameSequence);
 
     try {
-      const config = (game as any).config as {
-        hintDelaySec?: number;
-        advanceDelaySec?: number;
-        autoAdvance?: boolean;
-      } | null;
+      const config = (game as { config?: unknown }).config as
+        | {
+            hintDelaySec?: number;
+            advanceDelaySec?: number;
+            autoAdvance?: boolean;
+          }
+        | null
+        | undefined;
 
       if (config?.hintDelaySec && ctx.chat) {
         const hintKey = `hint:${gameSequence.id}`;
@@ -63,11 +69,28 @@ export class RoundOrchestratorService {
     }
   }
 
-  async playRound(ctx: Context, participants: User[], currentRound: any): Promise<void> {
-    const buttons = participants.map((user) => ({
-      text: user.name,
-      callback_data: `guess:${currentRound.id}_${user.id}`,
-    }));
+  async playRound(
+    ctx: Context,
+    participants: User[],
+    currentRound: RoundWithGuesses,
+  ): Promise<void> {
+    // Ensure roundId and userId are valid numbers before encoding
+    const roundId = typeof currentRound.id === 'bigint' ? Number(currentRound.id) : currentRound.id;
+    if (!roundId || isNaN(roundId)) {
+      console.error('Invalid roundId in playRound:', currentRound.id);
+      throw new Error('Invalid roundId');
+    }
+    const buttons = participants.map((user) => {
+      const userId = typeof user.id === 'bigint' ? Number(user.id) : user.id;
+      if (!userId || isNaN(userId)) {
+        console.error('Invalid userId in playRound:', user.id);
+        throw new Error('Invalid userId');
+      }
+      return {
+        text: user.name,
+        callback_data: this.codec.encode('guess', roundId, userId),
+      };
+    });
 
     await ctx.replyWithAudio(currentRound.musicFileId, {
       caption: this.text.get('rounds.playRound'),
@@ -116,7 +139,7 @@ export class RoundOrchestratorService {
     await this.startRound(ctx, Number(game.chatId));
   }
 
-  private chunkButtons(buttons: any[], size: number) {
+  private chunkButtons(buttons: InlineKeyboardButton[], size: number) {
     return Array.from({ length: Math.ceil(buttons.length / size) }, (_, i) =>
       buttons.slice(i * size, i * size + size),
     );

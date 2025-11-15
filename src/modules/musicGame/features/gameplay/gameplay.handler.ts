@@ -27,7 +27,30 @@ export class GameplayHandler {
     });
 
     actions.handle('guess', async (ctx, roundId, guessedUserId) => {
-      await this.musicGameService.processGuess(ctx, parseInt(roundId), parseInt(guessedUserId));
+      // Check if parameters are provided and valid
+      if (!roundId || !guessedUserId || roundId === '' || guessedUserId === '') {
+        console.error('Invalid guess parameters:', {
+          roundId,
+          guessedUserId,
+          callbackData: ctx.callbackQuery?.data,
+        });
+        await ctx.answerCbQuery('Ошибка: неверные параметры догадки');
+        return;
+      }
+      const parsedRoundId = parseInt(roundId, 10);
+      const parsedGuessedUserId = parseInt(guessedUserId, 10);
+      if (isNaN(parsedRoundId) || isNaN(parsedGuessedUserId)) {
+        console.error('Failed to parse guess parameters:', {
+          roundId,
+          guessedUserId,
+          parsedRoundId,
+          parsedGuessedUserId,
+          callbackData: ctx.callbackQuery?.data,
+        });
+        await ctx.answerCbQuery('Ошибка: неверные параметры догадки');
+        return;
+      }
+      await this.musicGameService.processGuess(ctx, parsedRoundId, parsedGuessedUserId);
     });
 
     actions.handle('round_hint', async (ctx, roundId) => {

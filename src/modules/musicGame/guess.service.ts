@@ -13,6 +13,7 @@ export class GuessService {
     chatId: number;
     roundId: number;
     guessingUserId: number;
+    guessedUserId?: number; // Optional: who the user is guessing uploaded the track
   }): Promise<
     | { isCorrect: boolean; points: number }
     | 'ALREADY_GUESSED'
@@ -21,7 +22,7 @@ export class GuessService {
     | 'ROUND_NOT_LIVE'
     | 'GAME_NOT_ACTIVE'
   > {
-    const { chatId, roundId, guessingUserId } = params;
+    const { chatId, roundId, guessingUserId, guessedUserId } = params;
 
     const round = await this.gameRepository.findRoundById(roundId);
     if (!round) return 'NO_ROUND';
@@ -45,7 +46,11 @@ export class GuessService {
     const preset = config?.scoringPreset ?? 'classic';
     const strategy: ScoringStrategy = scoringByPreset(preset);
 
-    const isCorrect = Number(round.userId) === guessingUserId;
+    // If guessedUserId is provided and valid, use it; otherwise fall back to guessingUserId
+    // (for backward compatibility with old behavior)
+    const actualGuessedId =
+      guessedUserId !== undefined && !isNaN(guessedUserId) ? guessedUserId : guessingUserId;
+    const isCorrect = Number(round.userId) === actualGuessedId;
     const isSelfGuess = guessingUserId === Number(round.userId);
     const points = strategy.score({
       isCorrect,
@@ -58,7 +63,7 @@ export class GuessService {
     await this.gameRepository.createGuess({
       roundId,
       userId: guessingUserId,
-      guessedId: Number(round.userId),
+      guessedId: actualGuessedId,
       isCorrect,
       points,
       isLateGuess,

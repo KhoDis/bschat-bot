@@ -34,7 +34,8 @@
     "noSaved": "Нет сохранённых игр.",
     "savedList": "Список игр:\n{{gamesList}}",
     "activeInfo": "{{info}}",
-    "activeNotFound": "Активная игра для чата {{chatId}} не найдена"
+    "activeNotFound": "Активная игра для чата {{chatId}} не найдена",
+    "stats": "{{stats}}"
   },
   "rounds": {
     "noMoreRounds": [

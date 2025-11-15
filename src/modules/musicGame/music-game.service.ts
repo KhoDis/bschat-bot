@@ -157,11 +157,21 @@ export class MusicGameService {
 
     try {
       const guessingUserId = ctx.from!.id;
-      const result = await this.guessService.processGuess({
+      // Only pass guessedUserId if it's a valid number
+      const guessParams: {
+        chatId: number;
+        roundId: number;
+        guessingUserId: number;
+        guessedUserId?: number;
+      } = {
         chatId: ctx.chat.id,
         roundId,
         guessingUserId,
-      });
+      };
+      if (guessedUserId && !isNaN(guessedUserId)) {
+        guessParams.guessedUserId = guessedUserId;
+      }
+      const result = await this.guessService.processGuess(guessParams);
 
       if (result === 'NO_ROUND') {
         await ctx.reply(this.text.get('rounds.notFound'));
@@ -349,9 +359,12 @@ export class MusicGameService {
    * List all players in the current game
    */
   async listPlayers(ctx: CommandContext): Promise<void> {
+    console.log('[MusicGameService] listPlayers called for chatId:', ctx.chat.id);
     const submissionUsers = await this.memberService.getSubmissionUsers(ctx.chat.id);
+    console.log('[MusicGameService] Found submission users:', submissionUsers.length);
 
     if (!submissionUsers.length) {
+      console.log('[MusicGameService] No players found, returning noPlayers message');
       await ctx.reply(this.text.get('musicGame.noPlayers'));
       return;
     }
@@ -423,7 +436,7 @@ export class MusicGameService {
         .map((item) => `${item.player}: ${item.correctGuesses} угадано`),
     ].join('\n');
 
-    await ctx.reply(this.text.get('musicGame.stats', { stats: statsText } as any));
+    await ctx.reply(this.text.get('musicGame.stats', { stats: statsText }));
   }
 
   // ==================== PRIVATE HELPER METHODS ====================
@@ -435,10 +448,23 @@ export class MusicGameService {
   }
 
   private async playRound(ctx: Context, participants: User[], currentRound: any): Promise<void> {
-    const buttons = participants.map((user) => ({
-      text: user.name,
-      callback_data: this.codec.encode('guess', currentRound.id, user.id),
-    }));
+    // Ensure roundId and userId are valid numbers before encoding
+    const roundId = typeof currentRound.id === 'bigint' ? Number(currentRound.id) : currentRound.id;
+    if (!roundId || isNaN(roundId)) {
+      console.error('Invalid roundId in playRound:', currentRound.id);
+      throw new Error('Invalid roundId');
+    }
+    const buttons = participants.map((user) => {
+      const userId = typeof user.id === 'bigint' ? Number(user.id) : user.id;
+      if (!userId || isNaN(userId)) {
+        console.error('Invalid userId in playRound:', user.id);
+        throw new Error('Invalid userId');
+      }
+      return {
+        text: user.name,
+        callback_data: this.codec.encode('guess', roundId, userId),
+      };
+    });
 
     await ctx.replyWithAudio(currentRound.musicFileId, {
       caption: this.text.get('rounds.playRound'),
