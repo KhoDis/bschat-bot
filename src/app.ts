@@ -21,8 +21,8 @@ class Bot {
 
   constructor() {
     const configService = container.get<ConfigService>(TYPES.ConfigService);
-
-    const agent = new SocksProxyAgent('socks5://127.0.0.1:1080');
+    
+    const agent = new SocksProxyAgent('socks5://host.docker.internal:1080');
 
     this.bot = new Telegraf<IBotContext>(configService.get("BOT_TOKEN"), {
       telegram: {
