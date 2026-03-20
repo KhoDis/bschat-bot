@@ -21,7 +21,14 @@ class Bot {
   constructor() {
     const configService = container.get<ConfigService>(TYPES.ConfigService);
 
-    this.bot = new Telegraf<IBotContext>(configService.get("BOT_TOKEN"));
+    const agent = new SocksProxyAgent('socks5://127.0.0.1:1080');
+
+    this.bot = new Telegraf<IBotContext>(configService.get("BOT_TOKEN"), {
+      telegram: {
+        agent: agent,
+        timeout: 30000,
+      }
+    });
     this.bot.use(
       session({
         defaultSession: () => ({}),

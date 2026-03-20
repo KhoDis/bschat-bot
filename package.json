@@ -28,6 +28,7 @@
     "nodemon": "^3.1.7",
     "openai": "^4.98.0",
     "reflect-metadata": "^0.2.2",
+    "socks-proxy-agent": "^8.0.2",
     "telegraf": "^4.16.3",
     "unsplash-js": "^7.0.19",
     "vitest": "^3.0.6",

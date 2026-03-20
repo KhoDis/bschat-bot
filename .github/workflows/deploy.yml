@@ -78,3 +78,5 @@ jobs:
             sudo docker compose -f docker-compose.yml -p bschat down
             sudo docker compose -f docker-compose.yml -p bschat pull
             sudo docker compose -f docker-compose.yml -p bschat up -d
+            sleep 5
+            sudo docker exec bschat-bot-1 curl --socks5 127.0.0.1:1080 https://api.telegram.org/bot${BOT_TOKEN}/getMe || true

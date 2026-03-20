@@ -24,6 +24,14 @@ services:
     networks:
       - bschat-net
     restart: always
+    # ДОБАВЛЯЕМ ЭТИ СТРОКИ:
+    network_mode: "host"  # Это позволит контейнеру видеть localhost прокси
+    # ИЛИ если не хотите host mode, используйте:
+    # extra_hosts:
+    #   - "host.docker.internal:host-gateway"
+    # environment:
+    #   - HTTPS_PROXY=socks5://host.docker.internal:1080
+    #   - HTTP_PROXY=socks5://host.docker.internal:1080
 
 networks:
   bschat-net:
