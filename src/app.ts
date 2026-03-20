@@ -14,6 +14,7 @@ import { TYPES } from "@/types";
 import { SorryModule } from "@/modules/joke/sorry.module";
 import { FoodModule } from "@/modules/food/food.module";
 import { LlmModule } from "@/modules/joke/llm.module";
+import { SocksProxyAgent } from "socks-proxy-agent";
 
 class Bot {
   bot: Telegraf<IBotContext>;
@@ -26,7 +27,6 @@ class Bot {
     this.bot = new Telegraf<IBotContext>(configService.get("BOT_TOKEN"), {
       telegram: {
         agent: agent,
-        timeout: 30000,
       }
     });
     this.bot.use(
